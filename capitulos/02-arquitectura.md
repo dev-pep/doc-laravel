@@ -128,13 +128,7 @@ Esto simplemente *binds* una interfaz a una implementación concreta de la misma
 
 No olvidemos que `::class` es simplemente un *string* con el nombre de la clase *fully qualified*.
 
-Existen otros métodos de *binding*. ***[TO-DO]***
-
-### Resolving ***[TO-DO]***
-
-### Container events ***[TO-DO]***
-
-### PSR-11 ***[TO-DO]***
+Existen otros métodos de *binding*.
 
 ## Service providers
 
@@ -181,6 +175,14 @@ Si el proveedor **únicamente** registra *bindings* en el contenedor de servicio
 
 Para posponer la carga, el proveedor debe implementar la interfaz ***Illuminate\Contracts\Support\DeferrableProvider*** y definir un método `provides()` que debería retornar un *array* con los nombres de las clases que registra.
 
-## Facades ***[TO-DO]***
+## Facades
 
-## Contracts ***[TO-DO]***
+Es una forma de acceder a métodos no estáticos como si fuesen estáticos. Existen varias *façades* definidas en Laravel, y están disponibles en el *service container*. Están definidas en el *namespace* ***Illuminate\Support\Facades***.
+
+Existe un buen número de ellas. Por citar algunas, tenemos ***App***, ***Cache***, ***Route***, etc.
+
+Para utilizarlas debemos importarlas primero:
+
+```php
+use Illuminate\Support\Facades\Route;
+```
