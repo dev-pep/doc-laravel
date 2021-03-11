@@ -177,7 +177,7 @@ Para posponer la carga, el proveedor debe implementar la interfaz ***Illuminate\
 
 ## Facades
 
-Es una forma de acceder a métodos no estáticos como si fuesen estáticos. Existen varias *façades* definidas en Laravel, y están disponibles en el *service container*. Están definidas en el *namespace* ***Illuminate\Support\Facades***.
+Es una forma de acceder a métodos no estáticos como si fuesen estáticos. Existen varias *facades* definidas en Laravel, y están disponibles en el *service container*. Están definidas en el *namespace* ***Illuminate\Support\Facades***.
 
 Existe un buen número de ellas. Por citar algunas, tenemos ***App***, ***Cache***, ***Route***, etc.
 
@@ -186,3 +186,7 @@ Para utilizarlas debemos importarlas primero:
 ```php
 use Illuminate\Support\Facades\Route;
 ```
+
+## Contracts
+
+Son un conjuntos de interfaces que definen los servicios *core* que proporciona el *framework*. Están en el *namespace* base ***Illuminate\Contracts***.
