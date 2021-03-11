@@ -6,6 +6,7 @@ Estos son mis apuntes de *Laravel* 7.
 
 1. [Primeros pasos](capitulos/01-primeros-pasos.md)
 2. [Arquitectura](capitulos/02-arquitectura.md)
+3. [Las bases](capitulos/03-bases.md)
 
 ---
 
