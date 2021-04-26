@@ -49,6 +49,8 @@ Entonces podremos usar el contenido de la variable dentro de nuestra plantilla m
 
 Las dobles llaves son la sentencia *echo* de *Blade*, con lo que se puede incluir cualquier código *PHP* en su interior.
 
+Para saber si una variable ha sido definida, *Blade* tiene la directiva `@isset($variable) ... @endisset` (puede incluir `@else`, como cualquier directiva condicional).
+
 ### Estructuras de control
 
 *Blade* dispone de `@if()`, `@elseif()`, `@else`, y `@endif`, a las que se les debe pasar una expresión *PHP*:

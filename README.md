@@ -1,4 +1,4 @@
-# Apuntes de PHP
+# Apuntes de Laravel
 
 Estos son mis apuntes de *Laravel* 7.
 
