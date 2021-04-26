@@ -560,3 +560,72 @@ $req->session()->forget('key');    // elimina un dato de sesión
 $req->session()->forget(['key1', 'key2', 'key3']);    // varios datos
 $req->session()->flush();    // todos los datos
 ```
+
+## Validación
+
+Lo más utilizado es el método `validate()` del objeto ***Request*** actual (podemos acceder a él desde cualquier método mediante inyección).
+
+Al invocar este método, se le deben pasar las reglas de validación en un *array*:
+
+```php
+$request->validate([
+    'title' => 'required|unique:posts|max:255',
+    'body' => 'required',
+]);
+```
+
+Se supone que esto se ejecuta cuando la *request* es el *submit* de un formulario, por ejemplo. Si la validación falla, el código posterior a `validate()` en nuestro controlador no se ejecuta, y se retorna al estado anterior al *submit* (se genera una respuesta automáticamente, y volveríamos a ver el formulario en blanco, para volver a introducir los datos). Si la validación es correcta, podemos seguir con el código que tratará los valores recibidos del *submit*.
+
+Las reglas de validción pueden pasarse como un *array* también: `['required', 'unique:posts', 'max:255']`. Ver el manual para los tipos de validación disponibles.
+
+Cuando la validación ha fallado, y se recibe la respuesta, los errores son accesibles a través de la variable `$errors`, que es un *array* con todos ellos. En la plantilla *Blade* se puede comprobar si existe alguno:
+
+```html
+@if ($errors->any())
+  <ul>
+    @foreach ($errors->all() as $error)
+      <li>{{ $error }}</li>
+    @endforeach
+  </ul>
+@endif
+```
+
+Alternativamente puede usarse la directiva *Blade* `@error`, y la variable ***$message***:
+
+```html
+@error('title')
+  <p>{{ $message }}</p>
+@enderror
+```
+
+En caso de que se haya producido un error de validación, normalmente volveremos a cargar el formulario, pero se perderán los valores que hemos enviado (al usar `validate()`, si esta falla, ya no tendremos disponible los valores de entrada del formulario). Para ello, se podrá usar el valor de la entrada antigua mediante la función helper `old()`, que recoge la entrada antigua. Se puede utilizar en la plantilla *Blade*:
+
+```html
+<input type="text" name="DNI" id="dniform" value="{{ old('DNI') }}">
+```
+
+Por ejemplo, suponiendo un formulario que tenga la línea anterior en un formulario:
+
+```php
+public function creacion() {  // responde a GET (presenta el formulario vacío)
+    return view('formulario');
+}
+
+public function guardado(Request $req) {  // responde al submit POST, recibe inyección de la request
+    $req->validate([
+        'DNI' => 'min:8|max:9|required',
+        'Nombre' => 'required'
+    ]);
+    return view('formulario');
+}
+```
+
+Si la validación falla, `validate()` terminará el método retornando el anterior formulario con los datos de `old()` disponibles para ese formulario, es decir, se recargará el formulario con las entradas anteriores (de hecho retorna `back()->withInputs()`). En cambio, si tiene éxito la validación, se recargará el formulario nuevo, sin datos en `old()` vacíos (normalmente, para poder usar los campos antiguos con `old()` en la siguiente *request*, hay que *flash* los datos en la *request* actual, mediante el método `flash()` de la *request*).
+
+Si por ejemplo deseamos un valor por defecto (por ejemplo una ciudad de residencia), cuando no hay valor antiguo que corregir, se puede hacer así:
+
+```html
+<input type="text" name="ciudad" id="ciudadform" value="{{ old('DNI') ?? 'Sabadell' }}">
+```
+
+Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será 'Sabadell'. Este es el uso del operador `??` de *Blade* (similar al operador ternario).
