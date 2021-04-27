@@ -629,3 +629,22 @@ Si por ejemplo deseamos un valor por defecto (por ejemplo una ciudad de residenc
 ```
 
 Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será 'Sabadell'. Este es el uso del operador `??` de *Blade* (similar al operador ternario).
+
+### Reglas de validación personalizadas
+
+Si deseamos añadir una regla de validación (*custom rule*), debemos crear una regla:
+
+```
+php artisan make:rule NombreRegla
+```
+
+La regla queda guardada en ***app/Rules***. La regla tendrá los métodos `passes()` y `message()`. El primero recibe el nombre del atributo y su valor (2 parámetros), y debe retornar ***true*** o ***false*** según pase la validación o no. Por su parte, el método `message()` debe retornar el mensaje de error en caso de que falle la validación.
+
+Para utilizar la regla, simplemente se debe pasar una instancia a la lista de validaciones para un atributo:
+
+```php
+$req->validate([
+    'DNI' => ['min:8', 'max:9', 'required', new NombreRegla],
+    'Nombre' => 'required'
+]);
+```
