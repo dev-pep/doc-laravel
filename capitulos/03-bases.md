@@ -225,7 +225,7 @@ Si queremos obtener datos *json* de una *json request*, usaremos el método `inp
 Si queremos leer un valor como booleano, el método `boolean()` retorna ***true*** si el contenido del dato es 1, "1", true, "true", "on" o "yes". En los demás casos retornará ***false***:
 
 ```php
-$archived = req->boolean('archived');
+$archived = $req->boolean('archived');
 ```
 
 Si deseamos obtener solo un subconjunto de los datos de entrada, podemos usar los métodos `only()` o `except()`, a los que pasaremos la lista de los datos que deseamos obtener, ya sea en una lista de argumentos, o en un *array* con todos ellos.
