@@ -197,7 +197,7 @@ class CreaTablaCoches extends Migration
     }
 }
 ```
-Para destruir una tabla, se usa también ***Schema***, y sus métodos `drop()` o `dropIfExists()`. Para renombrarla, `rename()`. Para los distintos métodos de creación de campos, consultar el manual. A estos métodos se les puede encadenar uno o más métodos modificadores (clave primaria, *nullable*, etc.).
+Para destruir una tabla, se usa también ***Schema***, y sus métodos `drop()` o `dropIfExists()`. Para renombrarla, `rename()`. Para los distintos métodos de creación de campos, índices, claves primarias, etc., consultar el manual ***[TO-DO: ampliar]***. A estos métodos se les puede encadenar uno o más métodos modificadores (clave primaria, *nullable*, etc.).
 
 Si la migración no crea una tabla nueva, sino que la modifica, se usa `--table` en lugar de `--create`:
 
