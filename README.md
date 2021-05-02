@@ -8,6 +8,7 @@ Estos son mis apuntes de *Laravel* 7.
 2. [Arquitectura](capitulos/02-arquitectura.md)
 3. [Las bases](capitulos/03-bases.md)
 4. [Frontend](capitulos/04-frontend.md)
+5. [Bases de datos](capitulos/05-bases-de-datos.md)
 
 ---
 
