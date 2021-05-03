@@ -528,8 +528,8 @@ session(['clave' => 'valor']);    // equivalente
 Si la clave es un *array*, debe hacerse con `push()` en lugar de con `put()`:
 
 ```php
-```
 $req->session()->push('user.teams', 'developers');
+```
 
 Esto añade un valor a la clave ***user.teams***, que contiene un *array*.
 
