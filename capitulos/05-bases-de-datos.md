@@ -48,25 +48,29 @@ DB::statement('drop table coches');
 
 ## *Query builders*
 
-El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder*, que es un objeto con un subconjunto de los datos, que tiene a su vez métodos que refinan el *query* y retornan también otro *query builder* (refinado). Así, se utilizan para ser encadenados uno tras otro; al final se encadena un método `get()` que convierte ese *query builder* en un *array* de registros, tales que para accederse a los campos se puede usar la sintaxis de acceso a propiedades. Todo empieza con el *query builder* `DB::table()`, que incluye todos los datos de la tabla.
+El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\Database\Query\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan un *query builder* refinado). Estos métodos se pueden ir encadenando uno tras otro.
+
+Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos. Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\Support\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
+
+El método inicial de creación de un *query builder* es `DB::table()`, que es un *select* de la tabla entera.
 
 ```php
 $user = DB::table('users')->where('name', 'John')->first();
 ```
 
-Este ejemplo toma la tabla ***users***, le aplica un *where* (`name=John`) mediante el método `where()`, y luego retorna el primero de los elementos. El método `first()` ya retorna el registro adecuado sin necesidad de invocar `get()`.
+Este ejemplo toma la tabla ***users***, le aplica un *where* (`name=John`) mediante el método `where()`, y luego retorna el primero de los elementos. El método `first()` retorna el registro, no una colección ni un *array*. Este objeto retornado permite acceder a sus campos mediante sintaxis de acceso a propiedades.
 
-`value()` retorna únicamente el valor del campo que le pasamos por parámtero.
+`value()` retorna únicamente un valor: el del campo cuyo nombre le pasamos por parámtero, en el primer registro de la *query*.
 
-`find()` retorna el registro en que su clave primaria (campo ***id***) tiene el valor que pasamos como argumento.
+`find()` retorna un simple objeto con el registro en que su clave primaria (campo ***id***) tiene el valor que pasamos como argumento.
 
-`pluck()` retorna todos los valores que tiene la columna (campo) que le pasamos como argumento.
+`pluck()` retorna todos los valores que tiene la columna (campo) cuyo nombre le pasamos como argumento. El tipo de retorno es una *collection*.
 
-Métodos agregación: `count()` (número de registros), `max('campo')`, `min('campo')`, `avg('campo')`, `sum('campo')`.
+Métodos agregación: `count()` (número de registros), `max('campo')`, `min('campo')`, `avg('campo')`, `sum('campo')`. Retornan un valor numérico.
 
-Para comprobar si existen registros: `exists()` y `doesntExist()`.
+Para comprobar si existen registros: `exists()` y `doesntExist()`. Retornan un booleano.
 
-Para hacer un simpre select, método `select()`:
+Para hacer un simpre select, método `select()` (retorna un *query builder*):
 
 ```php
 $users = DB::table('users')->select('name', 'email as user_email')->get();
@@ -113,9 +117,11 @@ $users = DB::table('users')->where([
 ])->get();
 ```
 
-Se pueden encadenar varios `where()`, `orWhere()`, `whereIn()`, `whereNotIn()`, etc. Existen otros métodos como `whereDate()`, `whereMonth()`, `whereColumn()`, `orWhereColumn()`, etc.
+Se pueden encadenar varios `where()` (se aplica *and*), `orWhere()` (se aplica *or*), `whereIn()`, `whereNotIn()`, etc. Existen otros métodos como `whereDate()`, `whereMonth()`, `whereColumn()`, `orWhereColumn()`, etc.
 
 ### Agrupación, ordenación, limitación
+
+Todos estos métodos son encadenables, esto es, retornan un *query builder*.
 
 `orderBy()` toma como primer argumento la columna por la que ordenar, mientras que el segundo argumento puede ser ***'asc'*** o ***'desc'***. Si se quiere ordenar por varias columnas, se encadenan varios `orderBy()`.
 
@@ -156,11 +162,11 @@ Para incrementar o decrementar un campo numérico, tenemos `increment()` y `decr
 
 ### Borrado
 
-`delete()` borra los registros de la *query builder*. `truncate()` está pensado para eliminar todos los registros de la tabla y resetear el contador de *id* a 0.
+Cuando la cadena de métodos termina en `delete()`, se borran los registros seleccionados. `truncate()` está pensado para eliminar todos los registros de la tabla y resetear el contador de *id* a 0.
 
 ### Depuración
 
-De forma similar las funciones de *PHP* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento.
+De forma similar las funciones de *PHP* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como terminales de la cadena (no hay que pasarles ningún argumento).
 
 ## Migraciones
 
@@ -172,7 +178,7 @@ Una migración especifica la estructura de una tabla, y puede indicar cómo se c
 php artisan make:migration crea_tabla_coches --create=coches
 ```
 
-En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***<timestamp>_crea_tabla_coches.php***, donde ***<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. En `--create` se indica el nombre de la tabla.
+En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***<timestamp>_crea_tabla_coches.php***, donde ***<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. En `--create` se indica que es una migración de creación y se proporciona el nombre de la tabla.
 
 El archivo de migración del ejemplo contiene la clase (creada automáticamente) ***CreaTablaCoches***. En ella debe haber dos métodos: `up()`, que especifica el cambio o creación, y `down()`, opcional, que especifica cómo deshacer tal cambio (en caso de *rollback*).
 
@@ -197,13 +203,16 @@ class CreaTablaCoches extends Migration
     }
 }
 ```
-Para destruir una tabla, se usa también ***Schema***, y sus métodos `drop()` o `dropIfExists()`. Para renombrarla, `rename()`. Para los distintos métodos de creación de campos, índices, claves primarias, etc., consultar el manual ***[TO-DO: ampliar]***. A estos métodos se les puede encadenar uno o más métodos modificadores (clave primaria, *nullable*, etc.).
 
-Si la migración no crea una tabla nueva, sino que la modifica, se usa `--table` en lugar de `--create`:
+Para destruir una tabla, se usa también ***Schema***, y sus métodos `drop()` o `dropIfExists()`. Para renombrarla, `rename()`.
+
+Si la migración no crea una tabla nueva, sino que modifica una existente, se usa `--table` en lugar de `--create`:
 
 ```
 php artisan make:migration modifica1_tabla_coches --table=coches
 ```
+
+En este caso, en lugar del método `create()`, utilizará el método `table()` para modificar la tabla.
 
 Una vez creadas las migraciones que queramos, se ejecutarán así:
 
@@ -228,6 +237,106 @@ Para revertir **todas** las migraciones del proyecto:
 
 ```
 php artisan migrate:reset
+```
+
+### Definición de tablas
+
+Ya hemos visto cómo definir campos a través del método `create()`. Existen otros métodos útiles en la *facade* ***Schema***: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe la columna; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
+
+El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos *MySQL*. En general, estos métodos toman un argumento con el nombre del campo. Veamos algunos de ellos:
+
+Para crear **claves primarias autoincrementales**: `bigIncrements()` es un ***UNSIGNED BIGINT***. `id()` equivale a `bigIncrements('id')`. También `increments()` (***UNSIGNED INTEGER***), `mediumIncrements()` (***UNSIGNED MEDIUMINT***), `smallIncrements()` (***UNSIGNED SMALLINT***), `tinyIncrements()` (***UNSIGNED TINYINT***).
+
+Métodos para la creación de tipos numéricos: `bigInteger()` (equivale a ***BIGINT***), `boolean()` (***BOOLEAN***), `integer()` (***INTEGER***), `mediumInteger()` (***MEDIUMINT***), `smallInteger()` (***SMALLINT***), `tinyInteger()` (***TINYINT***), `decimal()` (***DECIMAL***, con tamaño total, y posiciones decimales), `double()` y `float()` (***DOUBLE*** y ***FLOAT***, con tamaño total, y posiciones decimales), `unsignedBigInteger()` (***UNSIGNED BIGINT***), `unsignedDecimal()` (***UNSIGNED DECIMAL***, con tamaño total, y posiciones decimales), `unsignedInteger()` (***UNSIGNED INTEGER***), `unsignedMediumInteger()` (***UNSIGNED MEDIUMINT***), `unsignedSmallInteger()` (***UNSIGNED SMALLINT***), `unsignedTinyInteger()` (***UNSIGNED TINYINT***).
+
+El número de bits de estos enteros es el siguiente: ***TINYINT*** 8, ***SMALLINT*** 16, ***MEDIUMINT*** 24, ***INTEGER*** 32, y ***BIGINT*** 64.
+
+Para tipos *string*: `binary()` (***BLOB***, *binary large object*), `char()` (***CHAR***, con tamaño en segundo argumento), `longtext()` (***LONGTEXT***), `mediumText()` (***MEDIUMTEXT***), `string()` (***VARCHAR***, con tamaño), `text()` (***TEXT***), `enum()` (***ENUM***, con *array* con los valores posibles, de los que el campo solo puede tener un valor), `set()` (***SET***, con *array* con los valores posibles; a diferencia de un ***ENUM***, el valor del campo puede tener 0 o más elementos).
+
+Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión, dígitos totales), `time()` (***TIME***).
+
+Para otros tipos: `json()` (***JSON***).
+
+A los métodos anteriores se les puede encadenar métodos modificadores:
+
+`after('columna')` colocará el campo justo después del campo especificado.
+
+`autoIncrement()` convierte un campo entero en autoincremental.
+
+`comment('comentario')` añade un comentario a una columna.
+
+`default($valor)` especifica un valor por defecto para esa columna.
+
+`first()` coloca la columna en primera posición.
+
+`nullable($value = true)` establece la columna como *nullable* (puede contener ***null***).
+
+`unsigned()` establece una columna de tipo entero como *unsigned*.
+
+### Índices
+
+Se puede crear un índice sobre una columna, encadenándole simplemente `unique()` en la definición de la columna.
+
+```php
+$tabla->string('email')->unique();
+```
+
+Si no lo hemos hecho en ese momento, se puede hacer posteriormente:
+
+```php
+$tabla->unique('email');
+```
+
+Si queremos crear un índice basado en varias columnas, le pasaremos un *array* con los nombres de las columnas:
+
+```php
+$tabla->unique(['email', 'nombre', 'fecha']);
+```
+
+Este método acepta un segundos parámetro que será el nombre del índice. Si no se especifica, se creará un nombre por defecto, basado en el nombre de la tabla, columnas, etc.
+
+En lugar de `unique()`, se puede usar `index()` si queremos que se repitan valores en la columna. Otra alternativa es `primary()`, que lo que crea es una clave primaria.
+
+Para **cambiar el nombre** de un índice, se usará el método `renameIndex()` al que se pasa el nombre antiguo y el nuevo.
+
+Para **eliminar un índice**, dependiendo del tipo que sea, usaremos `dropPrimary()`, `dropUnique()` o `dropIndex()`, a los que pasaremos el nombre del índice.
+
+### Restricciones de llave foránea
+
+Las *Foreign Key Constraints* son un mecanismo para ayudar a mantener la integridad referencial.
+
+Supongamos que añadimos a una tabla existente ***posts*** una columna ***user_id***, que referencia a una clave primaria ***id*** en una tabla ***users***. Para añadir esta columna y crear esa restricción de clave foránea:
+
+```php
+Schema::table('posts', function (Blueprint $table) {
+    $table->unsignedBigInteger('user_id');  // crea la columna
+    $table->foreign('user_id')->references('id')->on('users');  // crea la restricción
+});
+```
+
+El código completo de la función puede sustituirse por una forma más resumida:
+
+```php
+$table->foreignId('user_id')->constrained();
+```
+
+Por un lado, `foreignId()` es un alias de `unsignedBigInteger()`. Y por otro lado, es importante el nombre que le demos a la nueva columna, puesto que es lo que utilizará *Laravel* para expandir al código anterior.
+
+Naturalmente, antes de `constrained()` se pueden incluir otros métodos modificadores, como de costumbre.
+
+Para eliminar una de estas restricciones, es decir, para eliminar una *foreign key*, hay que usar `dropForeign()`, al que le pasaremos el nombre de esta. La convención del nombre es como sigue: nombre de la tabla, nombre del campo y el sufijo ***foreign***, todo separado por guiones bajos (***_***). En nuestro caso sería:
+
+```php
+$table->dropForeign('posts_user_id_foreign');
+```
+
+Esto no elimina la columna, sino simplemente la restricción.
+
+Para habilitar y deshabilitar las restricciones de clave foránea en nuestras migraciones:
+
+```php
+Schema::enableForeignKeyConstraints();
+Schema::disableForeignKeyConstraints();
 ```
 
 ## Modelos: *Eloquent ORM*
@@ -268,7 +377,7 @@ Una vez tenemos nuestro modelo, y su tabla correspondiente en la base de datos, 
 $coches = App\Coche::all();
 ```
 
-En lugar de `all()` se puede usar `where()` especificando una condición. A cualquier resultado se le pueden encadenar métodos que van restringiendo el mismo:
+En lugar de `all()` se puede usar `where()` especificando una condición. Dado que estos métodos retornan un *query builder*, se pueden encadenar los métodos de estos:
 
 ```php
 $coches = App\Coche::where('active', 1)
@@ -277,11 +386,9 @@ $coches = App\Coche::where('active', 1)
                ->get();
 ```
 
-Un modelo *Eloquent* es un *query builder*, con lo que dispone de todos los métodos de estos.
-
 Si en lugar de `where()` o `all()` indicamos `find()` con un *array* de claves primarias, recibiremos una colección de registros coincidentes (si los hay).
 
-Una vez hecha la *query* se puede refrescar mediante `coches->refresh()`. El método `fresh()`, en cambio, retorna la consulta con datos frescos, pero no cambia la *query* original.
+Una vez hecha la *query* se puede refrescar mediante `coches->refresh()`, por si ha habido cambios en la base de datos por otro lado. El método `fresh()`, en cambio, retorna la consulta con datos frescos, pero no cambia la *query* original.
 
 ### Insertar o modificar registros
 
@@ -301,4 +408,4 @@ $coche->name =  $req->name;  // por ejemplo
 $coche->save();
 ```
 
-Para inserciones y/o modificaciones, se pueden usar los métodos de *query builder* del modelo (`insert()`, `update()`, etc.). De hecho, se pueden usar estos métodos para lo que se quiera, aunque *Eloquent* añade mucha más funcionalidad.
+Para inserciones y/o modificaciones, se pueden usar los métodos de *query builder* del modelo (`insert()`, `update()`, etc.). De hecho, se pueden usar estos métodos para lo que se quiera, aunque *Eloquent* añade más funcionalidad.
