@@ -34,6 +34,16 @@ El archivo ***index.php*** contiene el controlador del *frontend* que gestiona t
 
 Todos los archivos de configuración está en el directorio ***config***. El archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
 
+Es importante recalcar que las dependencias del proyecto estarán en la carpeta ***vendor***, que típicamente queda fuera del control de versiones. Cuando *composer* instala nuevas bibliotecas en ese directorio, es posible que estas, para funcionar correctamente, necesiten archivos de configuración, migraciones, etc. en directorios de nuestro proyecto, fuera de ***vendor***. Estos archivos sí estarían incluidos en nuestro control de versiones.
+
+Para que se generen tales archivos, hay que ejecutar:
+
+```
+php artisan vendor:publish
+```
+
+En ese momento, las bibliotecas que no lo hayan hecho, contribuirán con sus archivos de configuración. Normalmente, crearán un archivo *.php* dentro del directorio ***Config***, aunque pueden crear otras cosas, como se ha dicho.
+
 ### Variables de entorno
 
 Las variables definidas en ***.env*** son *overriden* por las variables existentes del sistema.
