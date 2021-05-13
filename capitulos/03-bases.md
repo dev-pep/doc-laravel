@@ -4,7 +4,7 @@
 
 Las rutas de la aplicación se hallan en la carpeta ***routes***, y se cargan automáticamente. Las rutas de la interfaz web se encuentran en ***routes/web.php***.
 
-La definición de ruta básica acepta una *URI* y una *closure* pasados a un método `get()` (o `post()`, `put()`, `delete()`, etc.) de la *facade* `Route`. Existen métodos para todos los verbos *HTTP*.
+La definición de ruta básica acepta una *URI* y una *closure* (que pertenecen a la clase `Closure` de *PHP*) pasados a un método `get()` (o `post()`, `put()`, `delete()`, etc.) de la *facade* `Route`. Existen métodos para todos los verbos *HTTP*.
 
 ```php
 Route::get('foo', function() {
@@ -30,7 +30,7 @@ Route::any('/foo', function() {
 });
 ```
 
-### Protección CSRF
+### Protección *CSRF*
 
 Para proteger de ataques *CSRF* (*cross-site request forgery*), los formularios que realicen peticiones a la aplicación deben contener un *token CSRF*. Para ello se puede usar la directiva de *Blade* `@csrf` que genera este *token*:
 
@@ -85,6 +85,31 @@ Se pueden capturar tantos fragmentos (entre llaves) como se quiera. El nombre qu
 
 Si el nombre del fragmento entre llaves termina en ***?***, significa que el fragmento es opcional. En ese caso, se le debe dar un valor por defecto al parámetro correspondiente en la función *callback*.
 
+### Rutas con nombre
+
+Se pueden asignar nombres a las rutas. Esto se hace para simplificar las referencias a una ruta. Se hace encadenando el método `name()` a la definición de la ruta.
+
+```php
+Route::get('sections/user/profile', function () {
+    /* ... */
+})->name('profile');
+```
+
+Así, podríamos referirnos a esta ruta, simplemente por el nombre corto:
+
+```php
+$url = route('profile');  // obtenemos la URL
+return redirect()->route('profile');  // redirigimos a esa ruta
+```
+
+Para obtener la *URL* podemos añadir parámetros, que serán añadidos a esta:
+
+```php
+$url = route('profile', ['id' => 1, 'photos' => 'yes']);
+```
+
+Los nombres de las rutas deben ser únicos.
+
 ### Ruta *fallback*
 
 Con el método `fallback()` definimos la acción para las rutas que no hayan encontrado *match*. Normalmente será una acción de "página no encontrada":
@@ -102,9 +127,9 @@ $route = Route::current();  // ruta actual
 $action = Route::currentRouteAction();  // acción de la ruta actual
 ```
 
-## Middleware
+## *Middleware*
 
-Se trata de componentes por los que pasa la petición *HTTP* antes de ser atendida. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
+Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
 
 El *middleware* se ubica en ***app/Http/Middleware***. Para crear uno nuevo:
 
@@ -112,7 +137,71 @@ El *middleware* se ubica en ***app/Http/Middleware***. Para crear uno nuevo:
 php artisan make:middleware NombreMiddleware
 ```
 
-***[TO-DO]***
+Esto creará la clase ***App\Http\Middleware\NombreMiddleware*** en el archivo ***app/Http/Middleware/NombreMiddleware.php***.
+
+*Laravel* irá ejecutando los *middlewares* sucesivamente. Para ello, si definen un método `handle()`, este será llamado. Este método define como primer parámetro, la *request*, y como segundo, una *closure* (de la clase `Closure`, lógicamente) que deberemos usar para seguir con el *pipeline* de *middlewares*.
+
+```php
+public function handle($request, Closure $next)
+{
+    if ($request->age <= 200) {
+        return redirect('home');
+    }
+    return $next($request);
+}
+```
+
+En el ejemplo vemos el uso que se debe dar a la *closure* si deseamos que el *middleware* tenga éxito ("pase") y siga a otra cosa. En caso contrario, deberemos retornar alguna otra cosa (en el ejemplo, una redirección, con lo que el *middleware* no "pasaría" el test).
+
+El ejemplo anterior realiza sus acciones antes de que la *request* sea atendida. Pero podemos hacer que realice acciones posteriormente a ser atendida. En ese caso, lo que deberemos retornar será la *response*, que obtendremos así:
+
+```php
+public function handle($request, Closure $next)
+{
+    // Acciones previas, si hay
+    $response = $next($request);
+    // Acciones posteriores
+    return $response;
+}
+```
+
+La llamada a `$next($request)` es la que marca el momento en que se realizarán las acciones.
+
+### Registro de *middleware*
+
+Para añadir el *middleware* de forma **global**, es decir, para que se ejecute siempre ante cualquier *request*, debemos registrar la clase del *middleware* en la propiedad ***$middleware*** de la clase en ***app/Http/Kernel.php***.
+
+Si queremos registrarlo solo para **rutas específicas**, lo haremos en la propiedad ***$routeMiddleware*** de la misma clase. En este caso le daremos una *key* de nuestra elección, a la que nos referiremos más tarde.
+
+En este último caso, para asociar un *middleware* a una ruta específica, lo haremos añadiendo una llamada al método `middleware()` tras la definición de la ruta:
+
+```php
+Route::get('admin/profile', function () {
+    // Definición de la ruta
+})->middleware('auth');
+```
+
+El método `middleware()` acepta varios argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* podemos usar el nombre completo de la clase.
+
+Se pueden agrupar varios *middlewares* bajo un grupo. Esto se define en la propiedad ***$middlewareGroups*** de la clase en ***app/Http/Kernel.php***. Cada grupo tendrá una *key* a la que se podrá hacer referencia con el método `middleware()` de la misma forma que se ha visto.
+
+### Parámetros al *middleware*
+
+Es posible pasar parámetros a nuestro *middleware*. Estos se recogen a partir del tercer parámetro del método `handle()`.
+
+Para pasar los parámetros se haría mediante el método `middleware()` de la ruta, tras dos puntos (***:***), y separándolos por comas. En la definición de `handle()`:
+
+```php
+public function handle($request, Closure $next, $name, $age) { /* ... */ }
+```
+
+Y en la definición de la ruta:
+
+```php
+Route::get('cliente', function () {
+    // Definición
+})->middleware('auth:manolo,50');
+```
 
 ## Controladores
 
