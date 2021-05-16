@@ -203,6 +203,8 @@ Route::get('cliente', function () {
 })->middleware('auth:manolo,50');
 ```
 
+Un *middleware* que esté registrado a nivel global no necesita definir parámetros. Además, siempre nos queda acceder a la información de entrada que lleva la *request*.
+
 ## Controladores
 
 Para no tener que definir el manejo de los *requests* como *closures* en los archivos de rutas, se pueden usar controladores, que son clases que permiten agrupar lógica de tratamiento de peticiones. Los controladores están ubicados en ***app/Http/Controllers***.
