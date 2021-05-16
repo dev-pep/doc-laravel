@@ -18,7 +18,17 @@ Para instalar un proyecto *Laravel* directamente:
 composer create-project --prefer-dist laravel/laravel:^7.0 nombreProyecto
 ```
 
+O lo que es lo mismo:
+
+```
+composer create-project --prefer-dist laravel/laravel nombreProyecto ^7.0
+```
+
 Esto creará un proyecto *Laravel* en una carpeta ***nombreProyecto***, y usando la versión más actualizada de *Laravel* 7 (descartando la versión 8).
+
+El argumento `--prefer-dist` sirve para que descargue los archivos del repositorio con la versión para distribución. Si queremos la versión del código fuente (para desarrollar, en este caso, *Laravel*) se incluiría `--prefer-source`.
+
+Si queremos que no instale las dependencias de desarrollo, hay que incluir `--no-dev`.
 
 Para iniciar un servidor *Laravel*:
 
