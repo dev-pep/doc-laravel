@@ -79,7 +79,7 @@ Una vez instalado, ya tendremos disponibles unos cuantos modelos *builtin* para 
 
 Estos modelos podemos encontrarlos en ***vendor/directorytree/ldaprecord/src/Models*** (corresponde al *namespace* ***Ldaprecord\Models***).
 
-Hay, básicamente dos modos de uso: autenticación llana, y autenticación con base de datos. En la primera no tenemos que tener nuestra propia base de datos de usuarios simultáneamente a la del servidor *LDAP*, con lo que la autenticación depende completamente de dicho servidor (si ese servidor cae, nuestra aplicación no funciona). En el segundo caso, a parte del servidor, tenemos nuestra propia base de datos, en la que autenticamos a nuestros usuarios *LDAP* (incluso usuarios que no estén en el *LDAP*).
+Hay, básicamente dos modos de uso: autenticación llana, y autenticación sincronizada con una base de datos. En la primera, la autenticación depende completamente del servidor *LDAP* (si ese servidor cae, nuestra aplicación no funciona). En el segundo caso, a parte del servidor, tenemos nuestra propia base de datos con la que cualquier autenticación en el *LDAP* se sincroniza. Es posible en este caso guardar información extra sobre los usuarios *LDAP*, e incluso tener usuarios que no están en el *LDAP*. Es algo complejo, y con la autenticación llana será suficiente para nuestros objetivos.
 
 ## Autenticación llana
 
@@ -105,10 +105,6 @@ Para crear una regla de autenticación *LDAP*:
 php artisan make:ldap-rule NombreRegla
 ```
 
-La regla se crea en ***app/Ldap/Rules***. Esta clase tiene un método `isValid()` que debe retornar ***true*** o ***false*** dependiendo de se el usuario concreto pasa la regla o no. El usuario concreto se hace disponible a través de la propiedad ***$user*** de la clase.
+La regla se crea en ***app/Ldap/Rules***. Esta clase tiene un método `isValid()` que debe retornar ***true*** o ***false*** dependiendo de si el usuario concreto pasa la regla o no. El usuario concreto se hace disponible a través de la propiedad ***$user*** de la clase.
 
 Una vez definida esta clase, ya podemos añadir el nombre de esta clase al *array* ***rules*** (usando `::class`, por ejemplo).
-
-## Sincronizar con nuestra BD
-
-TO-DO
