@@ -62,7 +62,7 @@ Las variables establecedas en ***.env*** se leen como *strings*, con lo que se p
 
 Si a una variable hay que darle un valor que contiene espacios, se indicará entre comillas dobles.
 
-Todos los valores de este archivo se cargarán en la superglobal de *PHP* `$_ENV`, aunque se puede usar la función `env()`:
+Todos los valores de este archivo (así como las variables de entorno del sistema) se cargarán en la superglobal de *PHP* `$_ENV`, aunque se puede usar la función `env()` para acceder a estas variables:
 
 ```php
 $d = env('APP_DEBUG', false);
