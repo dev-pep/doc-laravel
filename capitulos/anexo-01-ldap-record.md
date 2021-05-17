@@ -1,4 +1,4 @@
-# LdapRecord
+# Paquete LdapRecord-laravel
 
 La biblioteca *LdapRecord* proporciona un modo de autenticarse en ***Directorio Activo***.
 
