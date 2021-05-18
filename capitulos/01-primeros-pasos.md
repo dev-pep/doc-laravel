@@ -42,7 +42,9 @@ El archivo ***index.php*** contiene el controlador del *frontend* que gestiona t
 
 ## Configuración
 
-Todos los archivos de configuración está en el directorio ***config***. El archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
+Todos los archivos de configuración están en el directorio ***config***.
+
+Por otro lado, el archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
 
 Es importante recalcar que las dependencias del proyecto estarán en la carpeta ***vendor***, que típicamente queda fuera del control de versiones. Cuando *composer* instala nuevas bibliotecas en ese directorio, es posible que estas, para funcionar correctamente, necesiten archivos de configuración, migraciones, etc. en directorios de nuestro proyecto, fuera de ***vendor***. Estos archivos sí estarían incluidos en nuestro control de versiones.
 
@@ -72,11 +74,15 @@ El segundo parámetro (opcional) es el valor por defecto que retornará la funci
 
 ### Acceso a los valores de configuración
 
-Para acceder a los valores de configuración definidos, se usa la función `config()`. También tiene un segundo parámetro opcional con el valor por defecto:
+Los valores de configuración se almacenan en el directorio ***config***. Allí se encuentran los archivos de configuración. Estos son simples archivos *PHP* que lo que hacen es retornar un array de pares clave-valor.
+
+Para acceder a los valores de configuración definidos, se usa la función `config()`. Para acceder a un valor concreto, se usa la sintaxis de punto. La función tiene un segundo parámetro opcional con el valor por defecto:
 
 ```php
 $C = config('app.timezone', 'Asia/Seoul');
 ```
+
+En este caso, se accede a un archivo ***config/app.php*** que retorna un *array* que contiene una clave ***timezone***. La función retorna el valor asociado a esa clave. Sin embargo, esto también accedería a un archivo ***config/app/timezone.php***, retornando el valor o *array* completo que retorna este archivo. Así, la sintaxis de puntos se usa para descender tanto por directorios y subdirectorios como por *arrays* y *subarrays*. El conjunto de directorios y *arrays* forma un árbol. El *helper* `config()` no tiene por qué solicitar una hoja; si especifica un nodo no terminal del árbol (sea un *array* o un directorio), retornará un *array* con el resto de la jerarquí anidada.
 
 Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todas los valore de configuración en un solo archivo que será cargado al principio:
 
