@@ -11,6 +11,7 @@ Estos son mis apuntes de *Laravel* 7.
 5. [Seguridad](capitulos/05-seguridad.md)
 6. [Bases de datos](capitulos/06-bases-de-datos.md)
 7. [Profundizando](capitulos/07-profundizando.md)
+8. [Anexo: LdapRecord](capitulos/anexo-01-ldap-record.md)
 
 ---
 

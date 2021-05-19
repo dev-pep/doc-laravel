@@ -251,9 +251,9 @@ Métodos para la creación de tipos numéricos: `bigInteger()` (equivale a ***BI
 
 El número de bits de estos enteros es el siguiente: ***TINYINT*** 8, ***SMALLINT*** 16, ***MEDIUMINT*** 24, ***INTEGER*** 32, y ***BIGINT*** 64.
 
-Para tipos *string*: `binary()` (***BLOB***, *binary large object*), `char()` (***CHAR***, con tamaño en segundo argumento), `longtext()` (***LONGTEXT***), `mediumText()` (***MEDIUMTEXT***), `string()` (***VARCHAR***, con tamaño), `text()` (***TEXT***), `enum()` (***ENUM***, con *array* con los valores posibles, de los que el campo solo puede tener un valor), `set()` (***SET***, con *array* con los valores posibles; a diferencia de un ***ENUM***, el valor del campo puede tener 0 o más elementos).
+Para tipos *string*: `binary()` (***BLOB***, *binary large object*), `char()` (***CHAR***, con tamaño en segundo argumento), `longtext()` (***LONGTEXT***), `mediumText()` (***MEDIUMTEXT***), `string()` (***VARCHAR***, con tamaño, por defecto 255), `text()` (***TEXT***), `enum()` (***ENUM***, con *array* con los valores posibles, de los que el campo solo puede tener un valor), `set()` (***SET***, con *array* con los valores posibles; a diferencia de un ***ENUM***, el valor del campo puede tener 0 o más elementos).
 
-Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión, dígitos totales), `time()` (***TIME***).
+Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión), `time()` (***TIME***). El tipo ***DATETIME*** acepta un número de dígitos decimales, hasta 6 (microsegundos); el valor por defecto es 0.
 
 Para otros tipos: `json()` (***JSON***).
 
@@ -301,11 +301,11 @@ Para **cambiar el nombre** de un índice, se usará el método `renameIndex()` a
 
 Para **eliminar un índice**, dependiendo del tipo que sea, usaremos `dropPrimary()`, `dropUnique()` o `dropIndex()`, a los que pasaremos el nombre del índice.
 
-### Restricciones de llave foránea
+### Restricciones de llave externa
 
 Las *Foreign Key Constraints* son un mecanismo para ayudar a mantener la integridad referencial.
 
-Supongamos que añadimos a una tabla existente ***posts*** una columna ***user_id***, que referencia a una clave primaria ***id*** en una tabla ***users***. Para añadir esta columna y crear esa restricción de clave foránea:
+Supongamos que añadimos a una tabla existente ***posts*** una columna ***user_id***, que referencia a una clave primaria ***id*** en una tabla ***users***. Para añadir esta columna y crear esa restricción de clave externa:
 
 ```php
 Schema::table('posts', function (Blueprint $table) {
@@ -324,6 +324,8 @@ Por un lado, `foreignId()` es un alias de `unsignedBigInteger()`. Y por otro lad
 
 Naturalmente, antes de `constrained()` se pueden incluir otros métodos modificadores, como de costumbre.
 
+A la hora de definir la restricción, la tabla a la que pertenece la clave a la que hacemos referencia debe existir ya en la base de datos.
+
 Para eliminar una de estas restricciones, es decir, para eliminar una *foreign key*, hay que usar `dropForeign()`, al que le pasaremos el nombre de esta. La convención del nombre es como sigue: nombre de la tabla, nombre del campo y el sufijo ***foreign***, todo separado por guiones bajos (***_***). En nuestro caso sería:
 
 ```php
@@ -332,7 +334,7 @@ $table->dropForeign('posts_user_id_foreign');
 
 Esto no elimina la columna, sino simplemente la restricción.
 
-Para habilitar y deshabilitar las restricciones de clave foránea en nuestras migraciones:
+Para habilitar y deshabilitar las restricciones de clave externa en nuestras migraciones:
 
 ```php
 Schema::enableForeignKeyConstraints();
