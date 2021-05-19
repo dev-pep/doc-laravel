@@ -64,3 +64,15 @@ De todas formas, si también hay eventos en el *array* ***$listen***, también s
 Para despachar (generar) un evento se puede usar el *helper* `event()` (desde cualquier parte del código) al que se le pasará una instancia del evento deseado, conteniendo la información que queramos. Para ello, el constructor de la clase evento almacenará adecuadamente la información que reciba su constructor.
 
 Al despacharse el evento, los escuchadores asociados recibirán esa instancia a través de su método *handler*, y lo procesarán adecuadamente.
+
+## Publicación de la configuración
+
+Una vez hayamos incluido un paquete en nuestro proyecto con `composer`, necesitamos publicar la configuración del mismo, dentro del árbol de directorios de nuestro proyecto (es decir, fuera del subdirectorio de ***vendor*** donde resida el paquete). Los archivos de configuración que serán publicados están definidos en el *service provider* que viene con el paquete.
+
+Para publicar la configuración de todos los paquetes que no lo hayan hecho:
+
+```
+php artisan vendor:publish
+```
+
+Para publicar la configuración de un paquete concreto usaremos la opción `--provider`.
