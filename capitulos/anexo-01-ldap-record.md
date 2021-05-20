@@ -1,6 +1,6 @@
 # Paquete LdapRecord-laravel
 
-La biblioteca *LdapRecord* proporciona un modo de autenticarse en ***Directorio Activo***.
+La biblioteca *LdapRecord* proporciona un modo de autenticarse en ***Directorio Activo***. Para funcionar, es necesario que *PHP* tenga instalada la extensión ***ldap***.
 
 ## Instalación
 
@@ -16,7 +16,9 @@ Seguidamente, generaremos los archivos de configuración necesarios para su func
 php artisan vendor:publish --provider="LdapRecord\Laravel\LdapServiceProvider"
 ```
 
-En este caso, se generará simplemente el archivo ***config/ldap.php***. Este archivo simplemente retorna un *array* asociativo con información sobre la conexión a *DA*.
+## Configuración
+
+Una vez hecho esto, se generará simplemente el archivo ***config/ldap.php***. Este archivo simplemente retorna un *array* asociativo con información sobre la conexión a *DA*.
 
 En la clave ***default*** del *array*, indicamos el nombre de la conexión por defecto.
 
@@ -34,7 +36,13 @@ En cuanto a las conexiones, las definimos en la clave ***connections***. Su valo
 
 Los elementos ***hosts***, ***base_dn***, ***username*** y ***password*** son los únicos obligatorios.
 
-Todos estos elementos podemos definirlos en el archivo de configuración. Sin embargo, si lo dejamos tal cual está, podemos simplemente indicar la configuración en nuestro archivo ***.env*** de este modo (adaptándolo a nuestro servidor):
+La extensión ***ldap*** de *PHP* tiene una serie de configuraciones que podemos cambiar. Para ello utiliza las correspondientes constantes para acceder a estos valores. Si queremos cambiar alguna de estas opciones, se hace con el elemento de configuración ***options***, el cual es un *array* en el que las claves son la constante deseada. Es importante recalcar que hay algunas constantes que no se pueden redefinir a través de ***options***:
+- ***LDAP_OPT_PROTOCOL_VERSION*** se cambia con el elemento ***version*** (número).
+- ***LDAP_OPT_NETWORK_TIMEOUT*** se cambia con ***timeout*** (número).
+- ***LDAP_OPT_REFERRALS*** se cambia con ***follow_referrals*** (booleano).
+
+
+Todos estos elementos podemos definirlos en el archivo de configuración. Sin embargo, si lo dejamos tal cual está por defecto, podemos simplemente indicar la configuración en nuestro archivo ***.env*** de este modo (adaptándolo a nuestro servidor):
 
 ```
 LDAP_LOGGING=true
