@@ -132,11 +132,13 @@ $action = Route::currentRouteAction();  // acción de la ruta actual
 Para especificar un grupo de rutas, podemos usar el método `group()` al que pasaremos una *closure* como argumento. Esta *closure* contendrá a su vez todas las definiciones de rutas deseadas (incluyendo otros grupos, si queremos).
 
 ```php
-Route::group(function() {
+Route::group([], function() {
     Route::get(/* definición ruta */) -> name(/* nombre ruta */);
     Route::post(/* definición ruta */);
 }) -> name(/* nombre del grupo */);
 ```
+
+El primer argumento a `group()` es un *array* en el que se definen atributos comunes a todas las rutas del grupo. Sin embargo, si el método está encadenado tras otros (como `middleware()`, por ejemplo), este primer argumento desaparece.
 
 ## *Middleware*
 
