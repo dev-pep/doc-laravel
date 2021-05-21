@@ -74,7 +74,7 @@ El segundo parámetro (opcional) es el valor por defecto que retornará la funci
 
 ### Acceso a los valores de configuración
 
-Los valores de configuración se almacenan en el directorio ***config***. Allí se encuentran los archivos de configuración. Estos son simples archivos *PHP* que lo que hacen es retornar un array de pares clave-valor.
+Los valores de configuración se almacenan en el directorio ***config***. Allí se encuentran los archivos de configuración. Estos son simples archivos *PHP* que lo que hacen es retornar un *array* de pares clave-valor.
 
 Para acceder a los valores de configuración definidos, se usa la función `config()`. Para acceder a un valor concreto, se usa la sintaxis de punto. La función tiene un segundo parámetro opcional con el valor por defecto:
 
@@ -82,7 +82,13 @@ Para acceder a los valores de configuración definidos, se usa la función `conf
 $C = config('app.timezone', 'Asia/Seoul');
 ```
 
-En este caso, se accede a un archivo ***config/app.php*** que retorna un *array* que contiene una clave ***timezone***. La función retorna el valor asociado a esa clave. Sin embargo, esto también accedería a un archivo ***config/app/timezone.php***, retornando el valor o *array* completo que retorna este archivo. Así, la sintaxis de puntos se usa para descender tanto por directorios y subdirectorios como por *arrays* y *subarrays*. El conjunto de directorios y *arrays* forma un árbol. El *helper* `config()` no tiene por qué solicitar una hoja; si especifica un nodo no terminal del árbol (sea un *array* o un directorio), retornará un *array* con el resto de la jerarquí anidada.
+En este caso, se accede a un archivo ***config/app.php*** que retorna un *array* que contiene una clave ***timezone***. La función retorna el valor asociado a esa clave. Sin embargo, esto también accedería a un archivo ***config/app/timezone.php***, retornando el valor o *array* completo que retorna este archivo. Así, la sintaxis de puntos se usa para descender tanto por directorios y subdirectorios como por *arrays* y *subarrays*. El conjunto de directorios y *arrays* forma un árbol. El *helper* `config()` no tiene por qué solicitar una hoja del árbol; si especifica un nodo no terminal (sea un *array* o un directorio), retornará un *array* con el resto de la jerarquía hasta los nodos terminales.
+
+Es posible establecer un valor de configuración en tiempo de ejecución. Para ellos pasaremos un *array* a `config()` estableciendo los valores que deseemos:
+
+```
+config(['app.timezone' => 'Madrid/Paris']);
+```
 
 Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todas los valore de configuración en un solo archivo que será cargado al principio:
 

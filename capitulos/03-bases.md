@@ -127,6 +127,17 @@ $route = Route::current();  // ruta actual
 $action = Route::currentRouteAction();  // acción de la ruta actual
 ```
 
+### Grupos de rutas
+
+Para especificar un grupo de rutas, podemos usar el método `group()` al que pasaremos una *closure* como argumento. Esta *closure* contendrá a su vez todas las definiciones de rutas deseadas (incluyendo otros grupos, si queremos).
+
+```php
+Route::group(function() {
+    Route::get(/* definición ruta */) -> name(/* nombre ruta */);
+    Route::post(/* definición ruta */);
+}) -> name(/* nombre del grupo */);
+```
+
 ## *Middleware*
 
 Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
@@ -153,27 +164,27 @@ public function handle($request, Closure $next)
 
 En el ejemplo vemos el uso que se debe dar a la *closure* si deseamos que el *middleware* tenga éxito ("pase") y siga a otra cosa. En caso contrario, deberemos retornar alguna otra cosa (en el ejemplo, una redirección, con lo que el *middleware* no "pasaría" el test).
 
+Habría que tener cuidado a la hora de redirigir. Si por ejemplo redirigimos a una ruta que usa el mismo *middleware* podríamos ocasionar una redirección cíclica infinita.
+
 El ejemplo anterior realiza sus acciones antes de que la *request* sea atendida. Pero podemos hacer que realice acciones posteriormente a ser atendida. En ese caso, lo que deberemos retornar será la *response*, que obtendremos así:
 
 ```php
 public function handle($request, Closure $next)
 {
-    // Acciones previas, si hay
+    // Acciones previas al tratamiento de la request
     $response = $next($request);
-    // Acciones posteriores
+    // Acciones posteriores al tratamiento de la request
     return $response;
 }
 ```
 
-La llamada a `$next($request)` es la que marca el momento en que se realizarán las acciones.
-
 ### Registro de *middleware*
 
-Para añadir el *middleware* de forma **global**, es decir, para que se ejecute siempre ante cualquier *request*, debemos registrar la clase del *middleware* en la propiedad ***$middleware*** de la clase en ***app/Http/Kernel.php***.
+Para añadir el *middleware* de forma **global**, es decir, para que se ejecute siempre ante cualquier *request*, debemos registrar la clase del *middleware* añadiendo su nombre en la propiedad ***$middleware*** de la clase en ***app/Http/Kernel.php***.
 
-Si queremos registrarlo solo para **rutas específicas**, lo haremos en la propiedad ***$routeMiddleware*** de la misma clase. En este caso le daremos una *key* de nuestra elección, a la que nos referiremos más tarde.
+Si queremos registrarlo solo para **rutas específicas**, lo haremos en la propiedad ***$routeMiddleware*** de la misma clase. En este caso, añadiremos un elemento a ese *array* con una *key* de nuestra elección, a la que nos referiremos más tarde. El valor, será el nombre de la clase *middleware*.
 
-En este último caso, para asociar un *middleware* a una ruta específica, lo haremos añadiendo una llamada al método `middleware()` tras la definición de la ruta:
+Una vez hecho esto, para asociar ese *middleware* a una ruta específica, lo haremos encadenando una llamada al método `middleware()` tras la definición de la ruta, a la que pasaremos como argumento el nombre de esa clave que elegimos en el paso anterior:
 
 ```php
 Route::get('admin/profile', function () {
@@ -181,9 +192,9 @@ Route::get('admin/profile', function () {
 })->middleware('auth');
 ```
 
-El método `middleware()` acepta varios argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* podemos usar el nombre completo de la clase.
+El método `middleware()` acepta un número arbitrario de argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* podemos usar el nombre completo de la clase (así no habría necesidad de registrar esa clave en ***$routeMiddleware***).
 
-Se pueden agrupar varios *middlewares* bajo un grupo. Esto se define en la propiedad ***$middlewareGroups*** de la clase en ***app/Http/Kernel.php***. Cada grupo tendrá una *key* a la que se podrá hacer referencia con el método `middleware()` de la misma forma que se ha visto.
+Se pueden agrupar varios *middlewares* bajo un grupo. Esto se define en la propiedad ***$middlewareGroups*** de la clase en ***app/Http/Kernel.php***. Cada grupo tendrá una *key* de nuestra elección a la que se podrá hacer referencia con el método `middleware()` de la misma forma que se ha visto. El valor correspondiente a esa clave será un *array* con la lista de todas las clases *middleware* que queramos.
 
 ### Parámetros al *middleware*
 
@@ -203,7 +214,25 @@ Route::get('cliente', function () {
 })->middleware('auth:manolo,50');
 ```
 
-Un *middleware* que esté registrado a nivel global no necesita definir parámetros. Además, siempre nos queda acceder a la información de entrada que lleva la *request*.
+Un *middleware* que esté registrado a nivel global no necesita definir parámetros (no tendría mucho sentido). Además, siempre nos queda acceder a la información de entrada que lleva la *request*.
+
+## Encadenado de métodos para las rutas
+
+Todos estos métodos de ***Route*** retornan un objeto ***Route***, con lo que el valor de retorno de cada uno de ellos puede encadenarse con otro. En este caso, el orden no es importante. Para definir, por ejemplo un *middleware* para un grupo de rutas, da igual, por ejemplo, hacer esto:
+
+```php
+Route::middleware(/* middlewares */)
+      -> group(/* definición grupo */)
+      -> name(/* nombre grupo */);
+```
+
+Que esto:
+
+```php
+Route::group(/* definición grupo */)
+      ->middleware(/* middlewares */)
+      -> name(/* nombre grupo */);
+```
 
 ## Controladores
 
@@ -225,7 +254,7 @@ Route::get('foo', 'Photos\AdminController@show');
 
 Por convenio, el nombre de una clase de controlador termina en "Controller".
 
-Si el controlador **únicamente** maneja una sola acción, se puede definir un método `__invoke()`, que es el que será llamado cuando al definir la ruta no se indica nombre de método.
+Si el controlador **únicamente** maneja una sola acción, se puede definir un método `__invoke()`, que será invocado por defecto si al definir la ruta no especificamos nombre de método (solo nombre del controlador).
 
 Para crear un controlador:
 
