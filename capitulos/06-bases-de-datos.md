@@ -178,7 +178,7 @@ Una migración especifica la estructura de una tabla, y puede indicar cómo se c
 php artisan make:migration crea_tabla_coches --create=coches
 ```
 
-En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***<timestamp>_crea_tabla_coches.php***, donde ***<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. En `--create` se indica que es una migración de creación y se proporciona el nombre de la tabla.
+En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***\<timestamp>_crea_tabla_coches.php***, donde ***\<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. Con `--create` se indica que es una migración de creación y se proporciona el nombre de la tabla.
 
 El archivo de migración del ejemplo contiene la clase (creada automáticamente) ***CreaTablaCoches***. En ella debe haber dos métodos: `up()`, que especifica el cambio o creación, y `down()`, opcional, que especifica cómo deshacer tal cambio (en caso de *rollback*).
 
