@@ -131,6 +131,8 @@ Con `groupBy()` se agrupa por el campo (o campos) que se le pasa como argumento(
 
 Para limitar el número de registros resultante, tenemos el método `take()`, al que se le pasa el número de registros deseado. También está el método `skip()`, que se salta los primeros registros (el argumento especifica cuántos se saltarán).
 
+> Al parecer, si usamos `skip()` debemos usar posteriormente `take()`.
+
 ### Inserciones
 
 Para insertar, debemos pasar un registro (en un *array* de pares campo, valor) o varios (en un *array* de registros) a través del método `insert()`.
@@ -379,18 +381,22 @@ Una vez tenemos nuestro modelo, y su tabla correspondiente en la base de datos, 
 $coches = App\Coche::all();
 ```
 
-En lugar de `all()` se puede usar `where()` especificando una condición. Dado que estos métodos retornan un *query builder*, se pueden encadenar los métodos de estos:
+En lugar de `all()` se puede usar `where()` especificando una condición.
+
+Es importante recalcar que algunos de estos métodos retornan una *collection* y otros un *query builder*. Por ejemplo, ***Coche::all()*** retorna una *collection*, mientras que ***Coche::where()*** retorna un *query builder*. Sin embargo, las colecciones disponen de muchos de los métodos que usamos para refinar *query builders*, con la única diferencia que los métodos de las colecciones retornarán a su vez una colección (haciendo posible, pues, el encadenado de métodos) que irán refinando la colección.
+
+Por ejemplo:
 
 ```php
-$coches = App\Coche::where('active', 1)
-               ->orderBy('name', 'desc')
-               ->take(10)
-               ->get();
+$coches1 = App\Coche::where('id', 10) -> get();
+$coches2 = App\Coche::all() -> where('id', 10);
 ```
+
+Las dos sentencias anteriores retornan el mismo valor y tipo. En la primera construimos una *query*, encadenamos uno o más métodos que van retornando *query builders*, y al final convertimos el último *query builder* retornado en una colección (mediante `get()`). En el segundo caso, ya tenemos una colección desde el principio, y vamos encadenando uno o más métodos que van retornando colecciones, hasta el último, que, al retornar también una colección, no se debe usar `get()`.
 
 Si en lugar de `where()` o `all()` indicamos `find()` con un *array* de claves primarias, recibiremos una colección de registros coincidentes (si los hay).
 
-Una vez hecha la *query* se puede refrescar mediante `coches->refresh()`, por si ha habido cambios en la base de datos por otro lado. El método `fresh()`, en cambio, retorna la consulta con datos frescos, pero no cambia la *query* original.
+En el caso de un *query builder*, se puede refrescar mediante `coches->refresh()`, por si ha habido cambios en la base de datos por otro lado. El método `fresh()`, en cambio, retorna la consulta con datos frescos, pero no cambia la *query* original. Las *collections* carecen de estos métodos.
 
 ### Insertar o modificar registros
 
