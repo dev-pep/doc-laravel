@@ -272,6 +272,84 @@ Cuando enrutamos a un método de controlador, si este requiere parámetros, se a
 Route::get('foo', 'NombreController@nombreMetodo', ['parm1' => 3, 'parm2' => 'hello']);
 ```
 
+### *Resource controllers*
+
+Los controladores de recursos manejan todas las operaciones *CRUD* relacionadas con un recurso concreto (normalmente una tabla de una base de datos). Lo podemos crear a mano, o usar `artisan`:
+
+```
+php artisan make:controller CocheController --resource
+```
+
+A continuación, deberíamos definir las rutas para cada una de las operaciones *CRUD*, pero *laravel* facilita mucho el trabajo permitiéndonos definir todas esas rutas en una sola línea:
+
+```php
+Route::resource('coches', 'CocheController');
+```
+
+Automáticamente, se acaban de definir estas rutas, las cuales, además tienen un nombre asociado:
+
+| Método HTTP | URI               | Método  | Nombre de la ruta |
+| :---------- | :---------------- | :------ | :---------------- |
+| GET         | /coches           | index   | coches.index      |
+| GET         | /coches/create    | create  | coches.create     |
+| POST        | /coches           | store   | coches.store      |
+| GET         | /coches/{id}      | show    | coches.show       |
+| GET         | /coches/{id}/edit | edit    | coches.edit       |
+| PUT/PATCH   | /coches/{id}      | update  | coches.update     |
+| DELETE      | /coches/{id}      | destroy | coches.destroy    |
+
+El método `index()` sirve, básicamente para la presentación de la tabla en pantalla, `create()` para presentar un formulario para introducir un elemento (registro) nuevo en la tabla, `store()` para insertar un elemento nuevo (con los datos enviados), `show()` para mostrar un elemento (registro) en pantalla, `edit()` para mostrar un formulario para editar un registro existente, `update()` para modificar un registro existente (con los datos enviados), y `destroy()` para eliminar un registro.
+
+Varios de estos métodos precisarán también de datos de entrada en la *request*. En cuanto a las *URIs* con parámetros (***id***), deberían contener información que permitiera identificar un registro concreto unívocamente (normalmente será la clave primaria).
+
+Si tuviéramos más de un *resource controller* podríamos incluir una línea para cada uno, o usar una sola sentencia, usando un *array*, de esta forma:
+
+```php
+Route::resource([
+    'coches' => 'CocheController',
+    'fotos' => 'FotoController'
+]);
+```
+
+Deberemos crear todas las vistas que necesitemos, con los formularios adecuados. Sin embargo, los formularios *HTML* solo permiten enviar datos mediante los métodos ***GET*** y ***POST*** de *HTTP*. Para enviar formularios mediante ***PUT***, ***PATCH*** o ***DELETE***, deberemos usar la directiva *Blade* `@method()` dentro del formulario:
+
+```php
+@method('PATCH')
+```
+
+Si deseamos desarrollar un *resource controller* que no implemente todas las acciones arriba mencionadas, podemos usar los métodos `only()` o `except()`:
+
+```php
+Route::resource('coches', 'CocheController') -> only(['index', 'show']);
+Route::resource('fotos', 'FotoController') -> except(['create', 'store', 'update']);
+```
+
+#### Rutas de *Resource controllers* de *APIs*
+
+Podemos definir controladores de recursos que ofrecerán una *API*, normalmente no desearemos definir algunas de las acciones mencionadas, como las que presentan formularios para rellenar. Específicamente, las acciones `create()` y `edit()`.
+
+Para crear las rutas de un *API resource controller*, que no incluirán los dos métodos mencionados, lo haremos mediante:
+
+```php
+Route::apiResource('coches', 'CocheController');
+```
+
+ Estas *APIs* recibirán normalmente una petición (en consonancia con las rutas definidas arriba), y cuando sea necesario retornarán la información soliciatada. En el caso de una *API REST*, un objeto en formato *JSON*.
+
+Para retornar una *response* consistente en un objeto *JSON*, puede hacerse simplemente retornando un objeto del tipo *collection* desde el método concreto.
+
+En todo caso, para crear el *API resource controller*, puede hacerse fácilmente mediante:
+
+
+```
+php artisan make:controller CocheController --api
+```
+Si lo que queremos es agrupar todos los controladores *API* en un directorio ***Api*** diferenciado, para mejor organización:
+
+```
+php artisan make:controller Api/CocheController --api
+```
+
 ## Peticiones (*requests*)
 
 Se puede acceder a la *request* actual a través de la inyección de dependencias al hacer un *type-hint* de la clase ***Illuminate\Http\Request***. El *service container*, en este caso, nos enviará una instancia de la petición entrante.
