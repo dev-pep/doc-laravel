@@ -65,7 +65,38 @@ Para despachar (generar) un evento se puede usar el *helper* `event()` (desde cu
 
 Al despacharse el evento, los escuchadores asociados recibirán esa instancia a través de su método *handler*, y lo procesarán adecuadamente.
 
-## Publicación de la configuración
+## *Helpers*
+
+### URL's
+
+#### route()
+
+El *helper* `route()` retorna la *URL* correspondiente a una ruta **con nombre**. Por ejemplo, `route('nombreRuta')` retornaría la *URL* correspondiente a la ruta que tiene como nombre ***nombreRuta***. Si se define una ruta que contiene parámetros, se deben pasar tantos argumentos como sean necesarios a este *helper* mediante un array. Por ejemplo, si hemos definido la ruta:
+
+```php
+Route::get('clients/{id}', /* closure o controller */) -> name('clientesForm');
+```
+
+Podemos obtener la *URL* así: `route('clientesForm', ['id' => 33])`.
+
+Las *URLs* serán absolutas. Si deseamos una *URL* relativa, debemos pasar un tercer argumento con el valor ***false***.
+
+#### asset()
+
+Este *helper* retornará la *URL* de un *asset*. Dado que la *URL* tiene como base, por defecto, el raíz del proyecto (el directorio donde se halla ***index.php***), es decir, el directorio ***public***. Por lo tanto, todos los *assets* que necesitemos (imágenes, *scripts .js*, etc.), deberían estar en ese directorio o en subcarpetas del mismo. Si por ejemplo tenemos imágenes en ***public/images***, la *URL* de una de esas imágenes podría ser `asset('images/logo.png')`.
+
+Podemos definir la base de estas *URL* mediante la variable `ASSET_URL` del archivo ***.env***, lo cual es útil si tenemos *assets* en servidores externos:
+
+```
+ASSET_URL = https://undominio.com/assets
+```
+
+Entonces, `asset('images/logo.png')` retornará la *URL* ***https://undominio.com/assets/images/logo.png***.
+
+
+## Desarrollo de paquetes
+
+### Publicación de la configuración
 
 Una vez hayamos incluido un paquete en nuestro proyecto con `composer`, necesitamos publicar la configuración del mismo, dentro del árbol de directorios de nuestro proyecto (es decir, fuera del subdirectorio de ***vendor*** donde resida el paquete). Los archivos de configuración que serán publicados están definidos en el *service provider* que viene con el paquete.
 
