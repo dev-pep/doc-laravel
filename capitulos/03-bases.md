@@ -298,7 +298,7 @@ Automáticamente, se acaban de definir estas rutas, las cuales, además tienen u
 | PUT/PATCH   | /coches/{id}      | update  | coches.update     |
 | DELETE      | /coches/{id}      | destroy | coches.destroy    |
 
-El método `index()` sirve, básicamente para la presentación de la tabla en pantalla, `create()` para presentar un formulario para introducir un elemento (registro) nuevo en la tabla, `store()` para insertar un elemento nuevo (con los datos enviados), `show()` para mostrar un elemento (registro) en pantalla, `edit()` para mostrar un formulario para editar un registro existente, `update()` para modificar un registro existente (con los datos enviados), y `destroy()` para eliminar un registro.
+El método `index()` sirve, básicamente para la presentación de la tabla en pantalla, `create()` para presentar un formulario para introducir un elemento (registro) nuevo en la tabla, `store()` para insertar un elemento nuevo (con los datos enviados), `show()` debe retornar la información de un registro concreto para, por ejemplo, mostrar en pantalla, `edit()` para mostrar un formulario para editar un registro existente, `update()` para modificar un registro existente (con los datos enviados), y `destroy()` para eliminar un registro concreto.
 
 Varios de estos métodos precisarán también de datos de entrada en la *request*. En cuanto a las *URIs* con parámetros (***id***), deberían contener información que permitiera identificar un registro concreto unívocamente (normalmente será la clave primaria).
 
@@ -326,7 +326,7 @@ Route::resource('fotos', 'FotoController') -> except(['create', 'store', 'update
 
 #### Rutas de *Resource controllers* de *APIs*
 
-Podemos definir controladores de recursos que ofrecerán una *API*, normalmente no desearemos definir algunas de las acciones mencionadas, como las que presentan formularios para rellenar. Específicamente, las acciones `create()` y `edit()`.
+Podemos definir controladores de recursos que ofrecerán una *API*. En este caso, normalmente no desearemos definir algunas de las acciones mencionadas anteriormente, sobre todo las que presentan formularios para rellenar. Específicamente, las acciones `create()` y `edit()`.
 
 Para crear las rutas de un *API resource controller*, que no incluirán los dos métodos mencionados, lo haremos mediante:
 
@@ -336,14 +336,16 @@ Route::apiResource('coches', 'CocheController');
 
  Estas *APIs* recibirán normalmente una petición (en consonancia con las rutas definidas arriba), y cuando sea necesario retornarán la información soliciatada. En el caso de una *API REST*, un objeto en formato *JSON*.
 
+Hay que tener en cuenta que en este caso, las *URI* van precedidas por ***api/***. Es decir, se definen las rutas para ***api/coches***, ***api/coches/create***, etc.
+
 Para retornar una *response* consistente en un objeto *JSON*, puede hacerse simplemente retornando un objeto del tipo *collection* desde el método concreto.
 
 En todo caso, para crear el *API resource controller*, puede hacerse fácilmente mediante:
 
-
 ```
 php artisan make:controller CocheController --api
 ```
+
 Si lo que queremos es agrupar todos los controladores *API* en un directorio ***Api*** diferenciado, para mejor organización:
 
 ```
