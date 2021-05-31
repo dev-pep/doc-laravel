@@ -358,6 +358,12 @@ Al crear estos archivos, *laravel* ya coloca las clases en los *namespaces* adec
 Route::apiResource('coches', 'Api\CochesController');
 ```
 
+En todo caso, para comprobar todas las rutas definidas en el proyecto:
+
+```
+php artisan route:list
+```
+
 ## Peticiones (*requests*)
 
 Se puede acceder a la *request* actual a través de la inyección de dependencias al hacer un *type-hint* de la clase ***Illuminate\Http\Request***. El *service container*, en este caso, nos enviará una instancia de la petición entrante.
