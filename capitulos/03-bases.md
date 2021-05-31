@@ -336,7 +336,7 @@ Route::apiResource('coches', 'CocheController');
 
  Estas *APIs* recibirán normalmente una petición (en consonancia con las rutas definidas arriba), y cuando sea necesario retornarán la información soliciatada. En el caso de una *API REST*, un objeto en formato *JSON*.
 
-Hay que tener en cuenta que en este caso, las *URI* van precedidas por ***api/***. Es decir, se definen las rutas para ***api/coches***, ***api/coches/create***, etc.
+Normalmente definiremos las rutas, no en ***web.php***, sino en ***api.php***. La diferencia es que al definirlas en este último archivo, las *URI* van precedidas por ***api/***. Es decir, se definen automáticamente las rutas para ***api/coches***, ***api/coches/create***, etc.
 
 Para retornar una *response* consistente en un objeto *JSON*, puede hacerse simplemente retornando un objeto del tipo *collection* desde el método concreto.
 
@@ -350,6 +350,12 @@ Si lo que queremos es agrupar todos los controladores *API* en un directorio ***
 
 ```
 php artisan make:controller Api/CocheController --api
+```
+
+Al crear estos archivos, *laravel* ya coloca las clases en los *namespaces* adecuados. En el último caso, la clase sería ***App\Http\Controllers\Api\CocheController***, y la definición de la ruta (en ***api.php***) se haría:
+
+```php
+Route::apiResource('coches', 'Api\CochesController');
 ```
 
 ## Peticiones (*requests*)
