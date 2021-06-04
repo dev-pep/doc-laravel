@@ -67,7 +67,36 @@ Al despacharse el evento, los escuchadores asociados recibirán esa instancia a 
 
 ## *Helpers*
 
+A parte de numerosas utilidades para *arrays*, *strings* y otras cosas, podríamos destacar estos *helpers*:
+
+### *Paths*
+
+Es posible obtener la ruta (absoluta) a directorios concretos del proyecto mediante las siguientes funciones:
+- `app_path()` es la ruta a la carpeta ***app***.
+- `base_path()` es la ruta a la raíz del proyecto.
+- `config_path()` es la ruta a la carpeta ***config***.
+- `database_path()` es la ruta a la carpeta ***database***.
+- `public_path()` es la ruta a la carpeta ***public***.
+- `resource_path()` es la ruta a la carpeta ***resources***.
+- `storage_path()` es la ruta a la carpeta ***storage***.
+
+Si opcionalmente les pasamos un argumento a cualquiera de estas funciones, con un *string* que indique una ruta (relativa al directorio en cuestión) a un archivo o directorio, retornará la ruta (absoluta) de ese archivo o directorio.
+
 ### URL's
+
+#### asset() y secure_asset()
+
+Este *helper* retornará la *URL* de un *asset*. Dado que la *URL* tiene como base, por defecto, el raíz del proyecto (el directorio donde se halla ***index.php***), es decir, el directorio ***public***. Por lo tanto, todos los *assets* que necesitemos (imágenes, *scripts .js*, etc.), deberían estar en ese directorio o en subcarpetas del mismo. Si por ejemplo tenemos imágenes en ***public/images***, la *URL* de una de esas imágenes podría ser `asset('images/logo.png')`.
+
+Podemos definir la base de estas *URL* mediante la variable `ASSET_URL` del archivo ***.env***, lo cual es útil si tenemos *assets* en servidores externos:
+
+```
+ASSET_URL = https://undominio.com/assets
+```
+
+Entonces, `asset('images/logo.png')` retornará la *URL* ***https://undominio.com/assets/images/logo.png***.
+
+La función `secure_asset()` es igual, pero retorna una *URL HTTPS*.
 
 #### route()
 
@@ -81,18 +110,87 @@ Podemos obtener la *URL* así: `route('clientesForm', ['id' => 33])`.
 
 Las *URLs* serán absolutas. Si deseamos una *URL* relativa, debemos pasar un tercer argumento con el valor ***false***.
 
-#### asset()
+#### url() y secure_url()
 
-Este *helper* retornará la *URL* de un *asset*. Dado que la *URL* tiene como base, por defecto, el raíz del proyecto (el directorio donde se halla ***index.php***), es decir, el directorio ***public***. Por lo tanto, todos los *assets* que necesitemos (imágenes, *scripts .js*, etc.), deberían estar en ese directorio o en subcarpetas del mismo. Si por ejemplo tenemos imágenes en ***public/images***, la *URL* de una de esas imágenes podría ser `asset('images/logo.png')`.
+El *helper* `url()` retorna la *URL* de un archivo o carpeta del proyecto que se le pasa como primer argumento. Si se invoca sin argumentos, retorna un objeto ***UrlGenerator***, que acepta métodos como `current()`, `full()` o `previous()`.
 
-Podemos definir la base de estas *URL* mediante la variable `ASSET_URL` del archivo ***.env***, lo cual es útil si tenemos *assets* en servidores externos:
+La función acepta un segundo argumento con un *array* con componentes que se añaden a la *URL*:
 
 ```
-ASSET_URL = https://undominio.com/assets
+url('user/profile', [532])
 ```
 
-Entonces, `asset('images/logo.png')` retornará la *URL* ***https://undominio.com/assets/images/logo.png***.
+La función `secure_url()` es igual, pero retorna una *URL HTTPS*.
 
+### Varios
+
+#### back()
+
+La función `back()` retorna una *response* de redirección a la localización anterior.
+
+```php
+return back($status = 302, $headers = [], $fallback = false);
+return back();
+```
+
+#### config()
+
+Con el *helper* `config()` obtenemos valores de configuración. Utiliza notación de puntos para avanzar por la jerarquía de directorios (directorio ***config***) y por la jerarquía de *arrays* y objetos del archivo de configuración. Acepta un segundo argumento opcional, con un valor por defecto.
+
+```php
+$valor = config('app.timezone', $default);
+```
+
+Para **escribir** un valor de configuración se utiliza un *array*:
+
+```php
+config(['app.timezone' => $timz]);
+```
+
+#### cookie()
+
+Crea una instancia de una *cookie* con el nombre, valor y número de minutos de expiración indicados.
+
+```php
+$cookie = cookie('La cookie', 'Este es el valor', 180);
+```
+
+#### env()
+
+Retorna el valor de una variable del sistema (o variable definida en archivo ***.env***). Acepta un segundo argumento con valor por defecto.
+
+```php
+$valor = env('REMOTE_USER', 'Pepito');
+```
+
+#### old()
+
+Con `old()` obtenemos la entrada antigua *flashed* en la sesión.
+
+#### redirect()
+
+El *helper* `redirect()` retorna una *response* de redirección. Sin argumentos, retorna una instancia del redirector.
+
+```php
+return redirect($to = null, $status = 302, $headers = [], $secure = null);
+
+return redirect('/home');
+
+return redirect()->route('route.name');
+```
+
+#### request()
+
+La función `request()` retorna una instancia de la *request* actual. También podemos usarla para obtener un valor de entrada (acepta un segundo argumento con valor por defecto):
+
+```php
+$request = request();
+$valor = request('clave', $default);
+```
+
+#### response()
+
+El *helper* `response()` retorna una instancia de una respuesta del servidor (ver sección de respuestas).
 
 ## Desarrollo de paquetes
 

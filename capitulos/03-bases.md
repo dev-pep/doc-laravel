@@ -505,6 +505,8 @@ return response($contenido)
                            'Otro-header' => 'valor otro header']);
 ```
 
+El *helper* `response()` acepta un primer argumento con el contenido de tal respuesta (dependiendo del tipo de respuesta, será texto, *JSON*, etc.). Como segundo argumento opcional, el código de la respuesta (200 es *OK*). Opcionalmente puede tener un tercer argumento con un *array* de encabezados.
+
 También se pueden añadir *cookies* a la respuesta. Se hace de la misma forma que el método `header()`, pero en este caso con el método `cookie()`, cuyos tres primeros parámetros son los más usados: nombre, valor y tiempo de vida (en minutos). Alternativamente se puede usar el *facade* ***Cookie*** para añadir *cookies* a la cola, que serán enviadas con la respuesta (mismos argumentos que opción anterior):
 
 ```php
