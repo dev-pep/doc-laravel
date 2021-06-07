@@ -48,9 +48,9 @@ DB::statement('drop table coches');
 
 ## *Query builders*
 
-El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\Database\Query\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan un *query builder* refinado). Estos métodos se pueden ir encadenando uno tras otro.
+El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan un *query builder* refinado). Estos métodos se pueden ir encadenando uno tras otro.
 
-Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos. Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\Support\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
+Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos. Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\\Support\\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
 
 El método inicial de creación de un *query builder* es `DB::table()`, que es un *select* de la tabla entera.
 

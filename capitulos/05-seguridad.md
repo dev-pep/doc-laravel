@@ -117,7 +117,7 @@ Se utilizan dos mecanismos para gestionar la autorización de un usuario a utili
 
 ### *Gates*
 
-Las puertas son *closures* (o métodos) que definen si un usuario está autorizado a realizar cierta acción. Se registran en un *service provider*. Por conveniencia, se puede hacer en la clase ***App\Providers\AuthServiceProvider*** que viene por defecto en *Laravel*. Un *gate* recibe por defecto una instancia del usuario, y otros argumentos opcionales.
+Las puertas son *closures* (o métodos) que definen si un usuario está autorizado a realizar cierta acción. Se registran en un *service provider*. Por conveniencia, se puede hacer en la clase ***App\\Providers\\AuthServiceProvider*** que viene por defecto en *Laravel*. Un *gate* recibe por defecto una instancia del usuario, y otros argumentos opcionales.
 
 En el método `boot()` del proveedor de servicios registraremos la puerta mediante el método `define()` de la *facade* ***Gate***:
 
@@ -181,7 +181,7 @@ php artisan make:policy CochePolicy --model=Coche
 
 Las políticas son resueltas por el *sevice container*, con lo que pueden ser inyectadas automáticamente en nuestras clases.
 
-Para registrar las políticas, podemos hacerlo en ***App\Providers\AuthServiceProvider***, donde disponemos ya de la propiedad ***policies***. Esta es un *array* que asocia cada modelo a la política de acceso a él:
+Para registrar las políticas, podemos hacerlo en ***App\\Providers\\AuthServiceProvider***, donde disponemos ya de la propiedad ***policies***. Esta es un *array* que asocia cada modelo a la política de acceso a él:
 
 ```php
 protected $policies = [

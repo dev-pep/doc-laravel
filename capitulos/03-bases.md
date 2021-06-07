@@ -150,7 +150,7 @@ El *middleware* se ubica en ***app/Http/Middleware***. Para crear uno nuevo:
 php artisan make:middleware NombreMiddleware
 ```
 
-Esto creará la clase ***App\Http\Middleware\NombreMiddleware*** en el archivo ***app/Http/Middleware/NombreMiddleware.php***.
+Esto creará la clase ***App\\Http\\Middleware\\NombreMiddleware*** en el archivo ***app/Http/Middleware/NombreMiddleware.php***.
 
 *Laravel* irá ejecutando los *middlewares* sucesivamente. Para ello, si definen un método `handle()`, este será llamado. Este método define como primer parámetro, la *request*, y como segundo, una *closure* (de la clase `Closure`, lógicamente) que deberemos usar para seguir con el *pipeline* de *middlewares*.
 
@@ -240,7 +240,7 @@ Route::group(/* definición grupo */)
 
 Para no tener que definir el manejo de los *requests* como *closures* en los archivos de rutas, se pueden usar controladores, que son clases que permiten agrupar lógica de tratamiento de peticiones. Los controladores están ubicados en ***app/Http/Controllers***.
 
-Un controlador puede extender la clase ***App\Http\Controller*** si desea tener acceso a determinadas características. De lo contrario, no es obligatorio.
+Un controlador puede extender la clase ***App\\Http\\Controller*** si desea tener acceso a determinadas características. De lo contrario, no es obligatorio.
 
 Si queremos asignar una ruta a un método específico de un controlador:
 
@@ -248,7 +248,7 @@ Si queremos asignar una ruta a un método específico de un controlador:
 Route::get('foo', 'NombreController@nombreMetodo');
 ```
 
-No es necesario especificar la ruta (*namespace*) completa del controlador, porque *Laravel* ya sabe que los controladores están en ***App\Http\Controllers***. Sin embargo, si están en *namespace* interior, sí hay que definirlo. Por ejemplo, si queremos asignar una ruta al método `show()` del controlador ***App\Http\Controllers\Photos\AdminController***:
+No es necesario especificar la ruta (*namespace*) completa del controlador, porque *Laravel* ya sabe que los controladores están en ***App\\Http\\Controllers***. Sin embargo, si están en *namespace* interior, sí hay que definirlo. Por ejemplo, si queremos asignar una ruta al método `show()` del controlador ***App\\Http\\Controllers\\Photos\\AdminController***:
 
 ```php
 Route::get('foo', 'Photos\AdminController@show');
@@ -352,7 +352,7 @@ Si lo que queremos es agrupar todos los controladores *API* en un directorio ***
 php artisan make:controller Api/CocheController --api
 ```
 
-Al crear estos archivos, *laravel* ya coloca las clases en los *namespaces* adecuados. En el último caso, la clase sería ***App\Http\Controllers\Api\CocheController***, y la definición de la ruta (en ***api.php***) se haría:
+Al crear estos archivos, *laravel* ya coloca las clases en los *namespaces* adecuados. En el último caso, la clase sería ***App\\Http\\Controllers\\Api\\CocheController***, y la definición de la ruta (en ***api.php***) se haría:
 
 ```php
 Route::apiResource('coches', 'Api\CochesController');
@@ -366,7 +366,7 @@ php artisan route:list
 
 ## Peticiones (*requests*)
 
-Se puede acceder a la *request* actual a través de la inyección de dependencias al hacer un *type-hint* de la clase ***Illuminate\Http\Request***. El *service container*, en este caso, nos enviará una instancia de la petición entrante.
+Se puede acceder a la *request* actual a través de la inyección de dependencias al hacer un *type-hint* de la clase ***Illuminate\\Http\\Request***. El *service container*, en este caso, nos enviará una instancia de la petición entrante.
 
 El *service container* también enviará la instancia de la petición en caso de hacer el *type-hint* en una *closure*.
 
@@ -483,13 +483,13 @@ if($req->hasFile('photo'))
 if $archivo->isValid() ...
 ```
 
-El método `file()` retorna una instancia de ***Illuminate\Http\UploadedFile***. A parte de `isValid()`, esta clase dispone de los métodos `path()` (la ruta completa del archivo) o `extension()` (extensión del archivo basada, no en la extensión proporcionada, sino en el contenido).
+El método `file()` retorna una instancia de ***Illuminate\\Http\\UploadedFile***. A parte de `isValid()`, esta clase dispone de los métodos `path()` (la ruta completa del archivo) o `extension()` (extensión del archivo basada, no en la extensión proporcionada, sino en el contenido).
 
 ## Respuestas (*responses*)
 
 La forma más simple de retornar una respuesta (desde una ruta o controlador) es retornando un simple *string*. También podemos retornar un *array*, que el *framework* convertirá a una respuesta *JSON*.
 
-Aunque normalmente se retornará una vista o una ***Illuminate\Http\Response***. En este último caso podemos personalizar, además, el código de respuesta y las cabeceras *HTTP*:
+Aunque normalmente se retornará una vista o una ***Illuminate\\Http\\Response***. En este último caso podemos personalizar, además, el código de respuesta y las cabeceras *HTTP*:
 
 ```php
 return response($contenido)
@@ -639,7 +639,7 @@ View::composer('greeting', 'App\Http\View\Composers\GreetingComposer');
 
 En este caso se ha dado la ruta completa de *namespaces* del *composer*, puesto que en *Laravel* no tienen una ubicación específica. Se pueden organizar en cualquier parte de la jerarquía que nos interese. Por otro lado, en lugar del nombre de una clase, se puede dar como segundo argumento una *closure*.
 
-En el ejemplo, **justo antes** de renderizar la vista ***greeting***, se llamará al método `compose()` de la clase especificada, que recibe como parámetro una instancia de dicha vista (de la clase ***Illuminate\View\View***). En el código del método podemos manipular este objeto, por ejemplo añadiéndole datos:
+En el ejemplo, **justo antes** de renderizar la vista ***greeting***, se llamará al método `compose()` de la clase especificada, que recibe como parámetro una instancia de dicha vista (de la clase ***Illuminate\\View\\View***). En el código del método podemos manipular este objeto, por ejemplo añadiéndole datos:
 
 ```php
 public function compose(View $view)
