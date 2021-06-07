@@ -241,7 +241,7 @@ echo __('bienvenida', ['nombre' => 'Doyle']);
 
 Si en la definición del *string* el *placeholder* del parámetro está todo en mayúsculas o tiene únicamente la primera letra en mayúsculas, el valor que se le pase será cambiado para coincidir con esa capitalización.
 
-Para traducir *strings* de paquetes que tengan sus propios *language files*, en lugar de editar esos ficheros del paquete, se pueden *override* creando *language files* en ***resources/lang/vendor/<paquete>/<locale>/<archivo>***.
+Para traducir *strings* de paquetes que tengan sus propios *language files*, en lugar de editar esos ficheros del paquete, se pueden *override* creando *language files* en ***resources/lang/vendor/\<paquete>/\<locale>/\<archivo>***.
 
 Por ejemplo, supongamos que el paquete ***skyrim/hearthfire*** (recordemos que esto es *vendor/paquete*) tiene un archivo de lenguaje en inglés llamado ***messages.php***. Entonces solo tenemos que crear un archivo ***resources/lang/vendor/hearthfire/es/messages.php*** con nuestros propios *strings*.
 
