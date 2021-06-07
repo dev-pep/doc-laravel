@@ -362,9 +362,7 @@ php artisan make:model Coche --migration
 Existen algunas **asunciones importantes** que hace *Eloquent*:
 
 - El nombre de la tabla será el mismo que la clase modelo, pero **en plural y empezando en minúscula**. En este caso, el modelo ***Coche*** guardará sus registros en la tabla ***coches***. Si no queremos que se siga ese convenio, hay que definir el nombre de la tabla mediante la propiedad (*protected*) ***$table*** del modelo, que almacenará el nombre de la tabla.
-
 - Cada tabla tiene un campo con nombre ***id***, que es la clave primaria. Para cambiarlo, definir una propiedad protegida en la clase del modelo llamada ***$primaryKey***, con el nombre del campo con la clave primaria. También se asume que la clave primaria es un entero que se autoincrementa. Si queremos una clave primaria no autoincremental o no numérica, hay que definir la propiedad pública ***$incrementing*** a ***false***. Si el tipo no es numérico, además habría que definir la propiedad protegida ***$keyType*** a ***'string'***.
-
 - Cada tabla tendrá las columnas ***created_at*** y ***updated_at***, que actualizará *Eloquent* automáticamente. Si deseamos que no lo haga, se incluirá la propiedad pública ***$timestamps*** con valor ***false***.
 
 Si queremos dar un valor por defecto a alguno de los campos, definiremos la variable protegida ***$attributes***. Se le dará como valor un *array* con los nombres de los atributos a los que queramos dar valor por defecto, junto con sus valores:

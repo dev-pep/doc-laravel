@@ -25,18 +25,20 @@ En la clave ***default*** del *array*, indicamos el nombre de la conexión por d
 Otro de los elementos es ***logging***, que es un simple booleano que indica si se generará *logging* de las acciones que realicemos en el directorio *LDAP*. Los *logs* se almacenarán en ***storage/logs***.
 
 En cuanto a las conexiones, las definimos en la clave ***connections***. Su valor será a su vez un *array* con todas las conexiones posibles a *DA*. Cada una de estas conexiones tiene una clave con el nombre de la conexión, y un valor que consiste en un *array* asociativo con los datos de la misma. Sus pares clave/valor son:
-  - ***hosts*** es un *array* con *strings* que definen direcciones donde encontramos servidores *LDAP*. La conexión se intentará siempre en el orden especificado.
-  - ***base_dn*** almacena el *distinguished name* (*DN*, ver más adelante) base, a partir de donde se realizarán todas las búsquedas y creaciones.
-  - ***username*** y ***password*** son las credenciales de un usuario del directorio que tenga suficientes privilegios para realizar la acción que deseamos llevar a cabo. El nombre de usuario se indicará, normalmente, con un *distinguished name*.
-  - ***port*** es el puerto de conexión. Si no se indica, por defecto es el 389 (conexión no *SSL*) o 636 (conexión *SSL*). Si indicamos puerto 389 pero se habilita la conexión *SSL*, el puerto queda automáticamente cambiado a 636. Si se habilita *TLS*, no se puede utilizar *SSL*, y el puerto debe ser 389.
-  - ***use_ssl*** y ***use_tls*** se utilizan para habilitar *SSL* o *TLS*. Solo uno de ellos puede ser ***true***. Por defecto se usa *TLS* (recomendado).
-  - ***timeout*** es el valor, en segundos, del *timeout*. Por defecto es 5.
-  - ***version*** es la versión del servidor *LDAP*. Por defecto, 3 (recomendado).
-  - ***follow_referrals*** es un booleano (por defecto ***false***) que indica si un servidor puede hacer un *referral* si no tiene la información pero otro de los servidores la tiene.
+
+- ***hosts*** es un *array* con *strings* que definen direcciones donde encontramos servidores *LDAP*. La conexión se intentará siempre en el orden especificado.
+- ***base_dn*** almacena el *distinguished name* (*DN*, ver más adelante) base, a partir de donde se realizarán todas las búsquedas y creaciones.
+- ***username*** y ***password*** son las credenciales de un usuario del directorio que tenga suficientes privilegios para realizar la acción que deseamos llevar a cabo. El nombre de usuario se indicará, normalmente, con un *distinguished name*.
+- ***port*** es el puerto de conexión. Si no se indica, por defecto es el 389 (conexión no *SSL*) o 636 (conexión *SSL*). Si indicamos puerto 389 pero se habilita la conexión *SSL*, el puerto queda automáticamente cambiado a 636. Si se habilita *TLS*, no se puede utilizar *SSL*, y el puerto debe ser 389.
+- ***use_ssl*** y ***use_tls*** se utilizan para habilitar *SSL* o *TLS*. Solo uno de ellos puede ser ***true***. Por defecto se usa *TLS* (recomendado).
+- ***timeout*** es el valor, en segundos, del *timeout*. Por defecto es 5.
+- ***version*** es la versión del servidor *LDAP*. Por defecto, 3 (recomendado).
+- ***follow_referrals*** es un booleano (por defecto ***false***) que indica si un servidor puede hacer un *referral* si no tiene la información pero otro de los servidores la tiene.
 
 Los elementos ***hosts***, ***base_dn***, ***username*** y ***password*** son los únicos obligatorios.
 
 La extensión ***ldap*** de *PHP* tiene una serie de configuraciones que podemos cambiar. Para ello utiliza las correspondientes constantes para acceder a estos valores. Si queremos cambiar alguna de estas opciones, se hace con el elemento de configuración ***options***, el cual es un *array* en el que las claves son la constante deseada. Es importante recalcar que hay algunas constantes que no se pueden redefinir a través de ***options***:
+
 - ***LDAP_OPT_PROTOCOL_VERSION*** se cambia con el elemento ***version*** (número).
 - ***LDAP_OPT_NETWORK_TIMEOUT*** se cambia con ***timeout*** (número).
 - ***LDAP_OPT_REFERRALS*** se cambia con ***follow_referrals*** (booleano).
