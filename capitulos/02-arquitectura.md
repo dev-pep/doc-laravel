@@ -138,7 +138,7 @@ En el *array* ***providers*** de ***config/app.php*** pueden verse todos los que
 
 ### Crear un *service provider*
 
-Debe extender la clase ***Illuminate\Support\ServiceProvider***. Para crear uno, en línea de comandos:
+Debe extender la clase ***Illuminate\\Support\\ServiceProvider***. Para crear uno, en línea de comandos:
 
 ```
 php artisan make:provider nombreProvider
@@ -173,11 +173,11 @@ Para registrar el proveedor de servicios, debe añadirse al *array* ***providers
 
 Si el proveedor **únicamente** registra *bindings* en el contenedor de servicios, se puede posponer su registro hasta el momento en que sea necesario tal *binding*. Esto aumenta el rendimiento de la aplicación, ya que no se cargarán estos proveedores en cada petición.
 
-Para posponer la carga, el proveedor debe implementar la interfaz ***Illuminate\Contracts\Support\DeferrableProvider*** y definir un método `provides()` que debería retornar un *array* con los nombres de las clases que registra.
+Para posponer la carga, el proveedor debe implementar la interfaz ***Illuminate\\Contracts\\Support\\DeferrableProvider*** y definir un método `provides()` que debería retornar un *array* con los nombres de las clases que registra.
 
 ## Facades
 
-Es una forma de acceder a métodos no estáticos como si fuesen estáticos. Existen varias *facades* definidas en Laravel, y están disponibles en el *service container*. Están definidas en el *namespace* ***Illuminate\Support\Facades***.
+Es una forma de acceder a métodos no estáticos como si fuesen estáticos. Existen varias *facades* definidas en Laravel, y están disponibles en el *service container*. Están definidas en el *namespace* ***Illuminate\\Support\\Facades***.
 
 Existe un buen número de ellas. Por citar algunas, tenemos ***App***, ***Cache***, ***Route***, etc.
 
@@ -189,4 +189,4 @@ use Illuminate\Support\Facades\Route;
 
 ## Contracts
 
-Son un conjuntos de interfaces que definen los servicios *core* que proporciona el *framework*. Están en el *namespace* base ***Illuminate\Contracts***.
+Son un conjuntos de interfaces que definen los servicios *core* que proporciona el *framework*. Están en el *namespace* base ***Illuminate\\Contracts***.

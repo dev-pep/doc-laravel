@@ -85,7 +85,7 @@ LDAP://everest.himalaya.net:390/cn=George Mallory,ou=Alpinist,dc=himalaya,dc=net
 
 Una vez instalado, ya tendremos disponibles unos cuantos modelos *builtin* para conectarnos a un servidor de Directorio Activo o *OpenLDAP*. Existen formas de crear nuestros propios modelos *LDAP* con `artisan`, pero con los modelos incorporados es más que suficiente para la mayoría de casos.
 
-Estos modelos podemos encontrarlos en ***vendor/directorytree/ldaprecord/src/Models*** (corresponde al *namespace* ***Ldaprecord\Models***).
+Estos modelos podemos encontrarlos en ***vendor/directorytree/ldaprecord/src/Models*** (corresponde al *namespace* ***Ldaprecord\\Models***).
 
 Hay, básicamente dos modos de uso: autenticación llana, y autenticación sincronizada con una base de datos. En la primera, la autenticación depende completamente del servidor *LDAP* (si ese servidor cae, nuestra aplicación no funciona). En el segundo caso, a parte del servidor, tenemos nuestra propia base de datos con la que cualquier autenticación en el *LDAP* se sincroniza. Es posible en este caso guardar información extra sobre los usuarios *LDAP*, e incluso tener usuarios que no están en el *LDAP*. Es algo complejo, y con la autenticación llana será suficiente para nuestros objetivos.
 
