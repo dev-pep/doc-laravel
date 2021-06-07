@@ -72,6 +72,7 @@ A parte de numerosas utilidades para *arrays*, *strings* y otras cosas, podríam
 ### *Paths*
 
 Es posible obtener la ruta (absoluta) a directorios concretos del proyecto mediante las siguientes funciones:
+
 - `app_path()` es la ruta a la carpeta ***app***.
 - `base_path()` es la ruta a la raíz del proyecto.
 - `config_path()` es la ruta a la carpeta ***config***.

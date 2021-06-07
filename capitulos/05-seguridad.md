@@ -190,8 +190,9 @@ protected $policies = [
 ```
 
 De todas formas, *Laravel* autodescubre las políticas existentes, siempre que se cumpla:
-  - La política debe estar asociada a un modelo concreto de tal modo que el nombre de la política sea el mismo que el del modelo, con el sufijo ***Policy***.
-  - La política debe estar en una carpeta ***Policies*** dentro de la carpeta donde reside el modelo.
+
+- La política debe estar asociada a un modelo concreto de tal modo que el nombre de la política sea el mismo que el del modelo, con el sufijo ***Policy***.
+- La política debe estar en una carpeta ***Policies*** dentro de la carpeta donde reside el modelo.
 
 Si lo deseamos podemos definir nuestras propias formas de autodescubrimiento. Eso se realiza registrando estas formas así:
 
