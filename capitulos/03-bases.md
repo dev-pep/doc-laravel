@@ -531,7 +531,7 @@ return back();  // aquí se perderían los datos tecleados
 return back() -> withInput();    // aquí se conservan
 ```
 
-Lo que hace el método `withInput()` es *flashear* **los valores de la entrada** (como hace el método `flash()` de la *request*), de tal modo que en la siguiente *request* estarán disponibles (a través del *helper* `old()`). Esto puede ser útil para repetir la entrada de un formulario con datos anteriores. Ver la explicación del *helpler* `old()`.
+Lo que hace el método `withInput()` (de `back()`, o de `redirect()`, etc.) es *flashear* **los valores de la entrada** (como hace el método `flash()` de la *request*), de tal modo que en la siguiente *request* estarán disponibles (a través del *helper* `old()`). Esto puede ser útil para repetir la entrada de un formulario con datos anteriores. En la plantilla *Blade* del formulario habrá que hacer referencia a esos datos de `old()`, ya sea en el código *HTML*, o en *scripts JavaScript* que inicialicen los campos.
 
 Para redirigir a la acción de un controlador:
 
@@ -779,6 +779,8 @@ $req->session()->forget(['key1', 'key2', 'key3']);    // varios datos
 $req->session()->flush();    // todos los datos
 ```
 
+Para obtener la información de sesión actual podemos usar también el *helper* `session()`.
+
 ## Validación
 
 Lo más utilizado es el método `validate()` del objeto ***Request*** actual (podemos acceder a él desde cualquier método mediante inyección).
@@ -838,7 +840,7 @@ public function guardado(Request $req) {  // responde al submit POST, recibe iny
 }
 ```
 
-Si la validación falla, `validate()` terminará el método retornando el anterior formulario con los datos de `old()` disponibles para ese formulario, es decir, se recargará el formulario con las entradas anteriores (de hecho retorna `back()->withInputs()`). En cambio, si tiene éxito la validación, se recargará el formulario nuevo, sin datos en `old()` vacíos (normalmente, para poder usar los campos antiguos con `old()` en la siguiente *request*, hay que *flash* los datos en la *request* actual, mediante el método `flash()` de la *request*).
+Si la validación falla, `validate()` terminará el método retornando el anterior formulario con los datos de `old()` disponibles para ese formulario, es decir, se recargará el formulario con las entradas anteriores (de hecho retorna `back()->withInputs()`). En cambio, si tiene éxito la validación, se recargará el formulario nuevo, sin datos en `old()` (normalmente, para poder usar los campos antiguos con `old()` en la siguiente *request*, hay que *flash* los datos en la *request* actual, mediante el método `flash()` de la misma *request*; el método `withInput()` ya ejecuta ese *flash*, con lo que no hace falta volver a hacerlo).
 
 Si por ejemplo deseamos un valor por defecto (por ejemplo una ciudad de residencia), cuando no hay valor antiguo que corregir, se puede hacer así:
 
