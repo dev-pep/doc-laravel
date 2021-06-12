@@ -207,6 +207,12 @@ Si no hay tal dato antiguo, `old()` retornará un valor nulo, con lo que el camp
 <input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad') ?? 'Beijing' }}">
 ```
 
+Aunque lo mejor es usar el segundo argumento (valor por defecto) de `old()`:
+
+```html
+<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad', 'Beijing') }}">
+```
+
 #### redirect()
 
 El *helper* `redirect()` retorna una *response* de redirección. Sin argumentos, retorna una instancia del redirector.

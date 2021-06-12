@@ -531,7 +531,7 @@ return back();  // aquí se perderían los datos tecleados
 return back() -> withInput();    // aquí se conservan
 ```
 
-> Para repetir la entrada de un formulario con datos anteriores, será necesario popular esos datos en el formulario. Ver la explicación del *helpler* `old()`.
+Lo que hace el método `withInput()` es *flashear* **los valores de la entrada** (como hace el método `flash()` de la *request*), de tal modo que en la siguiente *request* estarán disponibles (a través del *helper* `old()`). Esto puede ser útil para repetir la entrada de un formulario con datos anteriores. Ver la explicación del *helpler* `old()`.
 
 Para redirigir a la acción de un controlador:
 
