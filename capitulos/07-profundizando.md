@@ -134,6 +134,14 @@ return back($status = 302, $headers = [], $fallback = false);
 return back();
 ```
 
+Supongamos que nos presentan un formulario para introducir datos. Esta es la localización original (fruto, de hecho, de una *response* de la aplicación). Rellenamos los campos y realizamos una *request* que envía esos datos. Un controlador decide que los datos son incorrectos, con lo que tenemos que volver al formulario, es decir, tenemos que volver atrás, nuevamente a la *response* original, no retornar una nueva. Ahí es cuando usamos `back()`. Pero, si además queremos que esa respuesta venga rellena con los datos que el usuario ha escrito (aunque sean incorrectos, es mejor que no pierda lo que ha escrito), lo haremos así:
+
+```php
+return back() -> withInput();
+```
+
+Véase también `old()`.
+
 #### config()
 
 Con el *helper* `config()` obtenemos valores de configuración. Utiliza notación de puntos para avanzar por la jerarquía de directorios (directorio ***config***) y por la jerarquía de *arrays* y objetos del archivo de configuración. Acepta un segundo argumento opcional, con un valor por defecto.
@@ -166,7 +174,26 @@ $valor = env('REMOTE_USER', 'Pepito');
 
 #### old()
 
-Con `old()` obtenemos la entrada antigua *flashed* en la sesión.
+Antes de retornar la respuesta, podemos *flashear* en la sesión actual la entrada del usuario para que esté disponible en la siguiente *request*. Lo haremos así:
+
+```php
+$request -> flash();
+```
+
+Podemos *flash* solo parte de la entrada:
+
+```php
+$request->flashOnly(['username', 'email']);
+$request->flashExcept('password');
+```
+
+Ahora, tras retornar la respuesta, en la siguiente *request* podemos acceder a estos datos con `old()`:
+
+```php
+$antiguo_nombre = old('nombre');
+```
+
+Podemos pasarle un segundo argumento con un valor por defecto en caso de que no encuentre el dato.
 
 #### redirect()
 
