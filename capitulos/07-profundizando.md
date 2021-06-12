@@ -238,6 +238,32 @@ $valor = request('clave', $default);
 
 El *helper* `response()` retorna una instancia de una respuesta del servidor (ver sección de respuestas).
 
+#### session()
+
+Se usa para obtener o establecer valores de la sesión. Estos valores se mantienen en las siguientes *requests* (esa es la idea de la sesión).
+
+Un solo argumento *string* indica una clave de la que deseamos obtener el valor. En ese caso admite un segundo argumento con un valor por defecto.
+
+Si se le pasa un *array*, podemos **establecer** uno o más valores.
+
+Sin argumentos retorna el almacén completo de la sesión.
+
+```php
+$value = session('key');  // obtener valor
+session(['chairs' => 7, 'instruments' => 3]);  // establecer valores
+
+$value = session() -> get('key');
+session() -> put(['chairs' => 7, 'instruments' => 3]);
+```
+
+Si queremos que un valor concreto esté disponible **únicamente** en la *request* actual y en la siguiente, debemos usar el método `flash()`:
+
+```php
+session() -> flash('estado', 'archivo enviado con éxito');
+```
+
+Si en la siguiente queremos darle una *request* extra de duración, usaremos el método `reflash()`.
+
 ## Desarrollo de paquetes
 
 ### Publicación de la configuración
