@@ -487,9 +487,9 @@ El método `file()` retorna una instancia de ***Illuminate\\Http\\UploadedFile**
 
 ## Respuestas (*responses*)
 
-La forma más simple de retornar una respuesta (desde una ruta o controlador) es retornando un simple *string*. También podemos retornar un *array*, que el *framework* convertirá a una respuesta *JSON*.
+Ante cualquier *request*, nuestra aplicación debe retornar una *response*. En nuestros controladores o rutas, debemos retornar una *response*. No es necesario crear un objeto de tipo respuesta. Podemos retornar simplemente un *string* de texto, o código *HTML* (directamente, o pasando una plantilla *Blade* al *helper* `view()`): *Laravel* ya se encarga de construir la respuesta (con sus cabeceras, etc.) a partir de lo que nosotros retornamos. También podemos retornar un *array*, que el *framework* convertirá en una respuesta *JSON*.
 
-Aunque normalmente se retornará una vista o una ***Illuminate\\Http\\Response***. En este último caso podemos personalizar, además, el código de respuesta y las cabeceras *HTTP*:
+El objeto respuesta es ***Illuminate\\Http\\Response***. Si queremos tener más control sobre la respuesta, podemos construir el objeto y personalizarlo (código de respuesta, cabeceras *HTTP*, etc.):
 
 ```php
 return response($contenido)
@@ -528,7 +528,7 @@ Si hay que redirigir el usuario a su localización anterior, por ejemplo, si ha 
 
 ```php
 return back();  // aquí se perderían los datos tecleados
-return back()->withInput();    // aquí se conservan
+return back() -> withInput();    // aquí se conservan
 ```
 
 Para redirigir a la acción de un controlador:
