@@ -531,6 +531,8 @@ return back();  // aquí se perderían los datos tecleados
 return back() -> withInput();    // aquí se conservan
 ```
 
+> Para repetir la entrada de un formulario con datos anteriores, será necesario popular esos datos en el formulario. Ver la explicación del *helpler* `old()`.
+
 Para redirigir a la acción de un controlador:
 
 ```php

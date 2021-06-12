@@ -195,6 +195,18 @@ $antiguo_nombre = old('nombre');
 
 Podemos pasarle un segundo argumento con un valor por defecto en caso de que no encuentre el dato.
 
+Si lo que queremos es redirigir a un formulario con datos incorrectos, de tal modo que esos datos vuelvan a mostrarse en el formulario, deberemos utilizar el valor antiguo en la vista. En la plantilla *Blade* usaremos como valor por defecto del *form input* pertinente el valor retornado por `old()`. Por ejemplo:
+
+```html
+<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad') }}">
+```
+
+Si no hay tal dato antiguo, `old()` retornará un valor nulo, con lo que el campo aparecerá en blanco, correctamente. Si queremos dar un valor por defecto cuando no exista dicho campo por defecto, podemos usar el operador `??`:
+
+```html
+<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad') ?? 'Beijing' }}">
+```
+
 #### redirect()
 
 El *helper* `redirect()` retorna una *response* de redirección. Sin argumentos, retorna una instancia del redirector.
