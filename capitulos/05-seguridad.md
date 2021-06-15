@@ -21,12 +21,12 @@ La **configuración** del mecanismo de autenticación que viene con *Laravel* se
 Este archivo retorna un *array* que tiene varios elementos, cuyas claves son ***defaults***, ***guards***, ***providers***, ***passwords*** y ***password_timeout***.
 
 - La clave ***providers*** describe los proveedores, es decir, las fuentes persistentes de las que se extraen los datos de usuario. Su valor es un *array* cuyos elementos son dichos proveedores: cada proveedor tendrá una clave con el nombre que daremos a ese proveedor, y su valor es un *array*:
-  - El elemento con clave ***driver*** podrá tener el valor ***eloquent*** si el proveedor es un modelo *Eloquent*, o ***database*** si el proveedor es simplemente una tabla, sin modelo asociado.
-  - El elemento ***model*** almacenará el nombre de la clase del modelo (si el proveedor es un modelo), o el nombre de la tabla.
+    - El elemento con clave ***driver*** podrá tener el valor ***eloquent*** si el proveedor es un modelo *Eloquent*, o ***database*** si el proveedor es simplemente una tabla, sin modelo asociado.
+    - El elemento ***model*** almacenará el nombre de la clase del modelo (si el proveedor es un modelo), o el nombre de la tabla.
 - En ***guards*** definimos el guardián (método) de autenticación. Su valor es un *array* cuyos elementos son dichos *guards*: cada uno de ellos tendrá una clave con el nombre que daremos a ese *guard*, y su valor es un *array*:
-  - El elemento ***driver*** indica el método de autenticación, que puede ser ***session*** o ***token***.
-  - El elemento ***provider*** es el nombre de uno de los proveedores que hemos definido.
-  - Se puede definir un elemento ***hash*** con valor ***false*** para indicar que no debe almacenar la contraseña *hashed*.
+    - El elemento ***driver*** indica el método de autenticación, que puede ser ***session*** o ***token***.
+    - El elemento ***provider*** es el nombre de uno de los proveedores que hemos definido.
+    - Se puede definir un elemento ***hash*** con valor ***false*** para indicar que no debe almacenar la contraseña *hashed*.
 - El elemento ***defaults*** indica varias cosas, de las que solo nos interesa una: define cuál es el *guard* por defecto.
 
 En cuanto a los otros elementos de la configuración, son más bien utilizados por los mecanismos de gestión de autenticación que genera *Laravel* automáticamente, con lo que no nos interesan.

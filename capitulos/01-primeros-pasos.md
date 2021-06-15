@@ -115,9 +115,9 @@ php artisan up
 La estructura puede organizarse a voluntad. Veremos aquí parte de la estructura por defecto. Directorios:
 
 - ***app*** - core de la aplicación.
-  - ***app/Console*** - API a la aplicación en modo consola (comandos `artisan`).
-  - ***app/Http*** - API a la aplicación (controladores, *middleware*, *requests*).
-  - ***app/Providers*** - contiene los *service providers* de la aplicación.  
+    - ***app/Console*** - API a la aplicación en modo consola (comandos `artisan`).
+    - ***app/Http*** - API a la aplicación (controladores, *middleware*, *requests*).
+    - ***app/Providers*** - contiene los *service providers* de la aplicación.  
 - ***bootstrap*** - contiene ***app.php***, que arranca el *framework*.
 - ***config*** - archivos de configuración (autodocumentados).
 - ***database*** - contiene migraciones de base de datos.
