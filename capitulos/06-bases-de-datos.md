@@ -324,7 +324,26 @@ $table->foreignId('user_id')->constrained();
 
 Por un lado, `foreignId()` es un alias de `unsignedBigInteger()`. Y por otro lado, es importante el nombre que le demos a la nueva columna, puesto que es lo que utilizará *Laravel* para expandir al código anterior.
 
-Naturalmente, antes de `constrained()` se pueden incluir otros métodos modificadores, como de costumbre.
+Naturalmente, antes de `constrained()` se pueden incluir otros métodos modificadores del campo, como de costumbre (es importante indicarse antes).
+
+Por otro lado, es posible definir cláusulas ***ON DELETE*** y ***ON UPDATE*** mediante los métodos `onDelete()` y `onUpdate()` respectivamente, que se colocarán **después** de `constrained()`. En el caso, por ejemplo, de ***MySQL***, tenemos las siguientes posibilidades:
+
+- ***ON DELETE***:
+    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Levantan error si se intenta eliminar una registro referenciado en otra tabla como llave externa.
+    - ***SET NULL*** pone las referencias a un valor nulo.
+    - ***CASCADE*** elimina también los registros que referencian al registro a eliminar.
+
+- ***ON UPDATE***:
+    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Levantan error si se intenta cambiar la clave primaria referenciada en otra tabla como llave externa.
+    - ***SET NULL*** pone las referencias de otras tablas a un valor nulo.
+    - ***CASCADE*** cambia las referencias en las otras tablas.
+
+```php
+$table->foreignId('user_id')
+    -> constrained()
+    -> onDelete('restrict')
+    -> onUpdate('cascade');
+```
 
 A la hora de definir la restricción, la tabla a la que pertenece la clave a la que hacemos referencia debe existir ya en la base de datos.
 
