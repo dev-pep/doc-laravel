@@ -1,10 +1,10 @@
 # Bases de datos
 
-La conexión a la base de datos se configura en el archivo ***config/database.php***, que suele remitir a la información de configuración presente en ***.env*** (dirección, puerto, nombre base de datos, usuario, contraseña, etc.). Si la contraseña contiene espacios en blanco, se deben usar comillas dobles.
+La conexión a la base de datos se configura en el archivo ***config/database.php***, que suele remitir a la información de configuración del entorno (o presente en ***.env***): dirección, puerto, nombre base de datos, usuario, contraseña, etc. Si la contraseña contiene espacios en blanco, se deben usar comillas dobles.
 
 Una vez está configurada la base de datos adecuadamente, podemos acceder a través de la *facade* ***DB***. Esta, proporciona métodos para todos los tipos de *query* a la base de datos: `select()`, `insert()`, `update()`, `delete()` y `statement()`.
 
-Para hacer un simple *select*, usaremos `select()`, que recibe dos argumentos: la consulta *SQL*, y un array de argumentos ligados a esta consulta (normalmente los valores del `where`):
+Para hacer un simple *select*, usaremos `select()`, que recibe dos argumentos: la consulta *SQL*, y un array de argumentos ligados a esta consulta (valores del filtro `where`, etc.):
 
 ```php
 $datos = DB::select('select * from coches where marca = ?', ['seat']);
@@ -48,9 +48,9 @@ DB::statement('drop table coches');
 
 ## *Query builders*
 
-El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan un *query builder* refinado). Estos métodos se pueden ir encadenando uno tras otro.
+El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan a su vez un *query builder* modificado). Estos métodos se pueden ir encadenando uno tras otro.
 
-Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos. Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\\Support\\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
+Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos (típicamente un tipo *array-like*). Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\\Support\\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
 
 El método inicial de creación de un *query builder* es `DB::table()`, que es un *select* de la tabla entera.
 
@@ -70,7 +70,7 @@ Métodos agregación: `count()` (número de registros), `max('campo')`, `min('ca
 
 Para comprobar si existen registros: `exists()` y `doesntExist()`. Retornan un booleano.
 
-Para hacer un simpre select, método `select()` (retorna un *query builder*):
+Para seleccionar campos, método `select()` (retorna un *query builder*):
 
 ```php
 $users = DB::table('users')->select('name', 'email as user_email')->get();
@@ -222,9 +222,9 @@ Una vez creadas las migraciones que queramos, se ejecutarán así:
 php artisan migrate
 ```
 
-Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía (archivos con *timestamp* posterior a la última migración (ejecución de `artisan migrate`).
+Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía (archivos con *timestamp* posterior a la última migración, ejecutada con `artisan migrate`).
 
-Para revertir el última migración:
+Para revertir la última migración:
 
 ```
 php artisan migrate:rollback
@@ -243,7 +243,7 @@ php artisan migrate:reset
 
 ### Definición de tablas
 
-Ya hemos visto cómo definir campos a través del método `create()`. Existen otros métodos útiles en la *facade* ***Schema***: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe la columna; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
+Ya hemos visto cómo definir campos a través del método `create()`. Existen otros métodos útiles en la *facade* ***Schema***: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe el campo; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
 
 El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos *MySQL*. En general, estos métodos toman un argumento con el nombre del campo. Veamos algunos de ellos:
 
@@ -283,7 +283,7 @@ Se puede crear un índice sobre una columna, encadenándole simplemente `unique(
 $tabla->string('email')->unique();
 ```
 
-Si no lo hemos hecho en ese momento, se puede hacer posteriormente:
+Se puede hacer posteriormente a la creación del campo:
 
 ```php
 $tabla->unique('email');
@@ -295,7 +295,7 @@ Si queremos crear un índice basado en varias columnas, le pasaremos un *array* 
 $tabla->unique(['email', 'nombre', 'fecha']);
 ```
 
-Este método acepta un segundos parámetro que será el nombre del índice. Si no se especifica, se creará un nombre por defecto, basado en el nombre de la tabla, columnas, etc.
+Este método acepta un segundo parámetro que será el nombre del índice. Si no se especifica, se creará un nombre por defecto, basado en el nombre de la tabla, columnas, etc.
 
 En lugar de `unique()`, se puede usar `index()` si queremos que se repitan valores en la columna. Otra alternativa es `primary()`, que lo que crea es una clave primaria.
 
@@ -381,7 +381,7 @@ php artisan make:model Coche --migration
 Existen algunas **asunciones importantes** que hace *Eloquent*:
 
 - El nombre de la tabla será el mismo que la clase modelo, pero **en plural y empezando en minúscula**. En este caso, el modelo ***Coche*** guardará sus registros en la tabla ***coches***. Si no queremos que se siga ese convenio, hay que definir el nombre de la tabla mediante la propiedad (*protected*) ***$table*** del modelo, que almacenará el nombre de la tabla.
-- Cada tabla tiene un campo con nombre ***id***, que es la clave primaria. Para cambiarlo, definir una propiedad protegida en la clase del modelo llamada ***$primaryKey***, con el nombre del campo con la clave primaria. También se asume que la clave primaria es un entero que se autoincrementa. Si queremos una clave primaria no autoincremental o no numérica, hay que definir la propiedad pública ***$incrementing*** a ***false***. Si el tipo no es numérico, además habría que definir la propiedad protegida ***$keyType*** a ***'string'***.
+- Cada tabla tiene un campo con nombre ***id***, que es la clave primaria. Para cambiarlo, definir una propiedad protegida en la clase del modelo llamada ***\$primaryKey***, con el nombre del campo con la clave primaria. También se asume que la clave primaria es un entero que se autoincrementa. Si queremos una clave primaria no autoincremental o no numérica, hay que definir la propiedad pública ***$incrementing*** a ***false***. Si el tipo no es numérico, además habría que definir la propiedad protegida ***$keyType*** a ***'string'***.
 - Cada tabla tendrá las columnas ***created_at*** y ***updated_at***, que actualizará *Eloquent* automáticamente. Si deseamos que no lo haga, se incluirá la propiedad pública ***$timestamps*** con valor ***false***.
 
 Si queremos dar un valor por defecto a alguno de los campos, definiremos la variable protegida ***$attributes***. Se le dará como valor un *array* con los nombres de los atributos a los que queramos dar valor por defecto, junto con sus valores:
@@ -400,7 +400,7 @@ $coches = App\Coche::all();
 
 En lugar de `all()` se puede usar `where()` especificando una condición.
 
-Es importante recalcar que algunos de estos métodos retornan una *collection* y otros un *query builder*. Por ejemplo, ***Coche::all()*** retorna una *collection*, mientras que ***Coche::where()*** retorna un *query builder*. Sin embargo, las colecciones disponen de muchos de los métodos que usamos para refinar *query builders*, con la única diferencia que los métodos de las colecciones retornarán a su vez una colección (haciendo posible, pues, el encadenado de métodos) que irán refinando la colección.
+Es importante recalcar que algunos de estos métodos retornan una *collection* y otros un *query builder*. Por ejemplo, ***Coche::all()*** retorna una *collection*, mientras que ***Coche::where()*** retorna un *query builder*. Sin embargo, este tipo concreto de *collection* dispone de muchos de los métodos que usamos para definir *query builders*, con la única diferencia que los métodos de las colecciones retornarán a su vez una colección (haciendo posible, pues, el encadenado de métodos) que irán refinando la colección.
 
 Por ejemplo:
 

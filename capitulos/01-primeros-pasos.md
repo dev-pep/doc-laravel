@@ -90,7 +90,7 @@ Es posible establecer un valor de configuración en tiempo de ejecución. Para e
 config(['app.timezone' => 'Madrid/Paris']);
 ```
 
-Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todas los valore de configuración en un solo archivo que será cargado al principio:
+Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todos los valores de configuración en un solo archivo que será cargado al principio:
 
 ```
 php artisan config:cache
@@ -114,17 +114,17 @@ php artisan up
 
 La estructura puede organizarse a voluntad. Veremos aquí parte de la estructura por defecto. Directorios:
 
-- ***app*** - core de la aplicación.
+- ***app*** - core de la aplicación. Contiene los modelos.
     - ***app/Console*** - API a la aplicación en modo consola (comandos `artisan`).
     - ***app/Http*** - API a la aplicación (controladores, *middleware*, *requests*).
     - ***app/Providers*** - contiene los *service providers* de la aplicación.
-- ***bootstrap*** - contiene ***app.php***, que arranca el *framework*.
+- ***bootstrap*** - contiene ***app.php*** (instancia de la aplicación), que arranca el *framework*.
 - ***config*** - archivos de configuración (autodocumentados).
 - ***database*** - contiene migraciones de base de datos.
 - ***public*** - contiene el ***index.php*** con la configuración de *autoloading*, y punto de entrada de todas las peticiones a la aplicación. También almacena los *assets*: imágenes, *javascript*, *css*,...
 - ***resources*** - contiene las **vistas** y archivos de idiomas.
 - ***routes*** - definición de todas las rutas de la aplicación.
-- ***storage*** - plantillas *Blade* compiladas, caches, y otros archivos generados por la aplicación. La subcarpete ***storage/logs*** guarda los *logs* generados, ***storage/framework*** los archivos que necesite generar el propio *framework*, y ***storage/app*** los archivos que genere la aplicación.
+- ***storage*** - plantillas *Blade* compiladas, caches, y otros archivos generados por la aplicación. La subcarpeta ***storage/logs*** guarda los *logs* generados, ***storage/framework*** los archivos que necesite generar el propio *framework*, y ***storage/app*** los archivos que genere la aplicación.
 - ***tests*** - *tests* automatizados.
 - ***vendor*** - dependencias de *Composer*.
 

@@ -127,7 +127,7 @@ Gate::define('update-post', function ($user, $post) {
     });
 ```
 
-El primer argumento a `define()` es el nombre que damos a esa puerta. El segundo, es una *closure* que retornará ***true*** o ***false*** según se permita la acción o no. En nuestro caso, definimos una puerta relacionada con la acción de actualizar un *post* en un blog. La acción se permitirá si y solo si el usuario autenticado es el autor del *post*. Para ello, vemos que la *closure* recibe dos argumentos: en primer lugar, una instancia del usuario autenticado (que se le inyecta automáticamente). Después de este primer parámetro, vienen los otros argumentos que deseemos darle (en este caso, una instancia del *post*, que incluye información del autor).
+El primer argumento a `define()` es el nombre que damos a esa puerta. El segundo, es una *closure* que retornará ***true*** o ***false*** según se permita la acción o no. En nuestro caso, definimos una puerta relacionada con la acción de actualizar un *post* en un blog. La acción se permitirá si y solo si el usuario autenticado es el autor del *post*. Para ello, vemos que la *closure* recibe dos argumentos: en primer lugar, una instancia del usuario autenticado (que se le pasa automáticamente). Después de este primer parámetro, vienen los otros argumentos que deseemos darle (en este caso, una instancia del *post*, que incluye información del autor).
 
 En lugar de una *closure* podemos indicar un *string* del tipo 'Clase@método', igual que con los controladores.
 
@@ -230,7 +230,7 @@ if($user->can('create', Coche::class))
     { /* ... */ }
 ```
 
-Existe otro modo de usar las políticas, y es mediante directivas las *Blade* `@can`, `@cannot` y `@canany`.
+Existe otro modo de usar las políticas, y es mediante las directivas *Blade* `@can`, `@cannot` y `@canany`.
 
 ```html
 @can('update', $coche)
@@ -252,7 +252,7 @@ El ejemplo anterior equivale exactamente a:
 @endif
 ```
 
-El equivalente a `@can('update', $coche)` sería `@unless(Auth::user()->can('update', $coche))`.
+El inverso a `@can('update', $coche)` sería `@unless(Auth::user()->can('update', $coche))`.
 
 También podemos comprobar si el usuario tiene por lo menos una de las capacidades listadas en un array mediante la directiva `@canany`:
 

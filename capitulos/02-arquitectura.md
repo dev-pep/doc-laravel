@@ -1,10 +1,6 @@
 # Arquitectura
 
-> En este apartado se hace referencia a un término que puede dar lugar a confusión: el término "servicio". Hay que ir con cuidado porque dependiendo del contexto, se refiere a dos conceptos que no tienen nada que ver el uno con el otro.
->
-> Por un lado, un servicio es un componente de la aplicación, que se registra a través de un *service provider*.
->
-> Por otro lado, es una clase que es utilizada por otras clases, y que es inyectada en estas a través del *service container*.
+> En este apartado se hace referencia a los **servicios** que pueden estar disponibles para la aplicación, y como crearlos y registrarlos. Entre estos servicios se hallan las clases y objetos que se inyectan en otras clases a través del mecanismo de inyección de dependencias (que realiza el llamado *service container*).
 
 ## Ciclo de vida de una petición
 
@@ -59,9 +55,9 @@ $peli->screen();
 
 Como vemos, la clase ***Pelicula*** se encarga de construir un nuevo objeto de tipo ***Creditos***. Esto es la dependencia: la clase ***Pelicula*** depende de la clase ***Creditos***. Esto podría llegar a ser un problema. Si por ejemplo tenemos docenas de clases que utilizan un objeto de tipo ***Creditos***, y a la larga cambiamos la forma de crear un objeto de tipo ***Creditos*** (por ejemplo, le añadimos un parámetro obligatorio al constructor), entonces deberemos cambiar todas y cada una de las clases que crean un objeto de esta clase, una por una.
 
-Por lo tanto, deberíamos dejar la creación del objeto fuera de la clase ***Película*** y que nos venga el objeto ya creado desde fuera. Eso es la inyección de dependencias: un mecanismo que inyecta esa dependencia (***Creditos***) dentro de nuestra clase (***Pelicula***), es decir, ese mecanismo, que sabe cómo se crea ese objeto, lo crea y nos lo entrega para que lo podamos usar. Esa clase (***Creditos***) se denomina un **servicio***.
+Por lo tanto, deberíamos dejar la creación del objeto fuera de la clase ***Pelicula*** y que nos venga el objeto ya creado desde fuera. Eso es la inyección de dependencias: un mecanismo que inyecta esa dependencia (***Creditos***) dentro de nuestra clase (***Pelicula***), es decir, ese mecanismo, que sabe cómo se crea ese objeto, lo crea y nos lo entrega para que lo podamos usar. Esa clase (***Creditos***) conforma un **servicio**, que utiliza la clase **cliente** ***Pelicula***.
 
-Ahora, suponiendo que exista tal mecanismo, ¿cómo hacemos uso de él? Simplemente añadiendo la inyección de esa dependencia en la lista de parámetros, con lo que ya podemos prescindir del `new`. En nuestro ejemplo, reescribiendo el constructor de ***Pelicula*** así:
+Ahora, suponiendo que exista tal mecanismo, ¿cómo hacemos uso de él? Simplemente añadiendo la inyección de esa dependencia en la lista de parámetros (especificando su tipo, y antes de los parámetros normales), con lo que ya podemos prescindir del `new`. En nuestro ejemplo, reescribiendo el constructor de ***Pelicula*** así:
 
 ```php
 function __construct(Creditos $creditos)
@@ -150,7 +146,7 @@ Existe, por defecto, un *service provider* vacío llamado ***AppServiceProvider*
 
 #### Método register()
 
-Si el proveedor tiene el método `register()`, se usara única y exclusivamente para registrar *bindings* en el contenedor de servicios, para nada más. En caso de que se quieran registrar *bindings* **simples**, se pueden usar las propiedades ***$bindings*** y ***$singletons***:
+Si el proveedor tiene el método `register()`, se usara única y exclusivamente para registrar *bindings* en el contenedor de servicios, para nada más. En caso de que se quieran registrar *bindings* **simples**, se pueden usar las propiedades ***\$bindings*** y ***\$singletons***:
 
 ```php
 public $bindings = [InterfazCreditos::class => Creditos::class];

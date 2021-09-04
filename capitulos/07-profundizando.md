@@ -32,7 +32,7 @@ public function boot()
 }
 ```
 
-El nombre del evento puede incluso incluir *wildcards*, como ***'event.*'*** para asociar más de un evento a esa closure. De todos modos, todo lo registrado así no será generado automáticamente por `artisan`.
+El nombre del evento puede incluso incluir *wildcards*, como ***'event.\*'*** para asociar más de un evento a esa closure. De todos modos, todo lo registrado así no será generado automáticamente por `artisan`.
 
 ### Autodescubrimiento de eventos
 
@@ -273,7 +273,7 @@ Si opcionalmente les pasamos un argumento a cualquiera de estas funciones, con u
 
 #### asset() y secure_asset()
 
-Este *helper* retornará la *URL* de un *asset*. Dado que la *URL* tiene como base, por defecto, el raíz del proyecto (el directorio donde se halla ***index.php***), es decir, el directorio ***public***. Por lo tanto, todos los *assets* que necesitemos (imágenes, *scripts .js*, etc.), deberían estar en ese directorio o en subcarpetas del mismo. Si por ejemplo tenemos imágenes en ***public/images***, la *URL* de una de esas imágenes podría ser `asset('images/logo.png')`.
+Este *helper* retornará la *URL* de un *asset*. La *URL* tiene como base, por defecto, el directorio donde se halla ***index.php***, es decir, el directorio ***public***. Por lo tanto, todos los *assets* que necesitemos (imágenes, *scripts .js*, etc.), deberían estar en ese directorio o en subcarpetas del mismo. Si por ejemplo tenemos imágenes en ***public/images***, la *URL* de una de esas imágenes podría ser `asset('images/logo.png')`.
 
 Podemos definir la base de estas *URL* mediante la variable `ASSET_URL` del archivo ***.env***, lo cual es útil si tenemos *assets* en servidores externos:
 
@@ -326,7 +326,7 @@ Supongamos que nos presentan un formulario para introducir datos. Esta es la loc
 return back() -> withInput();
 ```
 
-Véase también `old()`.
+Los datos antiguos están disponibles a través del *helper* `old()`.
 
 #### config()
 

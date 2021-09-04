@@ -184,7 +184,7 @@ Por ejemplo, en ***resources/lang/es/mensajes.php*** podríamos tener:
     ];
 ```
 
-En la el fichero de traducción al inglés (***resources/lang/en/mensajes.php***), tendríamos:
+En el fichero de traducción al inglés (***resources/lang/en/mensajes.php***), tendríamos:
 
 ```
 <?php

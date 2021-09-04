@@ -633,7 +633,7 @@ View::share('key', 'value');
 
 ### *View composers*
 
-Se trata de código (*callback* o método) invocado cuando se renderiza una vista. Para **registrar** un *view composer* (normalmente mediante un *service provider*), se utiliza el método `composer()` de la *façade* ***View***:
+Se trata de código (*callback* o método) invocado cuando se renderiza una vista. Para **registrar** un *view composer* (normalmente mediante un *service provider*), se utiliza el método `composer()` de la *facade* ***View***:
 
 ```php
 View::composer('greeting', 'App\Http\View\Composers\GreetingComposer');
@@ -650,7 +650,7 @@ public function compose(View $view)
 }
 ```
 
-Si se quiere registrar un *view composer* para más de una vista, en lugar del nombre de la vista, se puede usar un *array* con los nombres de las vistas deseadas. A parte, se permite el uso de *wildcards*, con lo que, por ejemplo, asociar un *view composer* a ***'*'*** lo asociará a todas las vistas de la aplicación.
+Si se quiere registrar un *view composer* para más de una vista, en lugar del nombre de la vista, se puede usar un *array* con los nombres de las vistas deseadas. A parte, se permite el uso de *wildcards*, con lo que, por ejemplo, asociar un *view composer* a ***\**** lo asociará a todas las vistas de la aplicación.
 
 ### Optimización
 
