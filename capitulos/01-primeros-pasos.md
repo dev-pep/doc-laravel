@@ -46,6 +46,12 @@ Todos los archivos de configuración están en el directorio ***config***.
 
 Por otro lado, el archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
 
+En todo caso, si no disponemos de un archivo ***.env*** (porque acabamos de clonar un proyecto, por ejemplo), debemos generar una *key* para la aplicación (que se guarda en el archivo mencionado):
+
+```
+php artisan key:generate
+```
+
 Es importante recalcar que las dependencias del proyecto estarán en la carpeta ***vendor***, que típicamente queda fuera del control de versiones. Cuando *composer* instala nuevas bibliotecas en ese directorio, es posible que estas, para funcionar correctamente, necesiten archivos de configuración, migraciones, etc. en directorios de nuestro proyecto, fuera de ***vendor***. Estos archivos sí estarían incluidos en nuestro control de versiones.
 
 Para que se generen tales archivos, hay que ejecutar:
