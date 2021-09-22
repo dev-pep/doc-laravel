@@ -452,14 +452,136 @@ Si en la siguiente queremos darle una *request* extra de duración, usaremos el 
 
 ## Desarrollo de paquetes
 
-### Publicación de la configuración
+Cuando desarrollamos un paquete, lo normal es incluir **todo** (rutas, vistas, *middlewares*...) dentro de una sola carpeta, por ejemplo ***src***. Lo normal es que en la raíz de esa carpeta ***src*** incluyamos un *service provider* que registre todas esas rutas, vistas, etc. Resulta conveniente que todo lo que registre ese *service provider* defina rutas de archivo relativas a la ubicación de tal *provider* (mediante el uso de ***\_\_DIR\_\_***).
 
-Una vez hayamos incluido un paquete en nuestro proyecto con `composer`, necesitamos publicar la configuración del mismo, dentro del árbol de directorios de nuestro proyecto (es decir, fuera del subdirectorio de ***vendor*** donde resida el paquete). Los archivos de configuración que serán publicados están definidos en el *service provider* que viene con el paquete.
+Al incluir nuestro paquete dentro de un proyecto, este quedará copiado en ***vendor/<creador>/<paquete>***. Normalmente consistirá en la carpeta ***src***, junto a otros archivos, como la licencia, o un ***composer.json*** con las dependencias del propio paquete y otras configuraciones.
 
-Para publicar la configuración de todos los paquetes que no lo hayan hecho:
+Cuando el paquete se incluya en otro proyecto (mediante `composer`, típicamente), se copiarán los archivos específicos en ***vendor***, y típicamente se deberá añadir (a mano) una referencia al *service provider* del paquete en la lista de *service providers* a cargar (en ***config/app.config***). Sin embargo, si no queremos que el usuario haga esta operación a mano, podemos definir el *service provider* (o más de uno) en el ***composer.json*** **del paquete**, en la sección ***extra*** (que también se puede usar para definir alias de nuestras *facades*):
+
+```json
+"extra": {
+    "laravel": {
+        "providers": [
+            "Barryvdh\\Debugbar\\ServiceProvider"
+        ],
+        "aliases": {
+            "Debugbar": "Barryvdh\\Debugbar\\Facade"
+        }
+    }
+},
+```
+
+Al configurarlo así, cuando el paquete se instale se aplicará el **autodescubrimiento** del paquete, y no habrá que configurarlo a mano.
+
+Sin embargo, a veces nos interesará que no se aplique tal autodescubrimiento en algún paquete concreto. Si es el caso, en el ***composer.json*** **del proyecto global** (no el del paquete) habrá que indicarlo, con una lista de paquetes que excluir de tal autodescubrimiento (también en la sección ***extra***):
+
+```json
+"extra": {
+    "laravel": {
+        "dont-discover": [
+            "barryvdh/laravel-debugbar"
+        ]
+    }
+},
+```
+
+Si indicamos el nombre `"*"` se excluyen **todos** los paquetes del autodescubrimiento.
+
+### Namespace
+
+Por otro lado, hay que definir el *namespace* del paquete en la sección de *autoload* del ***composer.json***.
+
+```json
+"autoload": {
+    "psr-4": {
+        "Barryvdh\\Debugbar\\": "src/"
+    }
+}
+```
+
+### Publicación
+
+Tras ser incluido y registrado (o autodescubierto) el *service provider*, en ocasiones son necesarios algunos archivos extra, fuera del árbol de directorios del paquete (por ejemplo, un archivo de configuración en la carpeta ***config*** del proyecto). En este caso, hay que aplicar otro paso: la publicación del paquete mediante `artisan`:
 
 ```
-php artisan vendor:publish
+php artisan vendor:publish --provider=<NombreServiceProvider>
 ```
 
-Para publicar la configuración de un paquete concreto usaremos la opción `--provider`.
+El *service provider* se refiere al (o a los) *provider(s)* de nuestro paquete, que deberá(n) invocar al método `publishes()` dentro de la definición del método `boot()`. Hay que indicar el *provider fully qualified* en la línea de comandos:
+
+```
+php artisan vendor:publish --provider=Barryvdh\\Debugbar\\ServiceProvider
+```
+
+```php
+$this -> publishes([__DIR__ . '/path/to/folder' => public_path('/folder/destino'),
+    __DIR__ . 'path/to/file' => config_path('nombreArchivo')]);
+```
+
+En el ejemplo, se copiará la carpeta ***/path/to/folder***, que se localizará en ***public/folder/destino*** dentro del proyecto.
+
+El método `publishes` toma un segundo parámetro opcional, que es un *tag* para categorizar el tipo de publicación. Algunos *tags* habituales son ***public***, ***config***, ***migrations***, etc. Pero podemos definir nuestros *tags* específicos.
+
+```
+php artisan vendor:publish --tag=config
+```
+
+En este ejemplo se publicarán todos los archivos y directorios con la etiqueta ***public*** de todos los proveedores que la definan.
+
+Si no especificamos *provider* ni *tag*, nos aparecerá un menú con las opciones a publicar.
+
+Para forzar una publicación aunque ya exista, se añadirá `--force` para sobrescribir.
+
+### Carga de recursos
+
+Si nuestro paquete tiene rutas, se pueden cargar así, dentro de la definición de `boot()` de nuestro *service provider*:
+
+```php
+$this->loadRoutesFrom($rutaArchivo);
+```
+
+Es importante indicar que las rutas en el directorio estándar (***routes***) de la aplicación, se cargan automáticamente a través del ***RouteServiceProvider*** por defecto de *laravel*. Este proveedor, les aplica a estas, el *middleware* ***web*** o ***api***, según sea el caso. Pero este *middleware* no se aplica a rutas cargadas por nuestro proveedor, con lo que deberíamos aplicarlo a mano:
+
+```php
+Route::middleware('web')
+    -> group(function() {
+        // Carga de rutas:
+        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
+        // Equivaldría a definir aquí las rutas con Route::...
+    });
+```
+
+Por simplicidad, esto es equivalente a:
+
+```php
+Route::middleware('web')
+    -> group(__DIR__ . '/routes/web.php');
+```
+
+En el siguiente ejemplo definimos las rutas *API* para controladores en el *namespace* ***Barryvdh\Debugbar\Controllers***:
+
+```php
+Route::namespace('Barryvdh\Debugbar\Controllers')  // se buscarán en este namespace todos los controladores involucrados
+    -> middleware('api')
+    -> prefix('/api')
+    -> group(__DIR__ . '/routes/api.php');
+```
+
+Para cargar traducciones y vistas en directorios no estándar:
+
+```php
+$this -> loadTranslationsFrom($rutaDirectorio, $proyecto);
+$this -> loadViewsFrom($rutaDirectorio, $proyecto);
+```
+
+La variable ***\$proyecto*** es un *string* con el nombre del proyecto. Si su valor es, por ejemplo ***Debugbar***, entonces para acceder, por ejemplo a la vista ***home***, se haría así:
+
+```php
+view('Debugbar::home');
+```
+
+Para registrar migraciones:
+
+```php
+$this -> loadMigrationsFrom($rutaDirectorio);
+```

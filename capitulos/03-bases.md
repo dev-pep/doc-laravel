@@ -41,6 +41,10 @@ Para proteger de ataques *CSRF* (*cross-site request forgery*), los formularios 
 </form>
 ```
 
+Otra forma es enviarlo manualmente: se debe enviar al sevidor el parámetro ***_token*** con el valor del *helper* `csrf_token()`.
+
+Esto solo es necesario en **rutas web** (no *API*) con métodos ***POST***, ***PUT***, ***PATCH*** y ***DELETE***.
+
 ### Redirección
 
 Se puede crear una redirección a otra *URI*:
@@ -138,8 +142,9 @@ Route::group([], function() {
 }) -> name(/* nombre del grupo */);
 ```
 
-El primer argumento a `group()` es un *array* en el que se definen atributos comunes a todas las rutas del grupo. Sin embargo, si el método está encadenado tras otros (como `middleware()`, por ejemplo), este primer argumento desaparece.
+El primer argumento a `group()` es un *array* en el que se definen *middlewares* aplicados a las rutas del grupo. Sin embargo, si el método está encadenado tras otros (como `middleware()`, por ejemplo), este primer argumento desaparece.
 
+Dar nombre a un grupo de rutas es útil, por ejemplo, para asignar *middleware* a ese grupo a través de los archivos de configuración de *laravel*.
 ## *Middleware*
 
 Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
@@ -236,6 +241,24 @@ Route::group(/* definición grupo */)
       -> name(/* nombre grupo */);
 ```
 
+Podemos definir un prefijo para todas las *URLs* del grupo y así evitar teclear tal prefijo en cada definición de `Route`:
+
+```php
+Route::prefix('/api')
+    -> group(/* definición grupo */);
+```
+
+El prefijo se puede definir también en el **nombre** de las rutas de un grupo:
+
+```php
+Route::name('admin.')  // prefijo
+    -> group(function() {
+        Route::get(/* definición de la ruta */) -> name('uno');  // admin.uno
+        Route::get(/* definición de la ruta */) -> name('dos');  // admin.dos
+        // ...
+    });
+```
+
 ## Controladores
 
 Para no tener que definir el manejo de los *requests* como *closures* en los archivos de rutas, se pueden usar controladores, que son clases que permiten agrupar lógica de tratamiento de peticiones. Los controladores están ubicados en ***app/Http/Controllers***.
@@ -253,6 +276,15 @@ No es necesario especificar la ruta (*namespace*) completa del controlador, porq
 ```php
 Route::get('foo', 'Photos\AdminController@show');
 ```
+
+Si nuestros controladores están en un *namespace* no estándar, se puede usar el método `namespace()`:
+
+```php
+Route::namespace('Un\Controller\Namespace')
+    -> get('foo', 'NombreController@nombreMetodo');
+```
+
+Esto registra la ruta ***foo*** para que invoque ***nombreMetodo()*** de ***Un\Controller\Namespace\NombreController***.
 
 Por convenio, el nombre de una clase de controlador termina en "Controller".
 
