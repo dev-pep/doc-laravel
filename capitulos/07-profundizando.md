@@ -350,6 +350,14 @@ Crea una instancia de una *cookie* con el nombre, valor y número de minutos de 
 $cookie = cookie('La cookie', 'Este es el valor', 180);
 ```
 
+#### dd()
+
+Esta función acepta una o más expresiones como argumentos, que presenta en pantalla, y termina la ejecución inmediatamente.
+
+#### dump()
+
+Al igual que `dd()`, acepta una o más expresiones como argumentos, que presenta en pantalla, y pero en este caso la ejecución prosigue normalmente.
+
 #### env()
 
 Retorna el valor de una variable del sistema (o variable definida en archivo ***.env***). Acepta un segundo argumento con valor por defecto.

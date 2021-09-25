@@ -168,7 +168,7 @@ Cuando la cadena de métodos termina en `delete()`, se borran los registros sele
 
 ### Depuración
 
-De forma similar las funciones de *PHP* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como terminales de la cadena (no hay que pasarles ningún argumento).
+De forma similar los *helpers* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como componentes de la cadena (no hay que pasarles ningún argumento).
 
 ## Migraciones
 
