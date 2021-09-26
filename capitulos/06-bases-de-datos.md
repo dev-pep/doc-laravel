@@ -503,7 +503,9 @@ Cuando es así, podemos dar valor a un campo fecha del modelo usando un *timesta
 
 #### *Casting* de atributos
 
-Podemos tener más control sobre el mapeo entre tipos de la base de datos y tipos *PHP* mediante este mecanismo. En el *array* ***\$casts*** podemos definir el tipo al que se mapeará un campo concreto de la tabla. Las claves del *array* son los nombres de los campos y los valores los tipos. Existen estos tipos predeterminados: ***integer***, ***real***, ***float***, ***double***, ***decimal:<digitos>***, ***string***, ***boolean***, ***object***, ***array***, ***collection***, ***date***, ***datetime*** y ***timestamp***.
+Podemos tener más control sobre el mapeo entre tipos de la base de datos y tipos *PHP* mediante este mecanismo. En el *array* ***\$casts*** podemos definir el tipo al que se mapeará un campo concreto de la tabla. Las claves del *array* son los nombres de los campos y los valores los tipos. Existen estos tipos predeterminados: ***integer***, ***real***, ***float***, ***double***, ***decimal:N***, ***string***, ***boolean***, ***object***, ***array***, ***collection***, ***date***, ***datetime*** y ***timestamp***.
+
+En el caso de ***decimal*** se debe indicar el número de dígitos (p.e. ***decimal:5***).
 
 ```php
 protected $casts = [
