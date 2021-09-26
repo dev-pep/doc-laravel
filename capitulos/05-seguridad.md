@@ -265,3 +265,21 @@ También podemos comprobar si el usuario tiene por lo menos una de las capacidad
 ```
 
 Como hemos visto en los ejemplos, en acciones que no precisan de instancia del modelo (como `create`), se pasa el nombre de la clase.
+
+## Encriptación
+
+Toda la encriptación en *Laravel* se realiza internamente a través de la *facade* ***Crypt***. *Laravel* la utiliza para encriptar *cookies* (para asegurarse que no se modifican en lado del cliente), etc. Para ello, esta *facade* necesita una clave, configurada en ***config/app.php***, y que por defecto toma su valor de la variable ***APP_KEY*** en el archivo ***.env***.
+
+Al crear un nuevo proyecto con *Composer*, o mediante el instalador de *Laravel*, se genera una clave automáticamente, pero al clonar una aplicación, puesto que el archivo ***.env*** no suele formar parte del repositorio, no se obtiene una clave por defecto. Además, aunque la clave también se clonara, no sería buena idea utilizarla: no es buena idea que nuestra aplicación use una clave que ya se usa en otro servidor. Nuestra clave debería ser única y existir solo en nuestra aplicación. Por lo tanto, cuando **clonamos** un proyecto para usar en nuestro servidor, deberemos crear nuestra propia clave para la aplicación:
+
+```
+php artisan key:generate
+```  
+
+Al ejecutar este comando, se cambia la clave por una aleatoria, y si no existe el archivo ***.env*** se crea uno automáticamente.
+
+Hay que indicar que los *passwords* en *Laravel* no son encriptados, sino *hashed* (mediante el método `make()` de la *facade* ***Hash***, o con el *helper* equivalente `bcrypt()`), con lo que no usan la clave de la aplicación, lo que significa que generar una clave nueva no afectará a los *passwords* almacenados. En este caso, el *hash* es *one-way*, mientras que la encriptación es de ida y vuelta, y **simétrica** (la misma clave de la aplicación se puede aplicar para encriptar y para desencriptar), ya que usa *AES-256-CBC*.
+
+Si deseamos rotar la clave de la aplicación, hay que tener en cuenta que las *cookies* encriptadas ya existentes serán invalidadas, y cualquier dato almacenado que hayamos encriptado con ***Crypt*** ya no será desencriptable.
+
+Para encriptar un *string* se usa `Crypt::encryptString()`; se le pasa el *string* a encriptar y retorna en *string* encriptado. Exactamente lo contrario que `Crypt::decryptString()`.
