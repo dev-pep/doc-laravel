@@ -382,7 +382,7 @@ Existen algunas **asunciones importantes** que hace *Eloquent*:
 
 - El nombre de la tabla será el mismo que la clase modelo, pero **en plural y empezando en minúscula**. En este caso, el modelo ***Coche*** guardará sus registros en la tabla ***coches***. Si no queremos que se siga ese convenio, hay que definir el nombre de la tabla mediante la propiedad (*protected*) ***$table*** del modelo, que almacenará el nombre de la tabla.
 - Cada tabla tiene un campo con nombre ***id***, que es la clave primaria. Para cambiarlo, definir una propiedad protegida en la clase del modelo llamada ***\$primaryKey***, con el nombre del campo con la clave primaria. También se asume que la clave primaria es un entero que se autoincrementa. Si queremos una clave primaria no autoincremental o no numérica, hay que definir la propiedad pública ***$incrementing*** a ***false***. Si el tipo no es numérico, además habría que definir la propiedad protegida ***$keyType*** a ***'string'***.
-- Cada tabla tendrá las columnas ***created_at*** y ***updated_at***, que actualizará *Eloquent* automáticamente. Si deseamos que no lo haga, se incluirá la propiedad pública ***$timestamps*** con valor ***false***.
+- Cada tabla tendrá las columnas ***created_at*** y ***updated_at***, que actualizará *Eloquent* automáticamente. Si deseamos que no lo haga, se incluirá la propiedad pública ***$timestamps*** con valor ***false***. Si queremos cambiar los nombres de los campos donde se guardarán los *timestamps*, se deben definir en la clase las constantes *CREATED_AT* y/o *UPDATED_AT*, conteniendo *strings* con los nombres deseados.
 
 Si queremos dar un valor por defecto a alguno de los campos, definiremos la variable protegida ***$attributes***. Se le dará como valor un *array* con los nombres de los atributos a los que queramos dar valor por defecto, junto con sus valores:
 
@@ -398,22 +398,25 @@ Una vez tenemos nuestro modelo, y su tabla correspondiente en la base de datos, 
 $coches = App\Coche::all();
 ```
 
-En lugar de `all()` se puede usar `where()` especificando una condición.
-
-Es importante recalcar que algunos de estos métodos retornan una *collection* y otros un *query builder*. Por ejemplo, ***Coche::all()*** retorna una *collection*, mientras que ***Coche::where()*** retorna un *query builder*. Sin embargo, este tipo concreto de *collection* dispone de muchos de los métodos que usamos para definir *query builders*, con la única diferencia que los métodos de las colecciones retornarán a su vez una colección (haciendo posible, pues, el encadenado de métodos) que irán refinando la colección.
-
-Por ejemplo:
+El método `all()` retorna una *collection* (*array-like*) de modelos *Eloquent*. Estas *collections* aceptan los métodos definidos para *query builders*. Al ir encadenando métodos (tanto si son equivalentes a los de los *query builders* como si no) los resultados obtenidos son de tipo *collection Eloquent* también, con lo que al final no hay que llamar a `get()`. En cambio, si el primer método llamado es el correspondiente a un *query builder*, no retornará una *collection*, sino un *query builder Eloquent* (basado en un *query builder* convencional). En tal caso, podríamos ir refinando la *query*, y al final sí deberíamos usar `get()`:
 
 ```php
-$coches1 = App\Coche::where('id', 10) -> get();
-$coches2 = App\Coche::all() -> where('id', 10);
+// Las dos sentencias son equivalentes:
+$coches1 = App\Coche::all()
+    ->where('id', '>', '5');
+$coches2 = App\Coche::where('id', '>', '5')
+    ->get();
 ```
 
-Las dos sentencias anteriores retornan el mismo valor y tipo. En la primera construimos una *query*, encadenamos uno o más métodos que van retornando *query builders*, y al final convertimos el último *query builder* retornado en una colección (mediante `get()`). En el segundo caso, ya tenemos una colección desde el principio, y vamos encadenando uno o más métodos que van retornando colecciones, hasta el último, que, al retornar también una colección, no se debe usar `get()`.
+Para pasar de colección a *query builder* y viceversa, disponemos de los métodos `toQuery()` (de las colecciones) y `fromQuery()` (de las *queries*).
 
-Si en lugar de `where()` o `all()` indicamos `find()` con un *array* de claves primarias, recibiremos una colección de registros coincidentes (si los hay).
+Si en lugar de `where()` o `all()` indicamos como primer método `find()` con un *array* de claves primarias, recibiremos una **colección** de registros coincidentes (si los hay), no un *query builder*.
 
-En el caso de un *query builder*, se puede refrescar mediante `coches->refresh()`, por si ha habido cambios en la base de datos por otro lado. El método `fresh()`, en cambio, retorna la consulta con datos frescos, pero no cambia la *query* original. Las *collections* carecen de estos métodos.
+En el caso de una llamada a un método que retorna un solo registro (como `find()` con un solo valor, o `first()`), se puede obtener el valor actual del modelo en la base de datos mediante el método `refresh()`, por si ha habido cambios en el mismo por otro lado. Sin embargo, el modelo mantiene su valor antiguo, es decir, `refresh()` no cambia el valor del modelo; simplemente **retorna** el valor existente en base de datos.
+
+De forma similar, el método `fresh()`, disponible en las *collections* de los modelos, retorna la consulta con datos frescos, sin afectar a la *collection* del modelo.
+
+> Podemos definir tantos métodos como queramos en el modelo. Estos métodos pueden llamarse sobre objetos que contengan un solo registro. Los nombres de los campos de la tabla son atributos del objeto, que podrán ser accedidos a través de $this.
 
 ### Insertar o modificar registros
 
@@ -421,7 +424,7 @@ Para añadir un registro, se crea una nueva instancia del modelo, se le dan los 
 
 ```php
 $coche = new Coche;
-$coche->name =  $req->name;  // por ejemplo
+$coche->name = $req->name;  // por ejemplo
 $coche->save();
 ```
 
@@ -429,8 +432,25 @@ Si queremos modificar un registro:
 
 ```php
 $coche = App\Coche::find(1);
-$coche->name =  $req->name;  // por ejemplo
+$coche->name = $req->name;  // por ejemplo
 $coche->save();
 ```
 
-Para inserciones y/o modificaciones, se pueden usar los métodos de *query builder* del modelo (`insert()`, `update()`, etc.). De hecho, se pueden usar estos métodos para lo que se quiera, aunque *Eloquent* añade más funcionalidad.
+Para inserciones y/o modificaciones, se pueden usar los métodos de *query builder* del modelo (`insert()`, `update()`, etc.).
+
+### Eliminación de registros
+
+Para eliminar un registro, usaremos el método `delete()` sobre un solo elemento, sobre una colección o sobre un *query builder*.
+
+```php
+$coche = App\Coche::find(['1', '2', '3']);
+$coche->delete();
+```
+
+Si conocemos las claves primarias de los registros a eliminar, podemos usar `destroy()`:
+
+```php
+App\Coche::destroy(1, 2, 3);
+App\Coche::destroy(25);
+App\Coche::destroy([21, 22, 23]);
+```
