@@ -418,6 +418,10 @@ De forma similar, el método `fresh()`, disponible en las *collections* de los m
 
 > Podemos definir tantos métodos como queramos en el modelo. Estos métodos pueden llamarse sobre objetos que contengan un solo registro. Los nombres de los campos de la tabla son atributos del objeto, que podrán ser accedidos a través de $this.
 
+A la hora de acceder al valor de los campos, puede hacerse mediante el operador `->` y el nombre del campo, como un atributo del objeto. El objeto debe ser un modelo único (no una colección, ni un *query builder*). En ese sentido, sería válido el objeto retornado por `first()`, por ejemplo, o cada uno de los elementos de una colección *Eloquent*, por separado.
+
+El objeto *Eloquent* dispone, internamente, de dos propiedades de tipo *array*: ***\$original*** y ***\$attributes***. Inicialmente, ambos contienen los valores por defecto (que hemos definido explícitamente), y, si procede, los valores en la base de datos al leer el modelo. A medida que se hacen cambios en el modelo con *PHP*, los cambios se van guardando en el *array* ***\$attributes***, pero ***\$original*** sigue igual. Cuando el modelo se guarda en base de datos, entonces ***\$original*** sí pasa a actualizarse según los valores de ***\$attributes***. Cuando se accede a un atributo del modelo, mediante `Coche->marca`, se retorna el valor correspondiente al contenido de ***\$attributes*** (o ***NULL*** si no existe el elemento).
+
 ### Insertar o modificar registros
 
 Para añadir un registro, se crea una nueva instancia del modelo, se le dan los valores pertinentes, y se invoca el método `save()` del mismo.
@@ -454,3 +458,59 @@ App\Coche::destroy(1, 2, 3);
 App\Coche::destroy(25);
 App\Coche::destroy([21, 22, 23]);
 ```
+
+### *Mutators*
+
+Este mecanismo permite gestionar el acceso a los atributos de un modelo *Eloquent*.
+
+#### *Accessors*
+
+Un *accessor* es un método definido dentro de la clase del modelo que define el acceso a un atributo concreto. El formato del nombre de este método debe ser del tipo ***get + NombreDelCampo + Attribute***, y se refiere a una columna de la tabla cuyo nombre es del tipo ***nombre_del_campo***. Obsérvese la disposición de mayúsculas y guiones bajos. Por ejemplo, el método ***getCilindradaMotorAttribute()*** se referiría al atributo (campo) del modelo ***cilindrada_motor***. El método debe retornar el valor del campo.
+
+Si el campo ya existe en la tabla, este método permite manipular su valor, recibiendo el valor original en la tabla como primer parámetro:
+
+```php
+public function getCilindradaMotorAttribute($valor)
+{
+    return $valor . ' c.c.';
+}
+```
+
+En cambio si no existe tal campo en la tabla, no recibe ningún valor, y permite retornar algún tipo de campo calculado, normalmente a partir del valor de otros campos del registro. Se puede acceder a ellos a través de `$this->atributo`.
+
+#### *Mutators*
+
+Un *mutator* tiene el mismo formato de nombre que un *accessor*, pero en lugar de retornar un valor, establece un valor de atributo. La forma correcta de hacerlo, es dando valor al elemento correspondiente de la propiedad ***\$attributes***:
+
+```php
+public function getMarcaAttribute($valor)
+{
+    $this->attributes['marca'] = strtolower($valor);
+}
+```
+
+En este caso, suponiendo que ***\$registro*** contenga un modelo de ***Coche***, al hacer ```$registro->marca = 'BMW'```, el valor del atributo ***marca*** será ***bmw***, ya que el valor pasará a través del *mutator*, que lo pasa a minúsculas.
+
+#### *Mutators* de fechas
+
+Por defecto, *Eloquent* traduce los campos ***created_at*** y ***updated_at*** a tipo ***Carbon***, que es una extensión del ***DateTime*** de *PHP*. Si tenemos otros campos de fecha que deseamos que sean mapeados a tipo ***Carbon***, debemos añadir sus nombres al array ***\$dates***:
+
+```php
+protected $dates = ['fecha_inicio', 'fecha_fin'];
+```
+
+Cuando es así, podemos dar valor a un campo fecha del modelo usando un *timestamp UNIX*, un *date string* ***Y-m-d***, un *date-time string*, una instancia de ***DateTime*** o una instancia de ***Carbon***.
+
+#### *Casting* de atributos
+
+Podemos tener más control sobre el mapeo entre tipos de la base de datos y tipos *PHP* mediante este mecanismo. En el *array* ***\$casts*** podemos definir el tipo al que se mapeará un campo concreto de la tabla. Las claves del *array* son los nombres de los campos y los valores los tipos. Existen estos tipos predeterminados: ***integer***, ***real***, ***float***, ***double***, ***decimal:<digitos>***, ***string***, ***boolean***, ***object***, ***array***, ***collection***, ***date***, ***datetime*** y ***timestamp***.
+
+```php
+protected $casts = [
+        'is_admin' => 'boolean',
+        'nombre' => 'string',
+        'fecha' => 'date'
+    ];
+```
+
+A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\Contracts\Database\Eloquent\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$cast***, se indicará como valor el nombre *fully qualified* de la clase (o mediante `::class`).
