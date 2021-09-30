@@ -145,6 +145,7 @@ Route::group([], function() {
 El primer argumento a `group()` es un *array* en el que se definen *middlewares* aplicados a las rutas del grupo. Sin embargo, si el método está encadenado tras otros (como `middleware()`, por ejemplo), este primer argumento desaparece.
 
 Dar nombre a un grupo de rutas es útil, por ejemplo, para asignar *middleware* a ese grupo a través de los archivos de configuración de *laravel*.
+
 ## *Middleware*
 
 Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
@@ -199,9 +200,15 @@ Route::get('admin/profile', function () {
 })->middleware('auth');
 ```
 
-El método `middleware()` acepta un número arbitrario de argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* podemos usar el nombre completo de la clase (así no habría necesidad de registrar esa clave en ***$routeMiddleware***).
+El método `middleware()` acepta un número arbitrario de argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* también podemos usar el nombre completo de la clase (así no habría necesidad de registrar esa clave en ***$routeMiddleware***).
 
 Se pueden agrupar varios *middlewares* bajo un grupo. Esto se define en la propiedad ***$middlewareGroups*** de la clase en ***app/Http/Kernel.php***. Cada grupo tendrá una *key* de nuestra elección a la que se podrá hacer referencia con el método `middleware()` de la misma forma que se ha visto. El valor correspondiente a esa clave será un *array* con la lista de todas las clases *middleware* que queramos.
+
+#### Otros métodos
+
+A parte de los métodos vistos, existe también `middlewareGroup()`, que registra un nuevo grupo de *middleware*. El primer argumento es el nombre del grupo, y el segundo es un *array* con nombres de *middleware*, de grupos de *middleware* o de clases *middleware*.
+
+Por otro lado, tenemos acceso también al método `getMiddlewareGroups()`, o `getMiddleware()`, que nos darán información sobre los grupos y nombres de *middleware* registrados.
 
 ### Parámetros al *middleware*
 

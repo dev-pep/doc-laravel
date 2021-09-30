@@ -74,7 +74,9 @@ Evidentemente, si no disponemos del mecanismo de *dependency injection*, esto no
 
 El *service container* es precisamente el mecanismo que realiza la inyección de dependencias.
 
-El ejemplo anterior era muy simple, ya que la creación del servicio era llanamente sin argumentos, pero es posible que deseemos que la creación de la dependencia incluya algún pase de argumentos. En ese caso, debemos crear un *service provider*. En el método `register()` de este, debemos enlazar (*bind*) esta dependencia con el modo de crear el objeto. Un ejemplo sería:
+El ejemplo anterior era muy simple, ya que la creación del servicio era llanamente sin argumentos, pero es posible que deseemos que la creación de la dependencia incluya algún pase de argumentos. En ese caso, debemos crear un *service provider*. Dentro del método `register()` de este, debemos enlazar (*bind*) esta dependencia con el modo de crear el objeto.
+
+Los *service providers* tienen una propiedad ***app***, que retorna, precisamente, una instancia del *service container*. Por otro lado, el *helper* `app()` de *Laravel* también retorna una instancia del mismo.
 
 ```php
 $this->app->bind(Creditos::class, function($app) {
@@ -94,7 +96,7 @@ $this->app->singleton(Creditos::class, function($app) {
 
 En este caso, solo se hará una sola instancia, que se utilizará en cada inyección.
 
-También podemos hacer el *binding* directamente a una instancia:
+También podemos hacer el *binding* directamente a una instancia ya existente:
 
 ```php
 $ob = new Creditos($valor);
@@ -124,7 +126,33 @@ Esto simplemente *binds* una interfaz a una implementación concreta de la misma
 
 No olvidemos que `::class` es simplemente un *string* con el nombre de la clase *fully qualified*.
 
-Existen otros métodos de *binding*.
+### Resolución
+
+Esto sería resolución automática:
+
+```php
+public function metodo(Creditos $creditos)
+{
+    // En $creditos tenemos la instancia que proporciona el service container
+}
+```
+
+Pero podemos obtener el servicio manualmente del *service container* con el método `make()` del *service container*, al que le pasaremos el nombre de la clase o interfaz en cuestrión (*fully qualified*):
+
+```php
+// Desde el interior de un service provider
+$creditos = $this->app->make(Creditos::class)
+```
+
+Si no estamos dentro de un *service provider* no tendremos acceso a la propiedad ***app***. Pero disponemos siempre del *helper* `app()`, que retorna también una instancia del *service container*.
+
+```php
+$creditos = app()->make(Creditos::class)
+// Por brevedad, esto es equivalente:
+$creditos = app(Creditos::class)
+// También podemos hacerlo así:
+$creditos = resolve(Creditos::class)
+```
 
 ## Service providers
 

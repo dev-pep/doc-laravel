@@ -311,6 +311,20 @@ La función `secure_url()` es igual, pero retorna una *URL HTTPS*.
 
 ### Varios
 
+#### app()
+
+Esta función retorna una instancia del *service container*.
+
+#### auth()
+
+Retorna una instancia del objeto *autenticator* sin usar la *facade* ***Auth***.
+
+```php
+user = auth()->user();
+```
+
+Se le puede pasar, como primer argumento, el nombre del *guard* deseado.
+
 #### back()
 
 La función `back()` retorna una *response* de redirección a la localización anterior.
@@ -327,6 +341,10 @@ return back() -> withInput();
 ```
 
 Los datos antiguos están disponibles a través del *helper* `old()`.
+
+#### bcrypt()
+
+Retorna un *hash* (no desencriptable) del *string* de entrada. Alternativa a la *facade* ***Hash***.
 
 #### config()
 
@@ -426,6 +444,16 @@ La función `request()` retorna una instancia de la *request* actual. También p
 ```php
 $request = request();
 $valor = request('clave', $default);
+```
+
+#### resolve()
+
+Sirve para extraer un servicio de *service container*:
+
+```php
+$objeto = resolve(UnaClaseOInstancia::class)
+// Equivale a:
+$objeto = app()->make(UnaClaseOInstancia::class);
 ```
 
 #### response()
