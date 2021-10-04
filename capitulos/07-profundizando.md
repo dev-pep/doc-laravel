@@ -525,7 +525,7 @@ Si indicamos el nombre `"*"` se excluyen **todos** los paquetes del autodescubri
 
 ### Namespace
 
-Por otro lado, hay que definir el *namespace* del paquete en la sección de *autoload* del ***composer.json***.
+Por otro lado, hay que definir el *namespace* (o *namespaces*) del paquete en la sección de *autoload* del ***composer.json***.
 
 ```json
 "autoload": {
@@ -567,6 +567,20 @@ En este ejemplo se publicarán todos los archivos y directorios con la etiqueta 
 Si no especificamos *provider* ni *tag*, nos aparecerá un menú con las opciones a publicar.
 
 Para forzar una publicación aunque ya exista, se añadirá `--force` para sobrescribir.
+
+Para publicar parte de la configuración dentro del archivo de configuración del paquete se usa `mergeConfigFrom()`. Supongamos que nuestro archivo de configuración es ***courier.php***.
+
+```php
+$this->mergeConfigFrom(__DIR__.'/path/to/config/courier.php', 'courier');
+```
+
+Este ejemplo fusiona todas las claves del archivo ***courier.php*** en el archivo correspondiente publicado ya. Solo añadirá las claves que no estén publicadas. Solo actúa en el primer nivel, es decir, si el valor de una clave es un *array*, no entrará a mirar qué claves tiene.
+
+Este otro ejemplo fusiona solo el contenido de una clave (***key***):
+
+```php
+$this->mergeConfigFrom(__DIR__.'/path/to/config/courier.php', 'courier.key');
+```
 
 ### Carga de recursos
 
