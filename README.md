@@ -15,6 +15,7 @@ Estos son mis apuntes de *Laravel* 7.
 ### Bibliotecas
 
 [LdapRecord-Laravel](capitulos/ldaprecord-laravel.md)
+[Laravel-DebugBar](capitulos/laravel-debugbar.md)
 
 ---
 
