@@ -907,3 +907,53 @@ $req->validate([
     'Nombre' => 'required'
 ]);
 ```
+
+## *Logging*
+
+*Laravel* usa *Monolog* para realizar el *logging*.
+
+La configuración de *logging* se encuentra en ***config/logging.php***. El *array* que retorna este archivo tiene una primera clave ***default*** con el nombre del canal por defecto.
+
+La segunda clave es ***channels***, cuyo valor es a su vez un *array* cuyos elementos son los diferentes canales de *logging*. Cada uno de estos elementos consta de una clave con el nombre del canal, y como valor un *array* con las distintas configuraciones del mismo.
+
+La clave ***driver*** del canal define el tipo de *log*. El resto de claves configuran el canal. Algunos tipos de *drivers* disponibles por defecto son (clave ***driver***):
+
+- ***stack***: en este caso, una clave ***channels*** tendrá como valor un *array* con los nombres de los canales que forman dicho *stack*.
+- ***single***: se refiere a un simple archivo de *log*, definido en la clave ***path***. La clave ***level*** define el nivel mínimo de *logging*.
+- ***daily***: es como ***single***, pero con *logging* rotativo (el número de días se indica en ***days***).
+- ***monolog***: utiliza un handler *Monolog*, que se le debe pasar en el campo ***handler*** (nombre de la clase). Si este *handler* necesita obtener argumentos, se indicarán a través del campo ***with*** (véase ejemplo). También se puede indicar un *formatter*, a través de los campos ***formatter*** (nombre de la clase) y ***formatter_with*** (*array* con argumentos para el *formatter*).
+- ***custom*** sirve para crear canales a medida.
+
+Ejemplo de canal de tipo *monolog*:
+
+```php
+'logentries' => [
+    'driver'  => 'monolog',
+    'handler' => Monolog\Handler\SyslogUdpHandler::class,
+    'with' => [
+        'host' => 'my.logentries.internal.datahubhost.company.com',
+        'port' => '10000',
+    ],
+]
+```
+
+Los *logs* ***single*** y ***daily*** admiten también los siguientes campos:
+- ***bubble***, por defecto ***true***, indica si el mensaje se propaga por el posible *stack* (en caso de formar parte de uno).
+- ***permission*** indica los permisos por defecto del archivo (por defecto 0644).
+- ***locking***, por defecto ***false***, indica si el archivo debe bloquearse antes de escribir en él.
+
+Los niveles de *logging* son, en orden descendente, ***emergency***, ***alert***, ***critical***, ***error***, ***warning***, ***notice***, ***info***, y ***debug***.
+
+A parte de poder indicarse estos nombres como niveles en la configuración, también existen métodos así denominados para enviar mensajes de *log* a través de la *facade* ***Illuminate\Support\Facades\Log***.
+
+```php
+Log::info($mensaje);
+```
+
+En este caso, el mensaje será enviado al canal por defecto. Para enviarlo a cualquier otro canal:
+
+```php
+Log::channel('nombre_canal')->info($mensaje);
+```
+
+Para enviar también información al *array* de contexto, pasaremos tal *array* como segundo argumento del método (en este caso `info()`).
