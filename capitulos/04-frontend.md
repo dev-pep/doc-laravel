@@ -49,6 +49,8 @@ Entonces podremos usar el contenido de la variable dentro de nuestra plantilla m
 
 Las dobles llaves son la sentencia *echo* de *Blade*, con lo que se puede incluir cualquier código *PHP* en su interior.
 
+Por defecto, el contenido de las dobles llaves está *escaped*, con lo que si el resultado es un *string* conteniendo código *HTML*, se visualizará todo como texto, incluyendo las etiquetas *HTML*. Por ejemplo, el *string* ***\<h1>Hola\</h1>*** se escupiría como ***\&lt;Hola\&gt;***. Si queremos que el resultado sea escupido en el archivo tal cual (*unescaped*), usaremos las llaves `{!! $name !!}`. En este caso, nos exponemos a ataques de inyección de código, si tal *string* lo ha introducido el usuario.
+
 Para saber si una variable ha sido definida, *Blade* tiene la directiva `@isset($variable) ... @endisset` (puede incluir `@else`, como cualquier directiva condicional).
 
 ### Estructuras de control
