@@ -524,6 +524,8 @@ if $archivo->isValid() ...
 
 El método `file()` retorna una instancia de ***Illuminate\\Http\\UploadedFile***. A parte de `isValid()`, esta clase dispone de los métodos `path()` (la ruta completa del archivo) o `extension()` (extensión del archivo basada, no en la extensión proporcionada, sino en el contenido).
 
+Es posible acceder a las variables del servidor mediante la instancia de la petición, como alternativa a usar ***\$_SERVER***, mediante el método `server()`.
+
 ## Respuestas (*responses*)
 
 Ante cualquier *request*, nuestra aplicación debe retornar una *response*. En nuestros controladores o rutas, debemos retornar una *response*. No es necesario crear un objeto de tipo respuesta. Podemos retornar simplemente un *string* de texto, o código *HTML* (directamente, o pasando una plantilla *Blade* al *helper* `view()`): *Laravel* ya se encarga de construir la respuesta (con sus cabeceras, etc.) a partir de lo que nosotros retornamos. También podemos retornar un *array*, que el *framework* convertirá en una respuesta *JSON*.
