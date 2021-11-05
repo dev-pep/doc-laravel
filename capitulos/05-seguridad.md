@@ -94,6 +94,14 @@ Esto métodos funcionan de forma similar a `attempt()` en cuanto a especificar e
 
 Por otro lado se puede autenticar a un usuario del mismo modo que si se tratase de `attempt()` pero solo para la *request* actual, de tal modo que no se generarían *cookies*, ni sesiones, ni nada (*stateless API*). Para ello se usaría el método `once()`.
 
+#### Autenticación *web* vs. *API*
+
+En la navegación *web*, el estado de autenticación se guarda en la información de sesión (en el servidor). El navegador dispone de la *cookie* de sesión, que envía el *ID* de dicha sesión, con lo que a pesar de que *HTTP* es un protocolo sin conexión, la sesión se mantiene entre llamadas.
+
+Por el contrario, los accesos *API* no tienen estado, ya que no se trata de una sesión de navegación, sino de acceso a datos, producido normalmente por una petición asíncrona, o quizá hecha por una aplicación que obtiene datos de un servicio *web*. En tal caso, no procede autenticarse mediante un usuario y contraseña. Pero si se desea dotar de seguridad estos accesos, se debe enviar un *API token*. El servidor accede a una base de datos para comprobar si existe algún usuario que posea dicho *token*, y si es así, servir los datos (a nombre de dicho usuario). Dado que dicho *token* se suele mandar mediante *GET*, resulta necesario renovarlo con frecuencia.
+
+En cuanto a cuándo expira la sesión, depende del navegador usado. En algunos sistemas y navegadores, la sesión termina al cerrar el navegador, mientras en otros no es así.
+
 ### Obtener información de autenticación
 
 Para saber si el usuario está autenticado, `Auth::check()` retornará ***true*** si lo está, y ***false*** si no.
