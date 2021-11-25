@@ -154,13 +154,19 @@ $creditos = app(Creditos::class)
 $creditos = resolve(Creditos::class)
 ```
 
-### *Zero-configuration resulution*
+### *Zero-configuration resolution*
 
-Esta característica, no documentada en *Laravel* 7 (sí en la 8), parace funcionar bien en la versión 7:
+Esta característica, no documentada en *Laravel* 7 (sí en la 8), parace funcionar también en la versión 7:
 
 Cuando una clase no tiene dependencias, o depende de otras clases concretas (no interfaces), y no tiene parámetros obligatorios en el constructor, ni siquiera es necesario registrarla en el *service container*. Por ejemplo:
 
+```php
+class Servicio { /* ... */ }
 
+function foo(Servicio $serv) {
+    // ...
+}
+```
 
 ## Service providers
 
