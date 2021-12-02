@@ -146,6 +146,49 @@ El primer argumento a `group()` es un *array* en el que se definen *middlewares*
 
 Dar nombre a un grupo de rutas es útil, por ejemplo, para asignar *middleware* a ese grupo a través de los archivos de configuración de *laravel*.
 
+## Aclaraciones sobre rutas
+
+Las rutas mapean una *URI* a un recurso, como una vista, un controlador, un archivo, etc. Para ello, **todas** las *requests* tienen que entrar por ***public/index.php***. A partir de ahí, el *script* ya gestiona la *request* según la *URI*. Por lo tanto, es necesario que se reescriban las *URLs* en el servidor, para evitar tener que teclear *URLs* largas y desagradables (de forma similar a lo que sucede en aplicaciones como *MediaWiki*).
+
+Veamos un ejemplo práctico. Para comprender el ejemplo, véase la documentación del servidor *Apache*:
+
+Supongamos que disponemos de un servidor *HTTP Apache 2*, y tenemos una aplicación *Laravel* en ***/home/user/aplicaciones/larapps/larapp1***. Queremos que la aplicación sea accesible mediante ***http://servidor.com/larapp1***, y se accediera a las diferentes páginas de la aplicación mediante *URLs* del estilo ***http://servidor.com/larapp1/ruta/pagina***.
+
+Cuando instalamos una aplicación *Laravel* nueva obtenemos un archivo ***.htaccess*** por defecto en el directorio ***public***. En él encontramos las directivas necesarias para obtener el resultado mencionado. Si nuestro servidor no permite el *override* con archivos ***.htaccess***, se deberá tener esa configuración dentro del directorio ***public***.
+
+Este es un buen ejemplo de configuración por defecto de *Laravel* en ***public***:
+
+```
+Alias /larapp1 /home/user/aplicaciones/larapps/larapp1/public
+
+<Directory /home/user/aplicaciones/larapps/larapp1/public>
+    RewriteEngine On
+
+    # Gestión de la cabecera de autorización:
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirige sin barras finales si no es una carpeta:
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Envía requests al front controller (public/index.php):
+    RewriteBase /larapp1/
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</Directory>
+```
+
+Como vemos, lo primero es la creación de un *alias* desde la *URI* deseada hasta el directorio ***public*** de la aplicación concreta (donde reside ***index.php***).
+
+Una vez dentro de la configuración del directorio ***public***, encontramos tres acciones:
+
+- La gestión de la cabecera de autorización, en caso de autenticación en el servidor, recoge la información de esa cabecera y la asigna a una variable del servidor (en este caso, llamada ***HTTP_AUTHORIZATION***). Si no necesitamos tal información, puede obviarse esta acción.
+- Redirección que elimina barras finales cuando la *URI* no hace referencia a un directorio.
+- Reescritura que envía todas las *requests* (no directorio ni fichero) a la *URI* ***/larapp1/index.php***, que se corresponde con el archivo ***/home/user/aplicaciones/larapps/larapp1/public/index.php***.
+
 ## *Middleware*
 
 Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
