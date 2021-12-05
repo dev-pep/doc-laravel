@@ -26,7 +26,24 @@ Supongamos que tenemos una clase ***Actividad***, que en alguno de sus métodos 
 $actividad = new Actividad($p1, $p2, new Deporte($p3, new Rugby($p4, $p5, new Estadio, $p6)));
 ```
 
-A parte de ser bastante lío, ¿qué pasaría si el constructor de ***Deporte*** cambia en cuanto a los parámetros? Habría que ir por todo el código cambiando todas las sentencias de instanciación. En cambio, si tuviésemos información de cómo se construye una instancia de cada una de estas clases, todo sería más sencillo, pues no habría que especificarlo en el código cada vez. Esto es precisamente lo que hace el *service container*.
+O lo que es peor, la creación de estos objetos podría estar esparcida por el código dentro de la clase:
+
+```php
+class Actividad {
+    public function __construct($p1, $p2) {
+        // ...
+        $e = new Estadio;
+        // ...
+        $r = new Rugby($p4, $p5, $d, $p6);
+        // ...
+        $d = new Deporte($p3, $r);
+    }
+}
+
+$actividad = new Actividad($v1, $v2);
+```
+
+A parte de ser bastante lío, ¿qué pasaría si el constructor de uno o más de estos servicios cambia en cuanto a los parámetros? Habría que ir por todo el código cambiando todas las creaciones de instancias. En cambio, si tuviésemos información de cómo se construye cada servicio, todo sería más sencillo, pues no habría que especificarlo en el código cada vez. Esto es precisamente lo que hace el *service container*: proporciona una instancia del servicio (clase) que se le solicite.
 
 La instancia del *service container* se crea en el archivo ***bootstrap/app.php***. Este objeto es de tipo ***Illuminate\Foundation\Application***, y puede obtenerse dicha instancia a través del *helper* `app()`.
 
@@ -142,7 +159,7 @@ $cliente = new Cliente;  // ERROR! El constructor espera 1 argumento...
 
 Las dependencias suelen inyectarse en los clientes a través de su constructor, o, en algunos casos, a través de métodos *setter*.
 
-> A modo de organización, la lógica de negocio se debería incluir en servicios inyectados en los controladores, que quedarían así, libres de lógica de negocio.
+> A modo de organización, la lógica de negocio se debería incluir en servicios inyectados en los controladores, que quedarían así, libres de lógica de negocio. Cabe añadir que la lógica relacionada con bases de datos se debería pasar al modelo (ver capítulo de bases de datos), fuera del controlador. De este modo, los controladores deberían tener muy poco código (*thin controllers*).
 
 ### Resolución de configuración cero
 
@@ -150,6 +167,8 @@ Hay que mencionar que **no siempre es necesario registrar un** ***binding***. Es
 
 - Su constructor no precisa de argumentos que precisen un valor concreto, como números o *strings*. Así, todos los parámetros (si los hay) deben ser dependencias *type-hinted*, que en ningún caso pueden ser interfaces.
 - La clase no tiene dependencias, y si las tiene, cumplen todas el requisito anterior.
+
+De todas formas, no tiene sentido que las clases pensadas para actuar como servicios para otras clases esperen valores concretos.
 
 > El contenedor de servicios evalúa las dependencias de una clase mediante el mecanismo de reflexión de *PHP*, que permite obtener información de la propia clase (incluso puede acceder a los comentarios del código).
 
