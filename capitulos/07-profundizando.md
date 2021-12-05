@@ -378,7 +378,7 @@ Al igual que `dd()`, acepta una o más expresiones como argumentos, que presenta
 
 #### env()
 
-Retorna el valor de una variable del sistema (o variable definida en archivo ***.env***). Acepta un segundo argumento con valor por defecto.
+Retorna el valor de una variable del sistema en ***\$_ENV***, ***\$_SERVER***, o en archivo ***.env*** (este último tiene prioridad). Acepta un segundo argumento con valor por defecto.
 
 ```php
 $valor = env('REMOTE_USER', 'Pepito');
