@@ -1,6 +1,6 @@
 # Apuntes de Laravel
 
-Estos son mis apuntes de *Laravel* 7.
+Estos son mis apuntes de *Laravel* 9.
 
 ## Tabla de contenido
 

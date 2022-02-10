@@ -130,8 +130,7 @@ Ejemplos:
 
 ```
 php artisan down
-php artisan down --message="Actualizando base de datos"
-php artisan down --allow=127.0.0.1 --allow=192.168.0.0/16
+php artisan down --redirect=/mantenimiento
 
 php artisan up
 ```
