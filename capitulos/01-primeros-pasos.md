@@ -143,15 +143,31 @@ La estructura puede organizarse a voluntad. Veremos aquí parte de la estructura
     - ***app/Console*** - API a la aplicación en modo consola (comandos `artisan`).
     - ***app/Http*** - API a la aplicación (controladores, *middleware*, *requests*).
     - ***app/Providers*** - contiene los *service providers* de la aplicación.
-- ***bootstrap*** - contiene ***app.php*** (instancia de la aplicación), que arranca el *framework*.
+- ***bootstrap*** - contiene ***app.php*** (instancia de la aplicación), que arranca el *framework*; también contiene el directorio ***cache***.
 - ***config*** - archivos de configuración (autodocumentados).
-- ***database*** - contiene migraciones de base de datos.
+- ***database*** - contiene migraciones de base de datos y otras utilidades.
+- ***lang*** - contiene los archivos de idiomas.
 - ***public*** - contiene el ***index.php*** con la configuración de *autoloading*, y punto de entrada de todas las peticiones a la aplicación. También almacena los *assets*: imágenes, *javascript*, *css*,...
-- ***resources*** - contiene las **vistas** y archivos de idiomas.
+- ***resources*** - contiene las **vistas** y otros recursos.
 - ***routes*** - definición de todas las rutas de la aplicación.
-- ***storage*** - plantillas *Blade* compiladas, caches, y otros archivos generados por la aplicación. La subcarpeta ***storage/logs*** guarda los *logs* generados, ***storage/framework*** los archivos que necesite generar el propio *framework*, y ***storage/app*** los archivos que genere la aplicación.
+- ***storage*** -
+    - ***storage/app*** - archivos generados por la aplicación.
+    - ***storage/logs*** - *logs* generados.
+    - ***storage/framework*** - archivos generados por el propio *framework*.
 - ***tests*** - *tests* automatizados.
 - ***vendor*** - dependencias de *Composer*.
+
+### El directorio *app*
+
+En cuanto al directorio *app*, tiene estas subcarpetas por defecto:
+
+- ***Console*** - comandos *artisan*.
+- ***Exceptions*** - manejador de excepciones. Es un buen lugar para almacenar las excepciones creadas a medida.
+- ***Http*** - contiene toda la lógica de tratamiento de una *request* (controladores, *middleware*).
+- ***Models*** - contiene las clases de los modelos *ORM* (*object-relational model*) *Eloquent*.
+- ***Providers*** - *service providers* de la aplicación.
+
+Existen otras subcarpetas (***Broadcasting***, ***Events***, ***Jobs***, ***Listeners***, ***Mail***, ***Notifications***, ***Policies***, ***Rules***), que almacenan otros mecanismos del *framework*, y que existen solo en caso de usar tales mecanismos (se irán viendo más adelante).
 
 ## Despliegue
 
@@ -180,3 +196,5 @@ php artisan view:cache
 ```
 
 Esto precompila todos los *templates Blade*, con lo que no se hace *on demand* cada vez que se retorne una vista a partir de una petición.
+
+Se debería establecer ***APP_DEBUG*** a ***false***, para no exponer información sobre valores de configuración.
