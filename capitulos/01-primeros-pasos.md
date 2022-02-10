@@ -12,19 +12,31 @@ composer global require laravel/installer
 
 Hay que asegurarse que la carpeta de ejecutables de los paquetes instalados globalmente en *Composer* está en el *path* del sistema. Esta carpeta está en la carpeta ***vendor/bin*** dentro del directorio de configuración de *Composer* (que suele variar de un sistema a otro).
 
-Para instalar un proyecto *Laravel* directamente:
+Una vez instalado, para crear un proyecto, se ejecuta, desde la carpeta en la que deseamos que se cree la subcarpeta del proyecto:
 
 ```
-composer create-project --prefer-dist laravel/laravel:^7.0 nombreProyecto
+laravel new <nombreProyecto>
+```
+
+Por otro lado, para instalar un proyecto *Laravel* directamente:
+
+```
+composer create-project --prefer-dist laravel/laravel nombreProyecto
 ```
 
 O lo que es lo mismo:
 
 ```
+composer create-project --prefer-dist laravel/laravel nombreProyecto
+```
+
+Si queremos una versión concreta de *Laravel*, cualquiera de estas órdenes vale:
+```
+composer create-project --prefer-dist laravel/laravel:^7.0 nombreProyecto
 composer create-project --prefer-dist laravel/laravel nombreProyecto ^7.0
 ```
 
-Esto creará un proyecto *Laravel* en una carpeta ***nombreProyecto***, y usando la versión más actualizada de *Laravel* 7 (descartando la versión 8).
+Esto creará un proyecto *Laravel* en una carpeta ***nombreProyecto***, usando la versión más actualizada de *Laravel*.
 
 El argumento `--prefer-dist` sirve para que descargue los archivos del repositorio con la versión para distribución. Si queremos la versión del código fuente (para desarrollar, en este caso, *Laravel*) se incluiría `--prefer-source`.
 
@@ -38,7 +50,7 @@ php artisan serve
 
 Creará un servidor web en la carpeta actual para el host ***ht<span>tp://localhost:8000***.
 
-El archivo ***index.php*** contiene el controlador del *frontend* que gestiona todas las peticiones que llegan a la aplicación.
+El archivo ***index.php*** es el *front controller*, que gestiona todas las peticiones que llegan a la aplicación.
 
 ## Configuración
 
@@ -46,7 +58,7 @@ Todos los archivos de configuración están en el directorio ***config***.
 
 Por otro lado, el archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
 
-> La variable ***APP_URL*** del archivo ***.env*** no juega un papel importante en el funcionamiento de la aplicación. Sin embargo, algunos paquetes la usan y no funcionarán bien si está mal configurada. A parte de esto, cosas como las notificaciones por correo electrónico o algunos comandos de consola también se pueden ver afectados.
+> La variable ***APP_URL*** del archivo ***.env*** no juega un papel importante en el funcionamiento de la aplicación. Sin embargo, algunos paquetes la usan y no funcionarán bien si está mal configurada. A parte de esto, algunos componentes, como las notificaciones por correo electrónico o algunos comandos de consola, también se pueden ver afectados.
 
 En todo caso, si no disponemos de un archivo ***.env*** (porque acabamos de clonar un proyecto, por ejemplo), debemos generar una *key* para la aplicación (que se guarda en el archivo mencionado):
 
@@ -54,7 +66,7 @@ En todo caso, si no disponemos de un archivo ***.env*** (porque acabamos de clon
 php artisan key:generate
 ```
 
-Es importante recalcar que las dependencias del proyecto estarán en la carpeta ***vendor***, que típicamente queda fuera del control de versiones. Cuando *composer* instala nuevas bibliotecas en ese directorio, es posible que estas, para funcionar correctamente, necesiten archivos de configuración, migraciones, etc. en directorios de nuestro proyecto, fuera de ***vendor***. Estos archivos sí estarían incluidos en nuestro control de versiones.
+Es importante recalcar que las dependencias (bibliotecas) del proyecto estarán en la carpeta ***vendor***, que típicamente queda fuera del control de versiones. Cuando *composer* instala nuevas bibliotecas en ese directorio, es posible que estas, para funcionar correctamente, necesiten archivos de configuración, migraciones, etc. en directorios de nuestro proyecto, fuera de ***vendor***. Estos archivos sí estarían incluidos en nuestro control de versiones.
 
 Para que se generen tales archivos, hay que ejecutar:
 
@@ -62,27 +74,29 @@ Para que se generen tales archivos, hay que ejecutar:
 php artisan vendor:publish
 ```
 
-En ese momento, las bibliotecas que no lo hayan hecho, contribuirán con sus archivos de configuración. Normalmente, crearán un archivo *.php* dentro del directorio ***Config***, aunque pueden crear otras cosas, como se ha dicho.
+En ese momento, las bibliotecas que no lo hayan hecho, contribuirán con sus archivos de configuración. Normalmente, crearán un archivo *.php* dentro del directorio ***config***, aunque pueden crear y/o modificar otros otros archivos, como se ha dicho.
 
 ### Variables de entorno
 
-Las variables definidas en ***.env*** son *overriden* por las variables existentes del sistema.
-
-Las variables establecedas en ***.env*** se leen como *strings*, con lo que se pueden usar valores como ***true***, ***false***, ***null***, o ***empty*** (que se interpretará como un *string* vacío).
-
-Si a una variable hay que darle un valor que contiene espacios, se indicará entre comillas dobles.
-
-El *helper* `env()` tiene acceso a todos estos valores, además de los valores de las superglobales *PHP* ***\$_ENV*** y ***\$_SERVER*** (el contenido en el archivo ***.env*** tiene prioridad):
+El *helper* `env()` tiene acceso a las variables de entorno del sistema, así como a los valores de las superglobales *PHP* ***\$_ENV*** y ***\$_SERVER***. En caso de no existir la variable de entorno o la variable superglobal, se buscará el valor en el archivo ***.env***.
 
 ```php
 $d = env('APP_DEBUG', false);
 ```
 
-El segundo parámetro (opcional) es el valor por defecto que retornará la función si no encuentra tal variable de entorno.
+El segundo parámetro (opcional) es el valor por defecto que retornará la función si no encuentra tal variable de entorno (o superglobal), y tampoco un valor en el archivo ***.env***.
+
+Las variables del sistema y superglobales tienen, pues, prioridad sobre las definiciones en ***.env***. Si se llega a utilizar un valor en este archivo, se incluye dentro del *array* ***\$_ENV***.
+
+Las variables establecedas en ***.env*** se leen como *strings*, y se pueden usar valores como ***true***, ***false***, ***null***, o ***empty*** (que se interpretará como un *string* vacío).
+
+Si a una variable hay que darle un valor que contiene espacios, se indicará entre comillas dobles.
 
 ### Acceso a los valores de configuración
 
 Los valores de configuración se almacenan en el directorio ***config***. Allí se encuentran los archivos de configuración. Estos son simples archivos *PHP* que lo que hacen es retornar un *array* de pares clave-valor.
+
+Algunos valores de configuración pueden referirse a valores en ***.env*** (configuración dependiente del entorno).
 
 Para acceder a los valores de configuración definidos, se usa la función `config()`. Para acceder a un valor concreto, se usa la sintaxis de punto. La función tiene un segundo parámetro opcional con el valor por defecto:
 
@@ -104,7 +118,11 @@ Para que la aplicación funcione más rápido (normalmente, en entorno de produc
 php artisan config:cache
 ```
 
-> Si hacemos esto, las llamadas a `env()` fuera de los archivos de configuración retornarán siempre ***null***.
+> Si hacemos esto, las llamadas a `env()`, fuera de los archivos de configuración, retornarán siempre ***null***.
+
+### Modo de depuración
+
+Por defecto, la configuración de depuración (en ***config/debug.php***) establece el modo de depuración según la variable de entorno (normalmente en ***.env***) ***APP_DEBUG***.
 
 ### Modo de mantenimiento
 
