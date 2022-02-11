@@ -159,7 +159,7 @@ La estructura puede organizarse a voluntad. Veremos aquí parte de la estructura
 
 ### El directorio *app*
 
-En cuanto al directorio *app*, tiene estas subcarpetas por defecto:
+En cuanto al directorio *app* (correspondiente al *namespace* ***App***), tiene estas subcarpetas por defecto:
 
 - ***Console*** - comandos *artisan*.
 - ***Exceptions*** - manejador de excepciones. Es un buen lugar para almacenar las excepciones creadas a medida.
