@@ -22,8 +22,6 @@ Una vez procesada la *request*, el controlador o ruta retornará una *response*,
 
 ## Service container
 
-> Es posible que se deba leer un poco acerca de las rutas y controladores en el siguiente capítulo antes de abordar la lectura de este apartado.
-
 Para entender este mecanismo, debemos comprender lo que es la dependencia y la inyección de dependencias (*dependency injection*). Se denomina **servicio** a una clase que es utilizada por otra clase (llamada clase **cliente**). Entonces, la clase cliente **depende** de la clase servicio.
 
 Supongamos que tenemos una clase ***Actividad***, que en alguno de sus métodos utiliza una instancia de una clase ***Deporte***, que a su vez utiliza en algún momento una clase de tipo ***Rugby***, que a su vez usa una clase de tipo ***Estadio***, etc. Esto puede acabar representando un problema tremendo. Imaginemos que queremos crear una instancia de ***Actividad***. Es posible que tengamos que inicializar cada uno de estos objetos:
