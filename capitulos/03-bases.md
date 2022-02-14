@@ -4,7 +4,7 @@
 
 Las rutas de la aplicación se hallan en la carpeta ***routes***, y se cargan automáticamente. Las rutas de la interfaz web se encuentran en ***routes/web.php***.
 
-La definición de ruta básica acepta una *URI* y una *closure* (que pertenecen a la clase `Closure` de *PHP*) pasados a un método `get()` (o `post()`, `put()`, `delete()`, etc.) de la *facade* `Route`. Existen métodos para todos los verbos *HTTP*.
+La definición de ruta básica acepta una *URI* y una *closure* (que pertenecen a la clase `Closure` de *PHP*) pasados a un método `get()` (o `post()`, `put()`, `delete()`, `patch()`, o `options()`) de la *facade* `Route`. Existen métodos para todos los verbos *HTTP*.
 
 ```php
 Route::get('foo', function() {
@@ -13,6 +13,8 @@ Route::get('foo', function() {
 ```
 
 En este caso, al hacer una petición ***GET*** de la *URI* ***foo***, simplemente obtendremos la salida ***Hello, world!***.
+
+El *service provider* ***RouteServiceProvider*** carga todas las rutas en el directorio ***routes***. El archivo ***web.php*** contiene las rutas de la interfaz web, y asocian al grupo de *middleware* web. En ***api.php*** están las rutas de la interfaz *API*, que al ser sin estado, no se asignan a ese grupo de *middleware*, sino al grupo *api*. En este caso, se le prefija ***/api*** a la *URI*.
 
 Se puede definir una ruta que responda a varios verbos *HTTP* con el método `match()`:
 
@@ -30,9 +32,13 @@ Route::any('/foo', function() {
 });
 ```
 
+Es posible inyectar cualquier dependencia en los argumentos de la función *callback*, simplemente indicando el tipo de cada argumento.
+
 ### Protección *CSRF*
 
-Para proteger de ataques *CSRF* (*cross-site request forgery*), los formularios que realicen peticiones a la aplicación deben contener un *token CSRF*. Para ello se puede usar la directiva de *Blade* `@csrf` que genera este *token*:
+Para proteger de ataques *CSRF* (*cross-site request forgery*), los formularios que realicen peticiones a la aplicación deben contener un *token CSRF*. Esto solo se aplica en **rutas web** (no *API*) con métodos ***POST***, ***PUT***, ***PATCH*** y ***DELETE***.
+
+Para insertar dicho *token* se puede usar la directiva de *Blade* `@csrf` dentro del formulario:
 
 ```html
 <form method="POST" action="/foo">
@@ -41,9 +47,7 @@ Para proteger de ataques *CSRF* (*cross-site request forgery*), los formularios 
 </form>
 ```
 
-Otra forma es enviarlo manualmente: se debe enviar al sevidor el parámetro ***_token*** con el valor del *helper* `csrf_token()`.
-
-Esto solo es necesario en **rutas web** (no *API*) con métodos ***POST***, ***PUT***, ***PATCH*** y ***DELETE***.
+Otra forma es enviarlo manualmente: se debe enviar al sevidor el campo ***_token*** del formulario con el valor del *helper* `csrf_token()`.
 
 ### Redirección
 
@@ -77,7 +81,7 @@ El tercer argumento (parámetros de la vista) es opcional.
 
 ### Parámetros de la ruta
 
-Para capturar un segmento de la *URI*:
+Para capturar un segmento de la *URI* (parámetros):
 
 ```php
 Route::get('user/{id}', function($identidad) {
@@ -85,16 +89,38 @@ Route::get('user/{id}', function($identidad) {
 });
 ```
 
-Se pueden capturar tantos fragmentos (entre llaves) como se quiera. El nombre que se les de entre llaves es irrelevante, deben estar compuestos de caracteres alfabéticos y signos, sin guión (***-***). Cada fragmento se corresponderá con un argumento pasado a la función *callback*, en orden.
+Se pueden capturar tantos fragmentos (entre llaves) como se quiera. El nombre que se les de entre llaves es irrelevante, deben estar compuestos de caracteres alfabéticos y guión bajo (***\_***), pero no guión (***-***). Cada fragmento se inyectará en un argumento pasado a la función *callback*, en orden. Si además tenemos dependencias que debe inyectar el *service container*, estas deben ir (*type-hinted*) antes de los parámetros de la *URI*.
 
 Si el nombre del fragmento entre llaves termina en ***?***, significa que el fragmento es opcional. En ese caso, se le debe dar un valor por defecto al parámetro correspondiente en la función *callback*.
 
-### Rutas con nombre
-
-Se pueden asignar nombres a las rutas. Esto se hace para simplificar las referencias a una ruta. Se hace encadenando el método `name()` a la definición de la ruta.
+Es posible restringir el formato de estos parámetros de la *URI* mediante expresiones regulares:
 
 ```php
-Route::get('sections/user/profile', function () {
+Route::get('/user/{id}', function($id) {
+    // ...
+})->where('id', '[0-9]+');
+
+Route::get('/user/{id}/{name}', function($id, $name) {
+    // ...
+})->where(['id' => '[0-9]+', 'name' => '[a-z]+']);
+```
+
+O mediante métodos como `whereAlpha()`, `whereNumeric()`, `whereAlphaNumeric()` o `whereUuid()`:
+
+```php
+Route::get('/user/{id}/{name}', function($id, $name) {
+    // ...
+})->whereNumber('id')->whereAlpha('name');
+```
+
+Si el parámetro no cumple con la restricción, se retorna un código 404.
+
+### Rutas con nombre
+
+Se pueden asignar nombres a las rutas. Esto se hace para simplificar las referencias a una ruta. Se hace encadenando el método `name()` a la definición de la ruta. Los nombres de las rutas deben ser únicos.
+
+```php
+Route::get('sections/user/profile', function() {
     /* ... */
 })->name('profile');
 ```
@@ -112,23 +138,19 @@ Para obtener la *URL* podemos añadir parámetros, que serán añadidos a esta:
 $url = route('profile', ['id' => 1, 'photos' => 'yes']);
 ```
 
-Los nombres de las rutas deben ser únicos.
-
-### Ruta *fallback*
-
-Con el método `fallback()` definimos la acción para las rutas que no hayan encontrado *match*. Normalmente será una acción de "página no encontrada":
-
-```php
-Route::fallback(function() { /* ... */ });
-```
-
 ### Acceso a la ruta actual
 
-Es posible acceder a la ruta que está tratando la petición actual:
+Es posible acceder al objeto ruta actual, así como a la acción actual:
 
 ```php
-$route = Route::current();  // ruta actual
-$action = Route::currentRouteAction();  // acción de la ruta actual
+$ruta = Route::current();  // ruta actual
+$action = Route::currentRouteAction();  // acción de la ruta actual (string)
+```
+
+La ruta actual se puede obtener también a través del objeto *request* actual (se verá más adelante). Suponiendo que ***\$req*** sea una variable en la que se ha inyectado dicha *request*, podemos acceder mediante
+
+```php
+$ruta = $req->route();
 ```
 
 ### Grupos de rutas
@@ -142,52 +164,108 @@ Route::group([], function() {
 }) -> name(/* nombre del grupo */);
 ```
 
-El primer argumento a `group()` es un *array* en el que se definen *middlewares* aplicados a las rutas del grupo. Sin embargo, si el método está encadenado tras otros (como `middleware()`, por ejemplo), este primer argumento desaparece.
+El primer argumento a `group()` es un *array* en el que se definen propiedades (atributos) comunes a todas las rutas del grupo. Por ejemplo, para añadir *middleware*, se asignará un *array* con nombres de *middleware* a la propiedad ***middleware***, etc.:
 
-Dar nombre a un grupo de rutas es útil, por ejemplo, para asignar *middleware* a ese grupo a través de los archivos de configuración de *laravel*.
-
-## Aclaraciones sobre rutas
-
-Las rutas mapean una *URI* a un recurso, como una vista, un controlador, un archivo, etc. Para ello, **todas** las *requests* tienen que entrar por ***public/index.php***. A partir de ahí, el *script* ya gestiona la *request* según la *URI*. Por lo tanto, es necesario que se reescriban las *URLs* en el servidor, para evitar tener que teclear *URLs* largas y desagradables (de forma similar a lo que sucede en aplicaciones como *MediaWiki*).
-
-Veamos un ejemplo práctico. Para comprender el ejemplo, véase la documentación del servidor *Apache*:
-
-Supongamos que disponemos de un servidor *HTTP Apache 2*, y tenemos una aplicación *Laravel* en ***/home/user/aplicaciones/larapps/larapp1***. Queremos que la aplicación sea accesible mediante ***http://servidor.com/larapp1***, y se accediera a las diferentes páginas de la aplicación mediante *URLs* del estilo ***http://servidor.com/larapp1/ruta/pagina***.
-
-Cuando instalamos una aplicación *Laravel* nueva obtenemos un archivo ***.htaccess*** por defecto en el directorio ***public***. En él encontramos las directivas necesarias para obtener el resultado mencionado. Si nuestro servidor no permite el *override* con archivos ***.htaccess***, se deberá tener esa configuración dentro del directorio ***public***.
-
-Este es un buen ejemplo de configuración por defecto de *Laravel* en ***public***:
-
-```
-Alias /larapp1 /home/user/aplicaciones/larapps/larapp1/public
-
-<Directory /home/user/aplicaciones/larapps/larapp1/public>
-    RewriteEngine On
-
-    # Gestión de la cabecera de autorización:
-    RewriteCond %{HTTP:Authorization} .
-    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-    # Redirige sin barras finales si no es una carpeta:
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
-
-    # Envía requests al front controller (public/index.php):
-    RewriteBase /larapp1/
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ index.php [L]
-</Directory>
+```php
+Route::group(['middleware' => ['api', 'web'], 'prefix' => 'admin'], function() {
+    // Definición de las rutas del grupo
+});
 ```
 
-Como vemos, lo primero es la creación de un *alias* desde la *URI* deseada hasta el directorio ***public*** de la aplicación concreta (donde reside ***index.php***).
+Existe otra forma de crear grupos. En lugar de utilizar el método estático `Route::group()` con las propiedades en un *array*, podemos definir estas propiedades mediante métodos encadenados, siendo el método `group()` (no estático) una de las posibilidades en la cadeana, en cuyo caso solo recibe un argumento (la *closure* con las definiciones de las rutas). En todo caso, el método `group()` debe ser el último de la cadena.
 
-Una vez dentro de la configuración del directorio ***public***, encontramos tres acciones:
+Para definir el *middleware* que afectará al grupo:
 
-- La gestión de la cabecera de autorización, en caso de autenticación en el servidor, recoge la información de esa cabecera y la asigna a una variable del servidor (en este caso, llamada ***HTTP_AUTHORIZATION***). Si no necesitamos tal información, puede obviarse esta acción.
-- Redirección que elimina barras finales cuando la *URI* no hace referencia a un directorio.
-- Reescritura que envía todas las *requests* (no directorio ni fichero) a la *URI* ***/larapp1/index.php***, que se corresponde con el archivo ***/home/user/aplicaciones/larapps/larapp1/public/index.php***.
+```php
+Route::middleware(['miduno', 'middos'])->group(function () {
+    // Definición de las rutas
+});
+```
+
+Si solo afecta a una ruta:
+
+```php
+Route::get('/', function() {/*...*/})
+    ->middleware('web');
+```
+
+El orden de encadenamiento suele ser indiferente, con lo que también podría hacerse:
+
+```php
+Route::middleware('web')
+    ->get('/', function() {/*...*/});
+```
+
+Existen otros métodos para indicar propiedades para la ruta o grupo de rutas. Todos estos métodos pueden encadenarse a voluntad:
+
+`controller()` recibe el nombre del controlador *fully qualified* asociado a la ruta. `domain()` recibe el nombre de un subdominio (acepta también parámetros):
+
+```php
+Route::domain('{account}.example.com')->group(function () {
+    Route::get('user/{id}', function ($account, $id) {/*...*/});
+});
+```
+
+Para añadir un prefijo a todas las rutas sin tener que teclearlo en todas, se usa `prefix()`, pasándole un *string* con dicho prefijo.
+
+Si damos nombre con `name()` a un grupo de rutas, y en la definición de estas rutas también se les da nombre, el nombre del grupo se prefija al de la ruta. Si un grupo de rutas tiene nombre pero varias de sus rutas no lo tienen, deberemos ir con cuidado, ya que estas tendrán el misno nombre (el nombre del grupo).
+
+Dar nombre a un grupo de rutas sin nombre es útil, por ejemplo, para asignar *middleware* a ese grupo a través de los archivos de configuración de *Laravel*.
+
+### *Binding* de modelos
+
+Es posible inyectar un modelo *Eloquent* directamente a partir de su ID en la *URL*:
+
+```php
+use App\Models\Coche;
+// Binding implícito:
+Route::get('/coches/{coche}', function (Coche $coche) {
+    return $coche->marca;
+});
+```
+
+También es posible inyectarlo en el controlador:
+
+```php
+Route::get('/coches/{coche}', [MiController::class, 'show']);
+ // En la definición del método show():
+public function show(Coche $coche) { /*...*/ }
+```
+
+Si en lugar del campo ID deseamos que se haga por otro campo, debemos indicarlo:
+
+```php
+Route::get('/coches/{coche:matricula}', function (Coche $coche) { /*...*/ });
+```
+
+Si queremos que el campo **por defecto** no sea ID, deberemos *override* el método `getRouteKeyName()` del modelo *Eloquent*:
+
+```php
+public function getRouteKeyName() {
+    return 'matricula';
+}
+```
+
+Por defecto se recibe una respuesta 404 si no se encuentra coincidencia.
+
+### Ruta *fallback*
+
+Con el método `fallback()` definimos la acción para las rutas que no hayan encontrado *match*. Normalmente será una acción de "página no encontrada":
+
+```php
+Route::fallback(function() { /*...*/ });
+```
+
+### *Method spoofing*
+
+Dado que los formularios *HTML* solo permiten métodos ***GET*** y ***POST***, si deseamos enviar el formulario mediante otro método, usaremos la directiva *Blade* `@method()` a la que pasaremos un string con el método deseado (***PUT***, ***DELETE***, etc.).
+
+### Aclaraciones sobre rutas
+
+Las rutas mapean una *URI* a un recurso, como una vista, un controlador, un archivo, etc. Para ello, **todas** las *requests* tienen que llegar al *front controller* ***public/index.php***. Por lo tanto, es necesario que el servidor tenga las reescrituras habilitadas.
+
+Al crear un proyecto, obtenemos las reescrituras adecuadas para el módulo ***rewrite*** de *Apache* en ***public/.htaccess***.
+
 
 ## *Middleware*
 

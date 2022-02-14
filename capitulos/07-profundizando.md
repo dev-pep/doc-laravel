@@ -590,7 +590,7 @@ Si nuestro paquete tiene rutas, se pueden cargar así, dentro de la definición 
 $this->loadRoutesFrom($rutaArchivo);
 ```
 
-Es importante indicar que las rutas en el directorio estándar (***routes***) de la aplicación, se cargan automáticamente a través del ***RouteServiceProvider*** por defecto de *laravel*. Este proveedor, les aplica a estas, el *middleware* ***web*** o ***api***, según sea el caso. Pero este *middleware* no se aplica a rutas cargadas por nuestro proveedor, con lo que deberíamos aplicarlo a mano:
+Es importante recordar que las rutas en el directorio estándar (***routes***) de la aplicación, se cargan automáticamente a través del ***RouteServiceProvider*** por defecto de *laravel*. Este proveedor, les aplica a estas, el *middleware* ***web*** o ***api***, según sea el caso. Pero este *middleware* no se aplica a rutas cargadas por nuestro proveedor, con lo que deberíamos aplicarlo a mano:
 
 ```php
 Route::middleware('web')
