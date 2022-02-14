@@ -266,10 +266,9 @@ Las rutas mapean una *URI* a un recurso, como una vista, un controlador, un arch
 
 Al crear un proyecto, obtenemos las reescrituras adecuadas para el módulo ***rewrite*** de *Apache* en ***public/.htaccess***.
 
-
 ## *Middleware*
 
-Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, independientemente de la *url*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
+Se trata de componentes (filtros) por los que pasa toda petición *HTTP* antes de ser atendida, en función de la *URI*. Por ejemplo, el *middleware* que verifica si el usuario está autenticado, redirigirá el *request* hacia la página solicitada o hacia la página de *login*.
 
 El *middleware* se ubica en ***app/Http/Middleware***. Para crear uno nuevo:
 
@@ -279,7 +278,7 @@ php artisan make:middleware NombreMiddleware
 
 Esto creará la clase ***App\\Http\\Middleware\\NombreMiddleware*** en el archivo ***app/Http/Middleware/NombreMiddleware.php***.
 
-*Laravel* irá ejecutando los *middlewares* sucesivamente. Para ello, si definen un método `handle()`, este será llamado. Este método define como primer parámetro, la *request*, y como segundo, una *closure* (de la clase `Closure`, lógicamente) que deberemos usar para seguir con el *pipeline* de *middlewares*.
+*Laravel* irá ejecutando los *middlewares* sucesivamente. Para ello, si definen un método `handle()`, este será llamado. Este método define como primer parámetro, la *request*, y como segundo, una *closure* (de tipo ***Closure***) que deberemos usar para seguir con el *pipeline* de *middlewares*.
 
 ```php
 public function handle($request, Closure $next)
@@ -291,17 +290,17 @@ public function handle($request, Closure $next)
 }
 ```
 
-En el ejemplo vemos el uso que se debe dar a la *closure* si deseamos que el *middleware* tenga éxito ("pase") y siga a otra cosa. En caso contrario, deberemos retornar alguna otra cosa (en el ejemplo, una redirección, con lo que el *middleware* no "pasaría" el test).
+Si decidimos que el *middleware* tiene éxito y siga la cadena, se debe retornar el resultado de la *closure* a la que se pasa el objeto *request*. En caso contrario, retornará algún tipo de respuesta (en el ejemplo, una redirección).
 
 Habría que tener cuidado a la hora de redirigir. Si por ejemplo redirigimos a una ruta que usa el mismo *middleware* podríamos ocasionar una redirección cíclica infinita.
 
-El ejemplo anterior realiza sus acciones antes de que la *request* sea atendida. Pero podemos hacer que realice acciones posteriormente a ser atendida. En ese caso, lo que deberemos retornar será la *response*, que obtendremos así:
+El ejemplo anterior realiza sus acciones **antes** de que la *request* sea atendida. Pero podemos hacer que realice acciones **posteriormente** a ser atendida. En ese caso, lo que deberemos retornar será la *response*, que obtendremos así:
 
 ```php
 public function handle($request, Closure $next)
 {
     // Acciones previas al tratamiento de la request
-    $response = $next($request);
+    $response = $next($request);    // invocación de la closure
     // Acciones posteriores al tratamiento de la request
     return $response;
 }
@@ -309,31 +308,34 @@ public function handle($request, Closure $next)
 
 ### Registro de *middleware*
 
-Para añadir el *middleware* de forma **global**, es decir, para que se ejecute siempre ante cualquier *request*, debemos registrar la clase del *middleware* añadiendo su nombre en la propiedad ***$middleware*** de la clase en ***app/Http/Kernel.php***.
+Para añadir el *middleware* de forma **global**, es decir, para que se ejecute siempre ante cualquier *request*, debemos registrar la clase del *middleware* añadiendo su nombre (*fully qualified*) en la propiedad ***$middleware*** de la clase en ***app/Http/Kernel.php***.
 
-Si queremos registrarlo solo para **rutas específicas**, lo haremos en la propiedad ***$routeMiddleware*** de la misma clase. En este caso, añadiremos un elemento a ese *array* con una *key* de nuestra elección, a la que nos referiremos más tarde. El valor, será el nombre de la clase *middleware*.
-
-Una vez hecho esto, para asociar ese *middleware* a una ruta específica, lo haremos encadenando una llamada al método `middleware()` tras la definición de la ruta, a la que pasaremos como argumento el nombre de esa clave que elegimos en el paso anterior:
+Por otro lado, la propiedad ***$routeMiddleware*** de la misma clase asocia una clave *string* a cada clase *middleware* (nombre completo). Podemos añadir un elemento a ese *array* con una clave relevante, y ya estaremos en condiciones de asociar ese *middleware* a una ruta o grupo de rutas mediante el método `middleware()`.
 
 ```php
-Route::get('admin/profile', function () {
-    // Definición de la ruta
-})->middleware('auth');
+Route::get('admin/profile', function () { /*...*/ })
+    ->middleware('auth');
 ```
 
-El método `middleware()` acepta un número arbitrario de argumentos, de tal modo que podemos asociar más de un *middleware* a una ruta. Por otro lado, en lugar de la *key* con la que se registró ese *middleware* también podemos usar el nombre completo de la clase (así no habría necesidad de registrar esa clave en ***$routeMiddleware***).
+El método `middleware()` acepta un *array* de *strings*, un solo *string*, o un número arbitrario de ellos, de tal modo que podemos asociar un o más *middlewares* a una ruta (o grupo de rutas). Por otro lado, en lugar de la clave con la que se registró ese *middleware* podemos usar el nombre completo de la clase (así no habría necesidad de registrarla en ***$routeMiddleware***).
 
-Se pueden agrupar varios *middlewares* bajo un grupo. Esto se define en la propiedad ***$middlewareGroups*** de la clase en ***app/Http/Kernel.php***. Cada grupo tendrá una *key* de nuestra elección a la que se podrá hacer referencia con el método `middleware()` de la misma forma que se ha visto. El valor correspondiente a esa clave será un *array* con la lista de todas las clases *middleware* que queramos.
+### Grupos de *middleware*
 
-#### Otros métodos
+Se pueden crear grupos de *middlewares*. Esto se define en la propiedad ***$middlewareGroups***. Cada grupo tendrá una clave, de forma similar que se ha visto. El valor correspondiente a esa clave será un *array* con la lista de todas las clases *middleware* que queramos. Luego, al usar dicha clave en `middleware()`, se usarán todos los *middlewares* del grupo.
 
-A parte de los métodos vistos, existe también `middlewareGroup()`, que registra un nuevo grupo de *middleware*. El primer argumento es el nombre del grupo, y el segundo es un *array* con nombres de *middleware*, de grupos de *middleware* o de clases *middleware*.
+Por defecto, existen los grupos ***web*** y ***api***, que son registrados automáticamente por ***RouteServiceProvider***.
 
-Por otro lado, tenemos acceso también al método `getMiddlewareGroups()`, o `getMiddleware()`, que nos darán información sobre los grupos y nombres de *middleware* registrados.
+> También es posible registrar grupos de *middleware* mediante `middlewareGroup()`, que registra el grupo indicado. El primer argumento es el nombre del grupo, y el segundo es un *array* con nombres de *middleware*, de grupos de *middleware* o de clases *middleware*.
+>
+> Por otro lado, tenemos acceso también al método `getMiddlewareGroups()`, o `getMiddleware()`, que nos darán información sobre los grupos y nombres de *middleware* registrados.
+
+### Exclusión de *middleware*
+
+Si asignamos un *middleware* a un grupo, pero queremos que no afecte a una de las rutas del grupo (o a un grupo entero), se debe excluir ese *middleware* de esa ruta específica, mediante `excludeMiddleware()`, que admite los mismos parámetros que `middleware()`.
 
 ### Parámetros al *middleware*
 
-Es posible pasar parámetros a nuestro *middleware*. Estos se recogen a partir del tercer parámetro del método `handle()`.
+Es posible pasar parámetros a nuestro *middleware*. Estos se recogen a partir del tercer parámetro del método `handle()` en adelante.
 
 Para pasar los parámetros se haría mediante el método `middleware()` de la ruta, tras dos puntos (***:***), y separándolos por comas. En la definición de `handle()`:
 
@@ -350,42 +352,6 @@ Route::get('cliente', function () {
 ```
 
 Un *middleware* que esté registrado a nivel global no necesita definir parámetros (no tendría mucho sentido). Además, siempre nos queda acceder a la información de entrada que lleva la *request*.
-
-## Encadenado de métodos para las rutas
-
-Todos estos métodos de ***Route*** retornan un objeto ***Route***, con lo que el valor de retorno de cada uno de ellos puede encadenarse con otro. En este caso, el orden no es importante. Para definir, por ejemplo un *middleware* para un grupo de rutas, da igual, por ejemplo, hacer esto:
-
-```php
-Route::middleware(/* middlewares */)
-      -> group(/* definición grupo */)
-      -> name(/* nombre grupo */);
-```
-
-Que esto:
-
-```php
-Route::group(/* definición grupo */)
-      ->middleware(/* middlewares */)
-      -> name(/* nombre grupo */);
-```
-
-Podemos definir un prefijo para todas las *URLs* del grupo y así evitar teclear tal prefijo en cada definición de `Route`:
-
-```php
-Route::prefix('/api')
-    -> group(/* definición grupo */);
-```
-
-El prefijo se puede definir también en el **nombre** de las rutas de un grupo:
-
-```php
-Route::name('admin.')  // prefijo
-    -> group(function() {
-        Route::get(/* definición de la ruta */) -> name('uno');  // admin.uno
-        Route::get(/* definición de la ruta */) -> name('dos');  // admin.dos
-        // ...
-    });
-```
 
 ## Controladores
 
