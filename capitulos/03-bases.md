@@ -12,7 +12,7 @@ Route::get('foo', function() {
 });
 ```
 
-En este caso, al hacer una petición ***GET*** de la *URI* ***foo***, simplemente obtendremos la salida ***Hello, world!***.
+Lo retornado por esta *closure* es precisamente la respuesta a la *request*. Si no es un objeto respuesta, *Laravel* se encarga de convertirlo en un objeto respuesta. En el caso del ejemplo, al hacer una petición ***GET*** de la *URI* ***foo***, simplemente obtendremos a la salida ***Hello, world!***.
 
 El *service provider* ***RouteServiceProvider*** carga todas las rutas en el directorio ***routes***. El archivo ***web.php*** contiene las rutas de la interfaz web, y asocian al grupo de *middleware* web. En ***api.php*** están las rutas de la interfaz *API*, que al ser sin estado, no se asignan a ese grupo de *middleware*, sino al grupo *api*. En este caso, se le prefija ***/api*** a la *URI*.
 
@@ -355,34 +355,25 @@ Un *middleware* que esté registrado a nivel global no necesita definir parámet
 
 ## Controladores
 
-Para no tener que definir el manejo de los *requests* como *closures* en los archivos de rutas, se pueden usar controladores, que son clases que permiten agrupar lógica de tratamiento de peticiones. Los controladores están ubicados en ***app/Http/Controllers***.
+Para no tener que definir el manejo de los *requests* como *closures* en los archivos de rutas, se pueden usar controladores, que son clases que permiten encapsular la lógica de tratamiento de peticiones. Los controladores están ubicados en ***app/Http/Controllers***.
 
-Un controlador puede extender la clase ***App\\Http\\Controller*** si desea tener acceso a determinadas características. De lo contrario, no es obligatorio.
+Un controlador suele extender la clase ***App\\Http\\Controller***. Aunque no es obligatorio, si no lo hace se pierden algunas características de un controlador.
 
 Si queremos asignar una ruta a un método específico de un controlador:
 
 ```php
-Route::get('foo', 'NombreController@nombreMetodo');
+Route::get('foo/{id}', [MiController::class, 'miMetodo']);
 ```
 
-No es necesario especificar la ruta (*namespace*) completa del controlador, porque *Laravel* ya sabe que los controladores están en ***App\\Http\\Controllers***. Sin embargo, si están en *namespace* interior, sí hay que definirlo. Por ejemplo, si queremos asignar una ruta al método `show()` del controlador ***App\\Http\\Controllers\\Photos\\AdminController***:
+En este caso, se llamará al método `miMetodo()`, al que se la pasarán automáticamente como parámetro todos los parámetros de la *URI* (si los hay), en el orden en que aparecen.
+
+> En versiones de *Laravel* anteriores a la 8, el segundo parámetro de `get()` era, en lugar de un *array*, un *string* del tipo ***'MiController@nombreMetodo'***.
+
+Si el controlador contiene un método `__invoke()`, este será invocado por defecto si al definir la ruta no especificamos nombre de método (solo nombre del controlador):
 
 ```php
-Route::get('foo', 'Photos\AdminController@show');
+Route::get('foo', MiController::class);
 ```
-
-Si nuestros controladores están en un *namespace* no estándar, se puede usar el método `namespace()`:
-
-```php
-Route::namespace('Un\Controller\Namespace')
-    -> get('foo', 'NombreController@nombreMetodo');
-```
-
-Esto registra la ruta ***foo*** para que invoque ***nombreMetodo()*** de ***Un\Controller\Namespace\NombreController***.
-
-Por convenio, el nombre de una clase de controlador termina en "Controller".
-
-Si el controlador **únicamente** maneja una sola acción, se puede definir un método `__invoke()`, que será invocado por defecto si al definir la ruta no especificamos nombre de método (solo nombre del controlador).
 
 Para crear un controlador:
 
@@ -392,11 +383,31 @@ php artisan make:controller nombreController
 
 Si queremos que sea invocable (con método `__invoke()`), añadimos `--invokable`.
 
-Cuando enrutamos a un método de controlador, si este requiere parámetros, se añaden en un *array*:
+Por convenio, el nombre de una clase de controlador termina en "Controller".
+
+### *Middleware* de un controlador
+
+Normalmente asignábamos el *middleware* a una ruta o conjunto de rutas. Es posible asignar *middleware* a un controlador, independientemente de la ruta. Para ello se usará el método `middleware()` del controlador:
 
 ```php
-Route::get('foo', 'NombreController@nombreMetodo', ['parm1' => 3, 'parm2' => 'hello']);
+class MiController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('log')->only('index');
+        $this->middleware('subscribed')->except('store');
+        $this->middleware(function ($request, $next) {
+            // Función middleware
+            return $next($request);  // por ejemplo
+        });
+    }
+}
 ```
+
+En este ejemplo, siempre que se invoque el controlador ***MiController***, se ejecutará el *middleware* con nombre ***auth*** (también se podría indicar el nombre de la clase *middleware*). En el caso de que el método (del controlador) que se vaya a ejecutar sea `index()`, se ejecutará también el *middleware* ***log***. Y en caso de que el método no sea `store()`, se ejecutará el *middleware* ***subscribed***. Por otro lado, la última sentencia indica que se ejecutará siempre el *middleware* definido por la *closure*, evitando así tener que crear una clase *middleware* completa.
+
+Los métodos `only()` y `except()` aceptan un *string* o un *array* de *strings*.
 
 ### *Resource controllers*
 
@@ -406,13 +417,13 @@ Los controladores de recursos manejan todas las operaciones *CRUD* relacionadas 
 php artisan make:controller CocheController --resource
 ```
 
-A continuación, deberíamos definir las rutas para cada una de las operaciones *CRUD*, pero *laravel* facilita mucho el trabajo permitiéndonos definir todas esas rutas en una sola línea:
+A continuación, deberíamos definir las rutas para cada una de las operaciones *CRUD*, pero *Laravel* facilita mucho el trabajo permitiéndonos definir todas esas rutas en una sola línea:
 
 ```php
-Route::resource('coches', 'CocheController');
+Route::resource('coches', CocheController::class);
 ```
 
-Automáticamente, se acaban de definir estas rutas, las cuales, además tienen un nombre asociado:
+Automáticamente, se acaban de definir estas rutas, las cuales, además, tienen un nombre asociado:
 
 | Método HTTP | URI               | Método  | Nombre de la ruta |
 | :---------- | :---------------- | :------ | :---------------- |
@@ -424,9 +435,9 @@ Automáticamente, se acaban de definir estas rutas, las cuales, además tienen u
 | PUT/PATCH   | /coches/{id}      | update  | coches.update     |
 | DELETE      | /coches/{id}      | destroy | coches.destroy    |
 
-El método `index()` sirve, básicamente para la presentación de la tabla en pantalla, `create()` para presentar un formulario para introducir un elemento (registro) nuevo en la tabla, `store()` para insertar un elemento nuevo (con los datos enviados), `show()` debe retornar la información de un registro concreto para, por ejemplo, mostrar en pantalla, `edit()` para mostrar un formulario para editar un registro existente, `update()` para modificar un registro existente (con los datos enviados), y `destroy()` para eliminar un registro concreto.
+El método `index()` sirve, básicamente, para la presentación de la tabla en pantalla; `create()` para presentar un formulario para introducir un elemento (registro) nuevo en la tabla; `store()` para insertar un elemento nuevo (con los datos enviados); `show()` debe retornar la información de un registro concreto para, por ejemplo, mostrar en pantalla; `edit()` para mostrar un formulario para editar un registro existente; `update()` para modificar un registro existente (con los datos enviados); y `destroy()` para eliminar un registro concreto.
 
-Varios de estos métodos precisarán también de datos de entrada en la *request*. En cuanto a las *URIs* con parámetros (***id***), deberían contener información que permitiera identificar un registro concreto unívocamente (normalmente será la clave primaria).
+Varios de estos métodos precisarán también de datos de entrada en la *request*. En cuanto a las *URIs* con parámetros (***id***), deberían contener información que permitiera identificar un registro concreto unívocamente (normalmente ***id*** será la clave primaria).
 
 Si tuviéramos más de un *resource controller* podríamos incluir una línea para cada uno, o usar una sola sentencia, usando un *array*, de esta forma:
 
@@ -437,27 +448,22 @@ Route::resource([
 ]);
 ```
 
-Deberemos crear todas las vistas que necesitemos, con los formularios adecuados. Sin embargo, los formularios *HTML* solo permiten enviar datos mediante los métodos ***GET*** y ***POST*** de *HTTP*. Para enviar formularios mediante ***PUT***, ***PATCH*** o ***DELETE***, deberemos usar la directiva *Blade* `@method()` dentro del formulario:
+Deberemos crear todas las vistas que necesitemos, con los formularios adecuados. Cuando necesitemos un formulario que envíe datos mediante métodos distintos de ***GET*** y ***POST***, usaremos la directiva *Blade* `@method()`, como ya hemos visto.
+
+A parte del método `middleware()`, los métodos `only()` y `except()` también se pueden usar en la definición de las rutas:
 
 ```php
-@method('PATCH')
+Route::resource('coches', CocheController::class)->only(['index', 'show']);
 ```
 
-Si deseamos desarrollar un *resource controller* que no implemente todas las acciones arriba mencionadas, podemos usar los métodos `only()` o `except()`:
+### *API Resource controllers*
 
-```php
-Route::resource('coches', 'CocheController') -> only(['index', 'show']);
-Route::resource('fotos', 'FotoController') -> except(['create', 'store', 'update']);
-```
-
-#### Rutas de *Resource controllers* de *APIs*
-
-Podemos definir controladores de recursos que ofrecerán una *API*. En este caso, normalmente no desearemos definir algunas de las acciones mencionadas anteriormente, sobre todo las que presentan formularios para rellenar. Específicamente, las acciones `create()` y `edit()`.
+Podemos definir controladores de recursos que ofrecerán una *API*. En este caso, normalmente no desearemos definir algunas de las acciones mencionadas anteriormente, sobre todo las que presentan formularios para rellenar (concretamente las acciones `create()` y `edit()`).
 
 Para crear las rutas de un *API resource controller*, que no incluirán los dos métodos mencionados, lo haremos mediante:
 
 ```php
-Route::apiResource('coches', 'CocheController');
+Route::apiResource('coches', CocheController::class);
 ```
 
 Estas *APIs* recibirán normalmente una petición (en consonancia con las rutas definidas arriba), y cuando sea necesario retornarán la información soliciatada. En el caso de una *API REST*, un objeto en formato *JSON*.
@@ -478,17 +484,26 @@ Si lo que queremos es agrupar todos los controladores *API* en un directorio ***
 php artisan make:controller Api/CocheController --api
 ```
 
-Al crear estos archivos, *laravel* ya coloca las clases en los *namespaces* adecuados. En el último caso, la clase sería ***App\\Http\\Controllers\\Api\\CocheController***, y la definición de la ruta (en ***api.php***) se haría:
-
-```php
-Route::apiResource('coches', 'Api\CochesController');
-```
+Al crear estos archivos, *Laravel* ya coloca las clases en los *namespaces* adecuados. En el último caso, la clase sería ***App\\Http\\Controllers\\Api\\CocheController***.
 
 En todo caso, para comprobar todas las rutas definidas en el proyecto:
 
 ```
 php artisan route:list
 ```
+
+### Inyección de dependencias
+
+Es posible inyectar cualquier dependencia en los parámetros de los métodos de un controlador. En este caso, las dependencias se inyectarán en los parámetros *type-hinted*, que deben ir antes de los posibles parámetros de la ruta.
+
+
+
+
+
+
+
+
+
 
 ## Peticiones (*requests*)
 
