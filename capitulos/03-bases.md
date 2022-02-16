@@ -653,7 +653,7 @@ Para acceder a un archivo subido en la actual *request*, se usa el método `file
 ```php
 $archivo = $req->file('photo');
 // Equivale a:
-$archivo = $req->subido;
+$archivo = $req->photo;
 ```
 
 Para comprobar se un campo archivo viene con contenido, o para ver si el archivo subido es válido:
