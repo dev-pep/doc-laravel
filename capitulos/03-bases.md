@@ -256,6 +256,8 @@ Con el método `fallback()` definimos la acción para las rutas que no hayan enc
 Route::fallback(function() { /*...*/ });
 ```
 
+En este caso, no se especifica *URI* como primer argumento.
+
 ### *Method spoofing*
 
 Dado que los formularios *HTML* solo permiten métodos ***GET*** y ***POST***, si deseamos enviar el formulario mediante otro método, usaremos la directiva *Blade* `@method()` a la que pasaremos un string con el método deseado (***PUT***, ***DELETE***, etc.).
@@ -496,47 +498,23 @@ php artisan route:list
 
 Es posible inyectar cualquier dependencia en los parámetros de los métodos de un controlador. En este caso, las dependencias se inyectarán en los parámetros *type-hinted*, que deben ir antes de los posibles parámetros de la ruta.
 
-
-
-
-
-
-
-
-
-
 ## Peticiones (*requests*)
 
-Se puede acceder a la *request* actual a través de la inyección de dependencias al hacer un *type-hint* de la clase ***Illuminate\\Http\\Request***. El *service container*, en este caso, nos enviará una instancia de la petición entrante.
-
-El *service container* también enviará la instancia de la petición en caso de hacer el *type-hint* en una *closure*.
-
-Si por ejemplo nuestro método controlador espera entrada de un parámetro de la ruta, se deberá incluir ese parámetro después de los parámetros correspondientes a las dependencias. Por ejemplo, si definimos la ruta:
-
-```php
-Route::get('user/{id}', 'UserController@user');
-```
-
-Entonces, suponiendo que nuestro controlador quiera acceder a la *request* actual y al parámetro de la *URL*:
-
-```php
-namespace App\Html\Controllers;
-
-use Illuminate\Http\Request;
-
-class UserController extends Controller
-{
-    public function user(Request $req, $identidad) { /* ... */ }
-}
-```
+Existe un un objeto descriptivo de la *request* actual, al que se puede acceder a través de la inyección de dependencias, al hacer un *type-hint* de la clase ***Illuminate\\Http\\Request***. El *service container*, en este caso, nos enviará una instancia del objeto que describe la petición entrante. Cuando hablemos de la *request* nos referiremos normalmente a este objeto.
 
 ### Métodos de la *request* actual
 
-El método `path()` retorna la *URI*.
+El método `path()` retorna la *URI* actual. La *URI* no empieza por barra (***/***), a no ser que se refiera a la *URI* raíz, en cuyo caso consistirá en una simple barra.
 
 El método `is()` comprueba si la *URI* coincide con cierto patrón que se le pasa como argumento (permite *wildcards*).
 
-`url()` retorna la *URL* completa, pero sin la *query string*, mientras que `fullUrl()` la incluye.
+`url()` retorna la *URL* completa (incluyendo protocolo), pero sin la *query string*, mientras que `fullUrl()` la incluye. En el caso de `url()`, no terminará nunca con una barra, ya que las reescrituras por defecto eliminan la barra final.
+
+Si además deseamos añadir parámetros extra a la *query string*:
+
+```php
+$ruta = $request->fullUrlWithQuery(['marca' => 'ACME', 'modelo' => '33']);
+```
 
 Para obtener el verbo (método) *HTTP*, `method()` retorna este. También existe `isMethod()`:
 
@@ -545,16 +523,36 @@ if($req->isMethod('post'))
     /* ... */
 ```
 
-Con el método `all()` se pueden obtener todos los datos de entrada, el cual devuelve un *array*.
+Con el método `header()` podemos obtener el valor de una cabecera que esté incluida en la *request*. Si no existe tal cabecera, retornará ***null***, aunque en ese caso podemos especificar un segundo argumento con el valor por defecto, en caso de que no exista la cabecera:
 
-El método `input()` retorna un dato de entrada independientemente del verbo *HTTP* usado:
+```php
+$valor1 = $request->header('Nombre-Cabecera1');
+$valor2 = $request->header('Nombre-Cabecera2', 'Valor por defecto');
+```
+
+Para comprobar si existe una cabecera:
+
+```php
+if($request->hasHeader('Nombre-Cabecera'))
+    /* ... */
+```
+
+Para obtener la *IP* del cliente, podemos usar el método `ip()`.
+
+### Datos de entrada
+
+Con el método `all()` se pueden obtener todos los datos de entrada (independientemente del método *HTTP*) en un *array*, tanto si se trata del envío de un formulario como de una petición *AJAX*.
+
+En lugar de un *array* podemos obtener todos los datos de entrada en una *collection* mediante el método `collection`.
+
+El método `input()` retorna un dato de entrada, cuyo nombre debemos especificar como argumento:
 
 ```php
 $valor1 = $req->input('name');
 $valor2 = $req->input('age', 20);
 ```
 
-En el segundo caso, se le ha dado un valor por defecto (que retorna cuando no encuentra ese dato).
+En el segundo caso, se le ha dado un valor por defecto. Si no se especifica, retornará ***null*** cuando no exista el campo.
 
 Si el formulario contiene *arrays*, se usa la notación con punto (***.***) para acceder a estos:
 
@@ -567,7 +565,11 @@ Si no indicamos ningún argumento, retornará un *array* con todos los datos.
 
 Si solo deseamos los datos del *query string*, se usa el método `query()`, cuyo uso es igual al de `input()`.
 
-Se puede usar una propiedad dinámica de ***Request*** para acceder a los datos:
+Si queremos obtener datos *json* de una *json request*, usaremos el método `input()`. Para acceder al contenido se usará la notación con punto para indicar la jerarquía.
+
+Si queremos obtener un valor de entrada como *booleano*, en lugar de `input()` usaremos el método `boolean()` al que pasaremos el nombre del campo. De forma similar, para fecha existe el método `date()`, que retornará una instancia de la clase ***Carbon***; los argumentos segundo y tercero (opcionales) indican formato y zona horaria.
+
+Se puede usar una propiedad (dinámica) del objeto ***Request*** para acceder a los datos:
 
 ```php
 $valor = $req->name;
@@ -575,15 +577,7 @@ $valor = $req->name;
 
 Primero buscará un dato de entrada con ese nombre, y si no lo encuentra, lo buscará en los parámetros de la ruta, si los hay.
 
-Si queremos obtener datos *json* de una *json request*, usaremos el método `input()`. Para acceder al contenido se usará la notación con punto.
-
-Si queremos leer un valor como booleano, el método `boolean()` retorna ***true*** si el contenido del dato es 1, "1", true, "true", "on" o "yes". En los demás casos retornará ***false***:
-
-```php
-$archived = $req->boolean('archived');
-```
-
-Si deseamos obtener solo un subconjunto de los datos de entrada, podemos usar los métodos `only()` o `except()`, a los que pasaremos la lista de los datos que deseamos obtener, ya sea en una lista de argumentos, o en un *array* con todos ellos.
+Si deseamos obtener solo un subconjunto de los datos de entrada, podemos usar los métodos `only()` o `except()`, a los que pasaremos la lista de los campos que deseamos obtener. La lista puede ser un número arbitrario de argumentos *string*, o un *array* con todos ellos.
 
 Para saber si un dato concreto está presente:
 
@@ -600,23 +594,69 @@ if($req->hasAny(['name', 'age', 'height'])) ...
 
 Retornará ***true*** si por lo menos uno de ellos está presente.
 
+El método `whenHas()` ejecuta la *closure* indicada como segundo argumento, siempre y cuando la entrada incluya el campo indicado en el primer argumento. El tercer argumento, opcional, es otra *closure* que se ejecutará si el campo no está incluido.
+
+```php
+$req->whenHas('name', function() {/*...*/}, function() {/*...*/});
+```
+
 El método `filled()` es como `has()` con un argumento no *array*, pero retornará ***false*** en el caso que el dato exista pero esté vacío.
+
+El método `whenFilled()` es a `filled()` lo que `whenHas()` es a `has()`.
 
 El método `missing()` es el inverso de `has()`.
 
-Para obtener el valor de una *cookie* (en *Laravel* están encriptadas y firmadas):
+Para añadir datos de entrada a la *request*, tenemos el método `merge()`, al que se pasará un *array* asociativo con todos los datos a añadir:
+
+```php
+$req->merge(['votes' => 0]);
+$req->mergeIfMissing(['votes' => 0]);
+```
+
+En el segundo caso, se añadirá solamente si el campo no existe previamente.
+
+#### Entrada antigua
+
+*Laravel* permite mantener los datos de entrada de la *request* actual para la próxima *request*. Especialmente útil para repopular formularios en los que la validación ha fallado en el lado del servidor y deben volver a presentarse. Sin embargo, no suele ser necesario, ya que existen algunas características de **validación** proporcionadas por *Laravel* que ya ejecutan este mecanismo automáticamente.
+
+El método `flash()` de la *request* flashea (inserta) **todos** los datos de entrada en la sesión, de tal modo que en el tratamiento de la subsiguiente petición estarán disponibles.
+
+Si solo deseamos flashear algunos campos, se pueden usar los métodos `flashOnly()` o `flashExcept()`, a los que se pasará un *string* o un *array* de *strings* con el nombre o nombres de los campos.
+
+Si se desea flashear los datos de entrada para redirigir a una página en concreto, se puede hacer utilizando los métodos `with()` o `withInput()`, como se verá en el apartado de respuestas de redirección.
+
+Una vez estemos gestionando la *request* en la que existen datos flasheados de la petición anterior en la sesión, se podrá acceder a estos mediante el método `old()` de la *request*.
+
+```php
+$antiguoNombre = $req->old('name');
+```
+
+Sin embargo, en lugares (como una plantilla *Blade*) en los que no tenemos acceso al objeto *request*, es útil usar el *helper* `old()`:
+
+```html
+<input type="text" name="username" value="{{ old('user') }}">
+```
+
+Si no existe tal dato antiguo, `old()` (tanto el método como el *helper*) retornará ***null***, a no ser que le indiquiemos como segundo argumento un valor por defecto.
+
+Para obtener el valor de una *cookie* (en *Laravel* están encriptadas y firmadas para evitar que sean editadas por el cliente):
 
 ```php
 $valor = $req->cookie('name');
 ```
 
-Otra manera es mediante la *facade* ***Cookie***:
+
+### Archivos
+
+Para acceder a un archivo subido en la actual *request*, se usa el método `file()`, al que se le pasa el nombre del campo correspondiente. También se puede acceder mediante propiedad dinámica:
 
 ```php
-$valor = Cookie::get('name');
+$archivo = $req->file('photo');
+// Equivale a:
+$archivo = $req->subido;
 ```
 
-Métodos relacionados con archivos subidos:
+Para comprobar se un campo archivo viene con contenido, o para ver si el archivo subido es válido:
 
 ```php
 if($req->hasFile('photo'))
@@ -624,9 +664,11 @@ if($req->hasFile('photo'))
 if $archivo->isValid() ...
 ```
 
-El método `file()` retorna una instancia de ***Illuminate\\Http\\UploadedFile***. A parte de `isValid()`, esta clase dispone de los métodos `path()` (la ruta completa del archivo) o `extension()` (extensión del archivo basada, no en la extensión proporcionada, sino en el contenido).
+El método `file()` retorna una instancia de ***Illuminate\\Http\\UploadedFile***. A parte de `isValid()`, esta clase dispone muchos otros métodos útiles. Podríamos mencionar `path()` (la ruta completa del archivo) o `extension()` (extensión del archivo basada, no en la extensión proporcionada, sino en el contenido).
 
-Es posible acceder a las variables del servidor mediante la instancia de la petición, como alternativa a usar ***\$_SERVER***, mediante el método `server()`.
+Para almacenar el archivo, se usará el método `store()` del ***UploadedFile***. El primer argumento es la ruta en disco por defecto configurado en *Laravel*. Si en lugar de ese disco deseamos guardar el archivo en otro disco, especificaremos el nombre del mismo como segundo argumento. El método guardará el archivo con un nombre único generado automáticamente. El método retorna la ruta del archivo (incluyendo dicho nombre), relativa al raíz del disco concreto.
+
+Si no deseamos que se guarde el archivo con un nombre autogenerado, usaremos el método `storeAs()`, al que se le debe pasar la ruta donde guardarlo, y el nombre deseado. Un tercer argumento opcional indicará el disco de destino.
 
 ## Respuestas (*responses*)
 
