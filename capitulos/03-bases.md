@@ -619,7 +619,7 @@ En el segundo caso, se añadirá solamente si el campo no existe previamente.
 
 *Laravel* permite mantener los datos de entrada de la *request* actual para la próxima *request*. Especialmente útil para repopular formularios en los que la validación ha fallado en el lado del servidor y deben volver a presentarse. Sin embargo, no suele ser necesario, ya que existen algunas características de **validación** proporcionadas por *Laravel* que ya ejecutan este mecanismo automáticamente.
 
-El método `flash()` de la *request* flashea (inserta) **todos** los datos de entrada en la sesión, de tal modo que en el tratamiento de la subsiguiente petición estarán disponibles.
+El método `flash()` de la *request* flashea (inserta) **todos** los datos de entrada en la sesión, de tal modo que en el tratamiento de (únicamente) la subsiguiente petición estarán disponibles.
 
 Si solo deseamos flashear algunos campos, se pueden usar los métodos `flashOnly()` o `flashExcept()`, a los que se pasará un *string* o un *array* de *strings* con el nombre o nombres de los campos.
 
@@ -637,14 +637,13 @@ Sin embargo, en lugares (como una plantilla *Blade*) en los que no tenemos acces
 <input type="text" name="username" value="{{ old('user') }}">
 ```
 
-Si no existe tal dato antiguo, `old()` (tanto el método como el *helper*) retornará ***null***, a no ser que le indiquiemos como segundo argumento un valor por defecto.
+Si no existe tal dato antiguo, `old()` (tanto el método como el *helper*) retornará ***null***, a no ser que le indiquemos como segundo argumento un valor por defecto.
 
-Para obtener el valor de una *cookie* (en *Laravel* están encriptadas y firmadas para evitar que sean editadas por el cliente):
+Para obtener el valor de una *cookie*:
 
 ```php
 $valor = $req->cookie('name');
 ```
-
 
 ### Archivos
 
@@ -672,9 +671,11 @@ Si no deseamos que se guarde el archivo con un nombre autogenerado, usaremos el 
 
 ## Respuestas (*responses*)
 
-Ante cualquier *request*, nuestra aplicación debe retornar una *response*. En nuestros controladores o rutas, debemos retornar una *response*. No es necesario crear un objeto de tipo respuesta. Podemos retornar simplemente un *string* de texto, o código *HTML* (directamente, o pasando una plantilla *Blade* al *helper* `view()`): *Laravel* ya se encarga de construir la respuesta (con sus cabeceras, etc.) a partir de lo que nosotros retornamos. También podemos retornar un *array*, que el *framework* convertirá en una respuesta *JSON*.
+Ante cualquier *request*, toda ruta, a través de una *closure* o un controlador, debe retornar una *response*. No es necesario crear un objeto de tipo respuesta: lo que retornemos será convertido en respuesta automáticamente. Podemos retornar simplemente un *string*, o código *HTML* (directamente, o pasando una plantilla *Blade* al *helper* `view()`). También podemos retornar un *array* o *collection* (incluso un modelo *Eloquent*), que el *framework* convertirá en una respuesta *JSON*.
 
-El objeto respuesta es ***Illuminate\\Http\\Response***. Si queremos tener más control sobre la respuesta, podemos construir el objeto y personalizarlo (código de respuesta, cabeceras *HTTP*, etc.):
+*Laravel* se encarga de construir la respuesta (con sus cabeceras, etc.) a partir de lo que nosotros retornamos.
+
+El objeto respuesta es de tipo ***Illuminate\\Http\\Response***. Si queremos tener más control sobre esta respuesta, podemos construir el objeto y personalizarlo (código de respuesta, cabeceras *HTTP*, etc.):
 
 ```php
 return response($contenido)
@@ -690,18 +691,38 @@ return response($contenido)
                            'Otro-header' => 'valor otro header']);
 ```
 
-El *helper* `response()` acepta un primer argumento con el contenido de tal respuesta (dependiendo del tipo de respuesta, será texto, *JSON*, etc.). Como segundo argumento opcional, el código de la respuesta (200 es *OK*). Opcionalmente puede tener un tercer argumento con un *array* de encabezados.
+El *helper* `response()` acepta un primer argumento con el contenido de tal respuesta (*string*, vista, *array*, etc.). Como segundo argumento, opcional, el código de la respuesta (200 es *OK*). Opcionalmente puede tener un tercer argumento con un *array* de encabezados, aunque dichos encabezados se pueden añadir, como hemos visto, con el método `withHeaders()`.
 
-También se pueden añadir *cookies* a la respuesta. Se hace de la misma forma que el método `header()`, pero en este caso con el método `cookie()`, cuyos tres primeros parámetros son los más usados: nombre, valor y tiempo de vida (en minutos). Alternativamente se puede usar el *facade* ***Cookie*** para añadir *cookies* a la cola, que serán enviadas con la respuesta (mismos argumentos que opción anterior):
+También se pueden añadir *cookies* a la respuesta. Se hace de la misma forma que el método `header()`, pero en este caso con el método `cookie()`, cuyos tres primeros parámetros son los más usados: nombre, valor y tiempo de vida (en minutos).
+
+> Los parámetros de este método son equivalentes a los del método `setcookie()` de *PHP*.
+
+Alternativamente, en caso de no disponer de una instancia del objeto respuesta, se puede usar la *facade* ***Cookie*** para añadir *cookies* a la cola, que serán enviadas con la respuesta (mismos argumentos que el método `cookie()`:
 
 ```php
 Cookie::queue(Cookie::make($nombre, $valor, 120));
-Cookie::queue($nombre, $valor, 120);    // equivalente
+// Equivale a:
+Cookie::queue($nombre, $valor, 120);
+```
+
+En caso de querer eliminar una *cookie* de la respuesta, se puede usar el método `withoutCookie()`:
+
+```php
+return response($contenido)
+           ->withoutCookie('nombre');
+```
+
+Alternativamente, si no tenemos acceso al objeto respuesta, podemos usar nuevamente la *facade* ***Cookie***:
+
+```php
+Cookie::expire('nombre');
 ```
 
 Por defecto, las *cookies* están encriptadas y firmadas (no pueden ser modificadas por el cliente).
 
-Para generar una redirección como respuesta:
+### Redirecciones
+
+Una redirección es una respuesta de tipo ***Illuminate\Http\RedirectResponse***. Se trata de redirección externa (genera nueva *request* en el cliente). Para generar una redirección:
 
 ```php
 Route::get('dashboard', function() {
@@ -712,19 +733,33 @@ Route::get('dashboard', function() {
 Si hay que redirigir el usuario a su localización anterior, por ejemplo, si ha enviado un formulario inválido y hay que retroceder conservando los datos que ha tecleado:
 
 ```php
-return back();  // aquí se perderían los datos tecleados
-return back() -> withInput();    // aquí se conservan
+return back();  // así se perderían los datos tecleados
+return back()->withInput();    // así se conservan
 ```
 
-Lo que hace el método `withInput()` (de `back()`, o de `redirect()`, etc.) es *flashear* **los valores de la entrada** (como hace el método `flash()` de la *request*), de tal modo que en la siguiente *request* estarán disponibles (a través del *helper* `old()`). Esto puede ser útil para repetir la entrada de un formulario con datos anteriores. En la plantilla *Blade* del formulario habrá que hacer referencia a esos datos de `old()`, ya sea en el código *HTML*, o en *scripts JavaScript* que inicialicen los campos.
+Dado que este mecanismo utiliza la sesión, solo funcionará si este código está en una ruta que utiliza el *middleware* ***web*** (las peticiones *API* no usan sesión alguna).
+
+Lo que hace el método `withInput()` (con `back()`, o `redirect()`, etc.) es *flashear* **los valores de la entrada** (como hace el método `flash()` de la *request*), de tal modo que en la siguiente *request* estarán disponibles, como se ha visto, a través de `old()`.
+
+Para redirigir a una ruta con nombre:
+
+```php
+return redirect()->route('login');
+```
+
+Si la ruta corresponde a una *URI* con parámetros, se puede añadir como segundo argumento, opcional, un *array* con estos:
+
+```php
+return redirect()->route('perfil', ['id' => 1]);
+```
 
 Para redirigir a la acción de un controlador:
 
 ```php
-return redirect()->action('NombreController@metodo');
+return redirect()->action([NombreController::class, 'metodo']);
 ```
 
-Se puede pasar un segundo argumento con un *array* de parámetros.
+Se puede pasar un segundo argumento con un *array* de parámetros de la *URI*.
 
 Para redirigir a un sitio externo:
 
@@ -732,10 +767,20 @@ Para redirigir a un sitio externo:
 return redirect()->away('https://www.somedomain.com');
 ```
 
-Si además de retornar una respuesta personalizada como las que hemos visto, el contenido debe ser una vista, hay que añadir también el método `view()`:
+Para añadir datos concretos a la sesión al redirigir:
 
 ```php
-return response($contenido)
+return redirect('dashboard')->with('estado', '¡Todo correcto!');
+```
+
+En el tratamiento de la redirección (probablemente una plantilla *Blade*), se tendrá acceso a esos datos *flashed*, mediante `session('estado')`.
+
+### Otros tipos de respuesta
+
+Si además de retornar una respuesta personalizada como las que hemos visto, el contenido debe ser una vista, hay que añadir esta mediante el método `view()`:
+
+```php
+return response()
             ->header('Content-type', $type)
             ->view('vistaHello', $data, 200);
 ```
@@ -746,7 +791,7 @@ En caso de que no queramos personalizar cabeceras, y simplemente queramos retorn
 return view('vistaHello', $data, 200);
 ```
 
-Para una respuesta *JSON*, se puede usar el método `json()`, el cual establecerá automáticamente la cabecera ***'Content-Type'*** a ***'application/json'***, y convertirá el *array* proporcionado a formato *JSON* usando la función de *PHP* `json_encode()`:
+Para una respuesta *JSON*, se puede usar el método `json()`, el cual establecerá automáticamente la cabecera ***Content-Type*** a ***application/json***, y convertirá el *array* proporcionado a formato *JSON* usando automáticamente la función de *PHP* `json_encode()`:
 
 ```php
 return response()->json(['name' => 'Abigail', 'state' => 'CA']);
