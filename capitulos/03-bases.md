@@ -172,7 +172,7 @@ Route::group(['middleware' => ['api', 'web'], 'prefix' => 'admin'], function() {
 });
 ```
 
-Existe otra forma de crear grupos. En lugar de utilizar el método estático `Route::group()` con las propiedades en un *array*, podemos definir estas propiedades mediante métodos encadenados, siendo el método `group()` (no estático) una de las posibilidades en la cadeana, en cuyo caso solo recibe un argumento (la *closure* con las definiciones de las rutas). En todo caso, el método `group()` debe ser el último de la cadena.
+Existe otra forma de crear grupos. En lugar de utilizar el método `Route::group()` con las propiedades en un *array*, podemos definir estas propiedades mediante métodos encadenados, siendo el método `group()` el último método de la cadena, en cuyo caso solo recibe solo un argumento (la *closure* con las definiciones de las rutas). Debe ser el último de la cadena porque retorna ***null***.
 
 Para definir el *middleware* que afectará al grupo:
 
@@ -669,6 +669,12 @@ Para almacenar el archivo, se usará el método `store()` del ***UploadedFile***
 
 Si no deseamos que se guarde el archivo con un nombre autogenerado, usaremos el método `storeAs()`, al que se le debe pasar la ruta donde guardarlo, y el nombre deseado. Un tercer argumento opcional indicará el disco de destino.
 
+Resulta útil recalcar que en un formulario *HTML* la etiqueta `<form>` debe incluir el atributo ***enctype*** con valor ***multipart/form-data***, y que el método *HTTP* debería ser *POST*.
+
+```html
+<form action="subida.php" method="post" enctype="multipart/form-data">
+```
+
 ## Respuestas (*responses*)
 
 Ante cualquier *request*, toda ruta, a través de una *closure* o un controlador, debe retornar una *response*. No es necesario crear un objeto de tipo respuesta: lo que retornemos será convertido en respuesta automáticamente. Podemos retornar simplemente un *string*, o código *HTML* (directamente, o pasando una plantilla *Blade* al *helper* `view()`). También podemos retornar un *array* o *collection* (incluso un modelo *Eloquent*), que el *framework* convertirá en una respuesta *JSON*.
@@ -817,42 +823,55 @@ Los argumentos son la ruta del archivo en disco, y un *array* de cabeceras opcio
 
 ## Vistas
 
-Contienen el *HTML* servido, y separa los controladores (lógica de la aplicación) de la presentación.
+Contienen el *HTML* servido, y separa la lógica de presentación de todo lo demás.
 
-Se almacenan en ***resources/Views***.
+Se almacenan en ***resources/Views***, y tienen extensión ***.blade.php***.
 
-Cuando definimos una ruta así:
+Cuando definimos una ruta con el *helper* `view()`:
 
 ```php
 Route::get('/', function() {
-    return view('admin.greeting', ['name' => 'James', 'age' => 55]);
+    return view('saludo', ['nombre' => 'James', 'edad' => 55]);
 });
 ```
 
-Estamos retornando el contenido de la plantilla *Blade* ***resources/Views/admin/greeting.blade.php***, a la que le pasamos dos argumentos. Obsérvese la *dot notation* en la llamada a `view()`: los subdirectorios de vistas no deben contener el carácter punto (***.***).
+En este ejemplo, estamos retornando el contenido de la plantilla *Blade* ***resources/Views/saludo.blade.php***. En este caso estamos un segundo parámetro opcional con dos argumentos para la vista.
 
-Podemos comprobar si existe una vista a través de la *facade* ***View***:
+Si organizamos las vistas jerárquicamente, podemos usar *dot notation* en la especificación del nombre:
 
 ```php
-use Illuminate\Support\Facades\View;
-
-if(View::exists('email.customer.form')) ...
+Route::get('/', function() {
+    return view('admin.saludo');
+});
 ```
 
-Con el método `first()` se retorna la primera vista disponible de una lista:
+En este caso, retornamos la vista ***resources/Views/admin/saludo.blade.php*** (sin argumentos).
+
+Debido a esta notación, los subdirectorios de las vistas no deben contener el carácter punto (***.***).
+
+El *helper* `view()` equivale al método `make()` de la *facade* ***View***. Esta *facade* contiene otros métodos útiles. Por ejemplo, con el método `first()` se retorna la primera vista existente de una lista de vistas posibles:
 
 ```php
-return view()->first(['email.customer', 'customer', 'general.customer'], $args);
+return View::first(['email.customer', 'customer', 'general.customer'], $args);
 ```
 
 El *array* de argumentos es opcional.
 
-Los argumentos se pueden pasar a una vista mediante ese *array* en el segundo argumento de `view()`, o mediante el método `with()`:
+También podemos comprobar la existencia de una vista:
+
+```php
+if(View::exists('email.customer.form'))
+    /* ... */
+```
+
+### Paso de argumentos
+
+Los argumentos se pueden pasar a una vista mediante un *array*, como se ha visto, o utilizando el método `with()`:
 
 ```php
 return view('greeting')
-          ->with('name', 'James')
-          ->with('age', 55);
+           ->with('name', 'James')
+           ->with('age', 55);
 ```
 
 Es posible compartir datos entre todas las vistas de la aplicación, a través del método `share()` de la *facade* ***View***. Las llamadas para compartir datos se usan, típicamente, en el método `boot()` de un *service provider*:
@@ -863,15 +882,20 @@ View::share('key', 'value');
 
 ### *View composers*
 
-Se trata de código (*callback* o método) invocado cuando se renderiza una vista. Para **registrar** un *view composer* (normalmente mediante un *service provider*), se utiliza el método `composer()` de la *facade* ***View***:
+Se trata de código (*callback* o método) invocado cuando se renderiza una vista. Para **registrar** un *view composer* (normalmente mediante el método `boot()` de un *service provider*), se utiliza el método `composer()` de la *facade* ***View***:
 
 ```php
-View::composer('greeting', 'App\Http\View\Composers\GreetingComposer');
+View::composer('greeting', GreetingComposer::class);
+View::composer('farewell', function($vista) {
+    /* ... */
+});
 ```
 
-En este caso se ha dado la ruta completa de *namespaces* del *composer*, puesto que en *Laravel* no tienen una ubicación específica. Se pueden organizar en cualquier parte de la jerarquía que nos interese. Por otro lado, en lugar del nombre de una clase, se puede dar como segundo argumento una *closure*.
+El primer argumento es el nombre de la vista, y el segundo es el *view composer* (clase o *closure*).
 
-En el ejemplo, **justo antes** de renderizar la vista ***greeting***, se llamará al método `compose()` de la clase especificada, que recibe como parámetro una instancia de dicha vista (de la clase ***Illuminate\\View\\View***). En el código del método podemos manipular este objeto, por ejemplo añadiéndole datos:
+*Laravel* no tiene una ubicación específica para las clases de *view composers*. Se pueden organizar en cualquier parte de la jerarquía (por ejemplo en ***app/View/Composers***).
+
+En el ejemplo anterior, **justo antes** de renderizar la vista ***greeting***, se llamará al método `compose()` de la clase ***GreetingComposer***, que recibe como parámetro una instancia de dicha vista (de la clase ***Illuminate\\View\\View***). En el código del método podemos manipular el objeto vista, por ejemplo añadiéndole argumentos:
 
 ```php
 public function compose(View $view)
@@ -879,6 +903,8 @@ public function compose(View $view)
     $view->with('count', 50);
 }
 ```
+
+Si definimos una *closure* como *view composer*, esta recibe como primer parámetro una instancia de la vista.
 
 Si se quiere registrar un *view composer* para más de una vista, en lugar del nombre de la vista, se puede usar un *array* con los nombres de las vistas deseadas. A parte, se permite el uso de *wildcards*, con lo que, por ejemplo, asociar un *view composer* a ***\**** lo asociará a todas las vistas de la aplicación.
 
@@ -895,6 +921,441 @@ Esto compilará todas las vistas. Si se quiere borrar todo el caché de vistas:
 ```
 php artisan view:clear
 ```
+
+## Plantillas *Blade*
+
+Se usan para definir las vistas de *Laravel*. Permiten extender un archivo *HTML* (incluyendo también, si se desea, fragmentos *PHP*) utilizando sus propias **directivas**.
+
+### Datos
+
+Como hemos visto, los argumentos a una vista se pasan de esta forma:
+
+```php
+return view('welcome', ['nombre' => 'Pepe']);
+```
+
+Para acceder a datos que se hayan pasado a la vista como argumento, se usa la plantilla`{{ $nombre }}`, donde el nombre de la variable debe coincidir con el nombre del argumento pasado. Esta plantilla equivale a un `echo` de *PHP*, y puede contener cualquier expresión *PHP*.
+
+Las sentencias en una plantilla `echo` se pasan automáticamente por la función `htmlspecialchars()` de *PHP* para evitar ataques *XSS*. Así, por ejemplo, los caracteres que definen etiquetas *HTML* ***\<*** y ***\>*** quedan convertidos en ***\&lt;*** y ***\&gt;*** respectivamente, sientdo imposible inyectar código *HTML*.
+
+Si no deseamos que se codifique una expresión, se debe usar en su lugar la plantilla `{!! $nombre !!}`. No se recomienda si la expresión son datos proporcionados por el usuario.
+
+Existen *frameworks Javascript* que usan la plantilla `{{ ... }}`. Si queremos que *Blade* no lo tome como plantilla propia, sino que lo deje literalmente, se indicará como `@{{ ... }}`, de tal modo que lo único que hará *Blade* será eliminar la arroba (***@***), sin aplicar la plantilla *echo*. Si existe un fragmento con muchas de estas plantillas *Javascript*, se puede incluir dentro de una sección `@verbatim` ... `@endverbatim` para no tener que indicar la arroba en cada plantilla.
+
+### Directivas
+
+#### Sentencias condicionales
+
+*Blade* dispone de la directiva `@if()` ... `@endif`, a la que se le debe pasar una expresión *PHP*. Dentro de esta se acepta la directiva `@elseif()`.
+
+```
+@if(count($records) < 10)
+    Tengo poquitos.
+@elseif(count($records) == 10)
+    Tengo diez.
+@else
+    Tengo muchos.
+@endif
+```
+
+Además, existe la directiva `@unless()` ... `@endunless`, que es lo contrario de `@if()`.
+
+También se dispone de las directivas `@isset()` ... `@endisset` y `@empty()` ... `@endempty` que equivalen a las respectivas funciones *PHP*.
+
+El código de la directiva `@auth` ... `@endauth` se utilizará si el usuario está autenticado, todo lo contrario que `@guest` ... `@endguest`. Opcionalmente, las directivas `@auth` y `@guest` aceptan un argumento con el *guard* usado para la autenticación (ver apartado de seguridad).
+
+Para comprobar si una sección tiene contenido, `@hasSection()` ... `@endif`, pasándole como argumento el nombre de la sección. La inversa es `@sectionMissing()` ... `@endif`.
+
+Cualquiera de estas directivas condicionales permite una sección final `@else`.
+
+#### Sentencias switch
+
+Para un mecanismo *switch*:
+
+```
+@switch($variable)
+    @case(1)
+        Primer caso...
+        @break
+    @case(10)
+        Segundo caso...
+        @break
+    ...
+    @default
+        Caso por defecto...
+@endswitch
+```
+
+#### Bucles
+
+Existen varios tipo de bucles: `@for`, `@foreach`, `@forelse` y `@while`:
+
+```
+@for($i = 0; $i < 10; $i++)
+    El valor es {{ $i }}
+@endfor
+
+@foreach($users as $user)
+    <p>Este es el usuario {{ $user->id }}</p>
+@endforeach
+
+@forelse($users as $user)
+    <li>{{ $user->name }}</li>
+@empty
+    <p>No users</p>
+@endforelse
+
+@while (true)
+    <p>Looping forever</p>
+@endwhile
+```
+
+`@forelse` es como `@foreach`, pero si el objeto sobre el que se va a iterar está vacío, se ejecutará únicamente la sección `@empty`.
+
+Dentro de los bucles disponemos de las directivas `@break` y `@continue`, que son equivalentes al funcionamiento de sus contrapartes en *PHP*. Pero además admiten una condición, de tal modo que la directiva se ejecuta solo en el caso que la condición sea verdadera: `@continue($i < 1)`, o `@break($i > 100)`.
+
+Dentro de un bucle tenemos acceso a la variable `$loop`, que nos da información sobre el estado del bucle. `$loop->first` es verdadero si estamos en la primera iteración, mientras que `$loop->last` es verdadero si estamos en la última.
+
+Si el bucle está anidado, `$loop->parent` es la variable `$loop` del bucle padre.
+
+`$loop->index` es el índice de la iteración actual (empieza en 0). `$loop->iteration` es la iteración actual (empieza en 1). `$loop->remaining` es la cantidad de iteraciones que quedan para terminar. `$loop->count` es el número de elementos del objeto que estamos iterando. `$loop->depth` indica el nivel de anidamiento del bucle. Las propiedades `$loop->even` y `$loop->odd` nos indican si el número de iteración es par o impar respectivamente.
+
+### Subvistas
+
+Mediante la directiva `@include()` se puede incluir una vista dentro de la actual. Todas las variables que estén disponibles en la plantilla actual, lo estarán también en la plantilla incluida. Se le pasa como argumento el nombre de la plantilla a incluir (con *dot notation*, como siempre). Como segundo parámetro se le puede pasar opcionalmente un *array* con parámetros extra para la plantilla a incluir.
+
+Si la plantilla no existe, se levantará un error. Para evitarlo, se puede incluir mediante `@includeIf()`, la cual no levantará error si la plantilla especificada no existe.
+
+La directiva `@includeWhen()` es como `@include()`, pero se inserta un primer parámetro con una condición, la cual, de evaluarse verdadera, realiza la acción de inclusión. Si la expresión no es verdadera, no se incluye la plantilla. Esta directiva es la contraria de `@includeUnless()`.
+
+`@includeFirst()` es como `@include()`, pero en lugar de pasársele un nombre de plantilla, se le pasa un *array* con nombres de plantilla. Se incluirá la primera de ellas que exista.
+
+### *PHP*
+
+Es posible insertar bloques de código *PHP* usando la directiva `@php` ... `@endphp`.
+
+### Comentarios
+
+Se incluyen entre `{{--` y `--}}`, y no se insertan en el *HTML* resultante.
+
+### Componentes
+
+Un *Blade component* es un fragmento de vista altamente configurable. Se puede ver como un fragmento `<div>`, por ejemplo. Existen dos tipos de componentes: los que utilizan clases y los anónimos. Para crear un componente con una clase, se debe indicar el nombre de la clase:
+
+```
+php artisan make:component MensajeAviso
+```
+
+Este comando creará la plantilla *Blade* ***resources/views/components/mensaje-aviso.blade.php***. El nombre de la vista será ***components.mensaje-aviso***, aunque normalmente no se utilizará este nombre para el uso del componente. Para utilizarlo dentro de una plantilla, hay que incluir en esta:
+
+```html
+<x-mensaje-aviso/>
+```
+
+Obsérvese cómo se traduce la notación *PascalCase* de la clase a la *kebab-case* de la plantilla, así como el prefijo ***x-*** añadido al nombre de esta.
+
+El comando de `artisan` creará también la clase ***App\\View\\Components\\MensajeAviso***, la cual extiende la clase ***Illuminate\\View\\Component***, en el archivo ***app/View/Components/MensajeAviso.php***.
+
+Uno de los usos de esta clase, es la renderización del componente. Para ello, el método `render()` retorna dicha renderización. Por defecto, dicho método simplemente retorna la plantilla:
+
+```php
+public function render() {
+    return view('components.mensaje-aviso');
+}
+```
+
+Para crear un componente dentro de una jerarquía de directorios, se puede hacer:
+
+```
+php artisan make:component Mensaje/MensajeAviso
+```
+
+Este comando creará la plantilla ***resources/views/components/mensaje/mensaje-aviso.blade.php***, junto a la clase ***App\\View\\Components\\Mensaje\\MensajeAviso*** en el archivo ***app/View/Components/Mensaje/MensajeAviso.php***.
+
+El nombre de la plantilla será ***components.mensaje.mensaje-aviso***, aunque para incluir el componente se hará así:
+
+```html
+<x-mensaje.mensaje-aviso/>
+```
+
+Si no deseamos la funcionalidad que aporta la clase de un componente, podemos crear un **componente anónimo**, es decir, únicamente se creará la plantilla, que funcionará de la misma forma, aunque sin las funcionalidades que podría aportarle la clase. Para ello, deberemos indicar el nombre de la plantilla (con la posible jerarquía en *dot notation*) y no el de la clase. Además indicaremos el *flag* `--view`:
+
+```
+php artisan make:component mensaje.mensaje-aviso --view
+```
+
+En este caso, también se incluirá el componente con `<x-mensaje.mensaje-aviso/>`. Su renderización no se realizará mediante un método `render()`, sino que se incluirá tal cual.
+
+Al crear los componentes de esta manera, no es necesario registrar nada, ya que estas ubicaciones por defecto son descubiertas automáticamente por *Laravel*. Sin embargo, si utilizamos un paquete que tiene componentes, el *service provider* de este deberá incluir el registro de dichos componentes. Normalmente se hará en su método `boot()`:
+
+```php
+use Illuminate\Support\Facades\Blade;
+
+public function boot()
+{
+    Blade::component('paquete-alerta', Alerta::class);
+}
+```
+
+Esto registrará el nombre ***paquete-alerta*** con la clase asociada al componente, la cual contendrá el método `render()` pertinente. Una vez cargado el componente, se incluirá en una plantilla mediante `<x-paquete-alerta/>`.
+
+#### Paso de datos
+
+Es posible pasar argumentos a un componente, usando formato *HTML* al incluirlo:
+
+```html
+<x-mensaje-aviso tipo-ms="error" mensaje="No ha funcionado."/>
+```
+
+Estos parámetros son pasados directamente al constructor de la clase del componente, y deberían almacenarse dentro de la instancia para su posterior presentación.
+
+El orden de aparición de estos parámetros en el constructor es indiferente, pero hay que tener en cuenta que los nombres deben coincidir. Además es importante recalcar que mientras los nombres de parámetros en la plantilla *HTML* deben estar en *kebab-case*, los del constructor deber tener *camelCase*.
+
+```php
+class MensajeAviso extends Component
+{
+    public $tipo;
+    public $mensaje;
+
+    public function __construct($tipoMs, $mensaje) {
+        $this->tipo = $tipoMs;
+        $this->mensaje = $mensaje;
+    }
+
+    public function render() {
+        return view('components.mensaje-aviso');
+    }
+}
+```
+
+Al definir la plantilla del componente, esta tiene acceso a las propiedades (y métodos) de la clase, con lo que se puede escribir algo como esto:
+
+```html
+<div class="{{ $tipo }}">
+    {{ $mensaje }}
+</div>
+```
+
+Dichas propiedades deben tener acceso `public`, al igual que los métodos de la clase a los que se quiera acceder:
+
+```html
+<div class="{{ miMetodo($tipo) }}">
+    {{ $mensaje . otroMetodo() }}
+</div>
+```
+
+Podemos indicar que el valor de un parámetro no es un *string* en sí sino una expresión *PHP* prefijando dos puntos (***:***) al nombre del parámetro:
+
+```html
+<x-mensaje-aviso tipo-ms="error" :mensaje="'Error:' . $ms"/>
+```
+
+En numerosas ocasiones, la modificación de componentes y/o plantillas puede dar lugar a que *Laravel* produzca un error de ejecución debido a la cache de vistas compiladas. En ese caso resulta útil limpiar dicha cache mediante `php artisan view:clear`.
+
+#### Acceso a atributos y *slots*
+
+A parte de una vista, el método `render()` puede retornar un *string* con contenido (*componente inline*) o una *closure*. En este último caso, esta recibe un argumento único, consistente en un *array* con tres elementos: ***componentName*** (nombre del componente), ***attributes*** (atributos del componente) y ***slot*** (veremos más adelante qué es el *slot* de un componente).
+
+```php
+public function render()
+{
+    return function($datos) {
+        // $datos['componentName'];
+        // $datos['attributes'];
+        // $datos['slot'];
+        return '<p>Poca cosa.<p>';
+    };
+}
+```
+
+La *closure* en sí debe retornar el contenido a mostrar. El valor que contiene la clave ***attributes*** es un *array* con los atributos que se le han indicado mediante:
+
+```html
+<x-mensaje-aviso atri-uno="valor uno" atri-dos="valor dos"/>
+```
+
+Sin embargo, los **atributos que son recogidos por el constructor** de la clase no aparecerán en este *array*.
+
+En el caso de este último ejemplo, para renderizar los atributos directamente en la plantilla:
+
+```
+<div {{ $attributes }}>
+    <!-- Contenido -->
+</div>
+```
+
+Esto daría lugar a:
+
+```html
+<div atri-uno="valor uno" atri-dos="valor dos">
+    <!-- Contenido -->
+</div>
+```
+
+En ente caso también, los atributos recogidos por el constructor de la clase tampoco serían incluidos.
+
+Puede surgir un problema cuando el atributo se define tanto en la plantilla como en la invocación de esta. Por ejemplo, si escribimos la plantilla:
+
+```
+<div {{ $attributes }} class="uno">
+    <!-- Contenido -->
+</div>
+```
+
+Y lo invocamos así:
+
+```html
+<x-mensaje-aviso class="dos"/>
+```
+
+Asumiendo que el atributo ***class*** no es recogido por el constructor de la clase del componente, esto dará lugar a:
+
+```html
+<div class="dos" class="uno">
+    <!-- Contenido -->
+</div>
+```
+
+Lo cual es *HTML* incorrecto. Para solucionarlo, podemos usar el método `merge()`:
+
+```
+<div {{ $attributes->merge(['class' => 'uno']) }}>
+    <!-- Contenido -->
+</div>
+```
+
+Ahora, los atributos quedarán mezclados correctamente:
+
+```html
+<div class="uno dos">
+    <!-- Contenido -->
+</div>
+```
+
+Hay que aclarar que este método está pensado para mezclar atributos de la propiedad ***class***. Para otro tipo de propiedades, simplemente especifica su valor por defecto: Si en la invocación del componente se proporciona su valor, este tendrá preferencia sobre el valor indicado en `merge()`.
+
+Para mezcla de clases (***class***) existe el método `class()`, que acepta un *array* con las clases a incluir/mezclar. Si el elemento tiene una clave numérica, la clase (o conjunto de clases) se añade siempre. En cambio, si la clave es un *string*, es la clave la que define la clase (o clases), y el valor es una expresión booleana, de tal modo que la inclusión se producirá solamente en caso de que la expresión sea cierta.
+
+```
+<div {{ $attributes->class(['uno', 'dos tres', 'cuatro cinco' => $expresion, 'seis']) }}>
+    <!-- Contenido -->
+</div>
+```
+
+Los métodos `merge()` y `class()` pueden encadenarse a voluntad.
+
+Existen algunas palabras reservadas que no pueden usarse como propiedades públicas o métodos del componente: ***data***, ***render***, ***resolveView***, ***shouldRender***, ***view***, ***withAttributes*** y ***withName***.
+
+#### Slots
+
+Los *slots* son el contenido definido en el momento de incluir el componente. En lugar de:
+
+```html
+<x-mensaje-aviso/>
+```
+
+Se invoca así:
+
+```html
+<x-mensaje-aviso>
+    <!-- Todo este contenido es el slot -->
+</x-mensaje-aviso>
+```
+
+Todo lo que queda entre las etiquetas de inicio y cierre es el *slot*. En la plantilla que define el componente, el contenido completo del *slot* (incluyendo comentarios *HTML*) queda disponible mediante la variable ***\$slot***.
+
+La plantilla podría definirse así:
+
+```
+<div id="33">
+    {{ $slot }}
+</div>
+```
+
+A parte de definir el contenido del *slot* en sí, que se recibe en la variable ***\$slot***, podemos definir también otras variables. Se puede ver como un pase de argumentos a la plantilla:
+
+```html
+<x-mensaje-aviso>
+    <x-slot:titulo>
+        Este es el título
+    </x-slot>
+
+    <x-slot:subtitulo>
+        Este es el subtítulo
+    </x-slot>
+
+    <!-- Contenido del slot -->
+</x-mensaje-aviso>
+```
+
+En la plantilla, recibiremos ese contenido en las variables correspondientes:
+
+```
+<div id="33">
+    <h1>{{ $titulo }}</h1>
+    <h3>{{ $subtitulo }}</h3>
+    {{ $slot }}
+</div>
+```
+
+Adicionalmente a definir estas variables, es posible asignarles atributos:
+
+```html
+<x-mensaje-aviso>
+    <x-slot:titulo class="uno">
+        Este es el título
+    </x-slot>
+    <!-- Contenido del slot -->
+</x-mensaje-aviso>
+```
+
+En la plantilla, tendremos acceso a la propiedad ***\$attributes*** de esa variable del *slot*, que puede usarse del mismo modo que la propiedad ***\$attributes*** del componente, incluyendo el uso de los métodos `merge()` y/o `class()`.
+
+```
+<div id="33">
+    <h1 {{ $titulo->attributes }}>
+        {{ $titulo }}
+    </h1>
+    {{ $slot }}
+</div>
+```
+
+### Construcción de *layouts*
+
+Para construir el *layout* de nuestra página, podemos hacerlo mediante componentes, o usando extensión de plantillas.
+
+#### *Layout* con componentes
+
+Para ello habrá que crear un componente *layout* que admita distintos parámetros. A la hora de presentarlo, usaremos una vista que incluirá ese *layout*, definiendo los valores del posible *slot*, variables, etc.
+
+#### *Layout* con herencia de plantillas
+
+`@extends` sirve para heredar de una plantilla base (padre). Por ejemplo `@extends('layout.app')` extenderá la plantilla ***resources/views/layout/app.blade.php***.
+
+Esto es, hace que la plantilla hija herede el contenido de la plantilla base. Pero para personalizar el contenido heredado, debemos definir una serie de **secciones**, o lugares donde la plantilla base espera que se le pase contenido. Las secciones las definimos con la directiva `@section()` en la plantilla hija, mientras la plantilla base muestra ese contenido mediante la directiva `@yield()`.
+
+Supongamos que en un punto de la plantilla base, se incluye `@yield('titulo')`. Cuando nosotros extendamos esa plantilla base, deberemos definir, en la plantilla hija, el contenido de la sección ***titulo***. Esto se podría hacer así:
+
+```
+@section('titulo', 'Página de bienvenida')
+```
+
+Esto simplemente sustituye la llamada a `@yield()` con el texto ***Página de bienvenida***.
+
+Si queremos expandir varias líneas en lugar de un simple *string*, disponemos de esta sintaxis alternativa:
+
+```
+@section('display')
+    <h1>Esta es la sección display</h1>
+    <!-- Más contenido para la sección -->
+@endsection
+```
+
+Es posible también que la plantilla base tenga alguna sección definida con `@section`. Esto sucede cuando extiende a su vez otra plantilla base. En el caso de una jerarquía de varios niveles en la que existe una sección definida con el mismo nombre en varios niveles consecutivos, la definida en el nivel más bajo tendrá preferencia, sobrescribiendo las demás. Para incluir dentro de la sección la definición en la plantilla de nivel superior, se incluirá la directiva `@parent`.
+
+En el caso de que la plantilla base defina una sección, si esta plantilla no extiende otra plantilla, la sección quedaría definida únicamente, y no se mostraría. Si queremos que la sección que definimos quede *yielded* inmediatamente, en lugar de terminarla con `@endsection` la terminaremos con `@show`.
+
+La directiva `@yield()` acepta un segundo argumento opcional, que usará si no encuentra la sección especificada.
 
 ## Generación de *URLs*
 

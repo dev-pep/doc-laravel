@@ -263,7 +263,7 @@ php artisan make:provider nombreProvider
 
 Facilita la creación, aunque también se podría hacer a mano.
 
-Existe, por defecto, un *service provider* vacío llamado ***AppServiceProvider***, que se carga por defecto, que puede utilizarse para añadir elementos para la aplicación.
+Existe, por defecto, un *service provider* vacío llamado ***AppServiceProvider***, que puede utilizarse para registrar elementos para nuestra aplicación. Si necesitamos registrar pocas cosas, es una buena práctica utilizar este proveedor. En caso de que tengamos que registrar una gran cantidad de servicios y/o otras características, es mejor agruparlo adecuadamente en distintos proveedores.
 
 #### Método register()
 

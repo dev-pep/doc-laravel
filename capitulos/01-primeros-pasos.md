@@ -1,5 +1,7 @@
 # Primeros pasos
 
+Como requisito previo para la programación en el *framework Laravel*, será necesario saber programar en lenguaje *PHP*.
+
 ## Instalación
 
 *Laravel* se puede instalar, tras instalar sus dependencias, a través del instalador del mismo *Laravel*, o a través de *Composer*. En ambos casos necesitamos *Composer*, que es la forma que tiene *Laravel* de gestionar las dependencias.
