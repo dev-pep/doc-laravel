@@ -1422,16 +1422,17 @@ La configuración de sesión está en ***config/session.php***. Por defecto, *La
 
 ### Uso de la sesión
 
-Se puede acceder a los datos de sesión mediante la función `session()` o mediante una instancia de ***Request***, que puede ser *type-hinted* en un controlador. En este último caso, el acceso es de este tipo:
+Se puede acceder a los datos de sesión mediante el *helper* `session()` o mediante la instancia de la ***Request***. En este último caso, el acceso es de este tipo:
 
 ```php
-public function show(Request $req)
-$valor = $req->session()->get('key');
+public function show(Request $req) {
+    return $req->session()->get('clave');
+}
 ```
 
-A este método `get()` se le puede pasar un segundo argumento opcional, que será devuelto en caso de que la clave solicitada no exista. Este argumento opcional puede ser una *closure*, que será ejecutada y se usará el valor que retorne.
+A este método `get()` se le puede pasar un segundo argumento opcional, que será devuelto en caso de que la clave solicitada no exista en la sesión. Este argumento opcional puede ser una *closure*, que será ejecutada y se usará el valor que retorne.
 
-También se puede usar la función global `session()`, cuyo uso es igual, pero en este caso podemos establecer valores de sesión pasándole como argumento un *array* con pares clave/valor.
+También se puede usar la función global `session()`, cuyo uso es igual, pero en este caso podemos establecer valores de sesión pasándole como argumento un *array* con pares clave/valor en lugar de un *string*.
 
 Para obtener todos los datos de sesión en un *array*:
 
@@ -1441,42 +1442,41 @@ $data = $req->session()->all();
 
 Para determinar si un determinado dato existe:
 
-
 ```php
-if($req->session()->has('key')) ...
-```
-Retorna ***true*** si el elemento existe y no es ***null***. Similar a:
-
-```php
-if($req->session()->exists('key')) ...
+if($req->session()->has('key'))
+    // ...
 ```
 
-En este caso, si el elemento existe, el método retornará ***true***, aunque su valor sea ***null***.
+Retorna ***true*** si el elemento existe y no es ***null***. Similar al método `exists()`, que será verdadero incluso aunque el valor sea  ***null***.
 
-Para almacenar un dato:
+Por otro lado, el método `missing()` retorna verdadero si el elemento es ***null*** o no existe (es el inverso de `has()`).
+
+Para almacenar un dato, se puede hacer de una de las dos formas:
 
 ```php
-$req->session()->put('clave', 'valor');
-session(['clave' => 'valor']);    // equivalente
+$req->session()->put('clave1', 'valor1');
+session(['clave2' => 'valor2']);
 ```
 
-Si la clave es un *array*, debe hacerse con `push()` en lugar de con `put()`:
+Si el valor correspondiente a una clave es un *array*, puede insertarse un nuevo elemento en dicho *array* mediante `push()`:
 
 ```php
 $req->session()->push('user.teams', 'developers');
 ```
 
-Esto añade un valor a la clave ***user.teams***, que contiene un *array*.
+Esto añade un valor al *array* cuya clave es ***user.teams***.
 
-Un método equivalente a `get()` es `pull()`, con la diferencia que este último, si la clave existe, la borra después de leerla.
+Un método equivalente a `get()` es `pull()`, pero en este caso, si la clave existe la borra de la sesión después de retornarla.
 
-Para incorporar datos que solo estén disponibles en la siguiente petición *HTTP* (por ejemplo, un mensaje de confirmación del tipo 'consulta enviada'), se hace mediante el método `flash()`.
+### *Flashing* de datos de sesión
+
+Para que ciertos datos estén disponibles en la *request* actual y también en la siguiente (pero no más allá), se hace mediante el método `flash()`.
 
 ```php
 $req->session()->flash('status', 'Mensaje enviado con éxito');
 ```
 
-En este caso, el elemento está disponible durante la *request* actual y durante la siguiente únicamente. Si en la siguiente solicitud decidimos ampliar la disponibilidad de los datos *flashed* una *request* más:
+En este caso, el elemento ***status*** estará disponible también durante la siguiente *request*. Si en la siguiente solicitud decidimos prorrogar la disponibilidad de los datos *flashed* una *request* más:
 
 ```php
 $req->session()->reflash();
@@ -1488,6 +1488,10 @@ Y si solo deseamos hacerlo con un subconjunto de los datos *flashed*:
 $req->session()->keep(['clave1', 'clave2', 'clave3']);
 ```
 
+Si lo que queremos es que un dato concreto esté disponible únicamente durante la *request* actual, usaremos el método `now()` en lugar de `flash()`.
+
+### Eliminación de datos
+
 Para eliminar datos de la sesión:
 
 ```php
@@ -1495,8 +1499,6 @@ $req->session()->forget('key');    // elimina un dato de sesión
 $req->session()->forget(['key1', 'key2', 'key3']);    // varios datos
 $req->session()->flush();    // todos los datos
 ```
-
-Para obtener la información de sesión actual podemos usar también el *helper* `session()`.
 
 ## Validación
 
