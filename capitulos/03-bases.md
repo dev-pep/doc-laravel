@@ -1359,7 +1359,7 @@ La directiva `@yield()` acepta un segundo argumento opcional, que usará si no e
 
 ## Generación de *URLs*
 
-Dada una *URI*, la función `url()` construye una *URL* completa, añadiendo a esa *URI* el esquema (*http* o *https*) y el nombre del *host*, correspondientes a la *request* actual. Si no se le pasa una *URI*, retornará un **objeto** con la *URL* actual. A partir de este, podemos acceder a la siguiente información:
+Dada una *URI*, la función `url()` construye una *URL* completa, añadiendo el esquema (*http* o *https*) y el nombre del *host*, correspondientes a la *request* actual. Si no se le pasa argumento, retornará un **objeto** que describe la *URL* actual. A partir de este, podemos acceder a la siguiente información:
 
 ```php
 url()->current();    // URL actual, sin la query string
@@ -1375,14 +1375,40 @@ URL::full();
 URL::previous();
 ```
 
+### *URLs* de rutas con nombre
+
+Supongamos la definición de la siguiente ruta:
+
+```php
+Route::get('/productos', /* definición de la ruta */ )
+    ->name('prods');
+Route::get('/clientes/{numero}', /* definición de la ruta */ )
+    ->name('clients');
+```
+
+Suponiendo que la aplicación está en ***https://miservidor.com***, la expresión `route('prods')` retornará ***https://miservidor.com/productos***. En cambio, no podemos hacer `route('clientes')` porque debemos indicar el parámetro de la *URL*. Esto debe hacerse en el segundo argumento a `route()`, en el cual definiremos todos estos parámetros en un *array*. Si en el *array* definimos parámetros extra que no son parámetros de la *URL*, los añadirá en la *query string*:
+
+```php
+echo route('clients', ['numero' => 33, 'modo' => 'full']);
+```
+
+Esto producirá ***https://miservidor.com/clientes/33?modo=full***.
+
+### *URLs* de acciones de controlador
+
 Podemos obtener una *URL* para un método concreto de un controlador con la función `action()`:
 
 ```php
-$url = action('NombreController@metodoX');
 $url = action([NombreController::class, 'metodoX']);
 ```
 
-Cualquiera de las dos formas aceptará también un segundo argumento con un *array* de argumentos al método.
+Si el controlador es *invokable*, podemos hacer:
+
+```php
+$url = action(NombreController::class);
+```
+
+Cualquiera de las dos formas aceptará también un segundo argumento con un *array* de argumentos de la *URL*.
 
 ## Sesión
 
