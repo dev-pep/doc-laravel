@@ -1502,9 +1502,7 @@ $req->session()->flush();    // todos los datos
 
 ## Validación
 
-Lo más utilizado es el método `validate()` del objeto ***Request*** actual (podemos acceder a él desde cualquier método mediante inyección).
-
-Al invocar este método, se le deben pasar las reglas de validación en un *array*:
+Validación de los datos de entrada (formulario) que llegan al servidor. Lo más utilizado es el método `validate()` del objeto ***Request*** actual. Al invocar este método, se le deben pasar las reglas de validación en un *array*:
 
 ```php
 $request->validate([
@@ -1513,14 +1511,30 @@ $request->validate([
 ]);
 ```
 
-Se supone que esto se ejecuta cuando la *request* es el *submit* de un formulario, por ejemplo. Si la validación falla, el código posterior a `validate()` en nuestro controlador no se ejecuta, y se retorna al estado anterior al *submit* (se genera una respuesta automáticamente, y volveríamos a ver el formulario en blanco, para volver a introducir los datos). Si la validación es correcta, podemos seguir con el código que tratará los valores recibidos del *submit*.
+Si la validación falla, el código posterior a `validate()` no se ejecuta, y se retorna automáticamente una redirección a la *URL* anterior (la presentación del formulario). En cambio, si la validación es correcta, podemos seguir con el código para tratar los valores recibidos del *submit*.
 
-Las reglas de validción pueden pasarse como un *array* también: `['required', 'unique:posts', 'max:255']`. Ver el manual para los tipos de validación disponibles.
+Las reglas de validación pueden pasarse como un *array* también: `['required', 'unique:posts', 'max:255']`. Véase la documentación oficial para una explicación de los tipos de validación disponibles.
 
-Cuando la validación ha fallado, y se recibe la respuesta, los errores son accesibles a través de la variable `$errors`, que es un *array* con todos ellos. En la plantilla *Blade* se puede comprobar si existe alguno:
+> Los campos opcionales deberían ser marcados como ***nullable*** en la validación, ya que *Laravel*, por defecto convierte las cadenas vacías en ***null***.
+
+En caso de datos de entrada anidados, se puede usar la *dot notation* para hacer referencia a ellos. Es por esto que si el nombre del campo contiene un punto, debe indicarse *escaped*.
+
+### Mostrar los errores de validación
+
+Cuando la validación ha fallado, y se recibe la respuesta de la posterior redirección, los datos de entrada antiguos son *flashed* (accesibles mediante el *helper* `old()`, como se ha visto anteriormente). En realidad, la redirección retornada automáticamente por el sistema de validación equivale a `back()->withInput()`.
+
+Si por ejemplo deseamos un valor por defecto cuando no existe valor antiguo (*old data*), se puede hacer así:
 
 ```html
-@if ($errors->any())
+<input type="text" name="ciudad" id="ciudadform" value="{{ old('DNI') ?? 'Sabadell' }}">
+```
+
+Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será ***Sabadell***. Esto muestra el uso del operador `??` de *Blade* (similar al operador ternario).
+
+Por otro lado, los errores producidos son enviados como argumento a todas las vistas de la aplicación (cuando tratamos la redirección por fallos de validación), a través de la variable `$errors` (de tipo ***Illuminate\Support\MessageBag***). En la plantilla *Blade* se puede comprobar su contenido:
+
+```
+@if($errors->any())
   <ul>
     @foreach ($errors->all() as $error)
       <li>{{ $error }}</li>
@@ -1531,62 +1545,82 @@ Cuando la validación ha fallado, y se recibe la respuesta, los errores son acce
 
 Alternativamente puede usarse la directiva *Blade* `@error`, y la variable ***$message***:
 
-```html
+```
 @error('title')
   <p>{{ $message }}</p>
 @enderror
 ```
 
-En caso de que se haya producido un error de validación, normalmente volveremos a cargar el formulario, pero se perderán los valores que hemos enviado (al usar `validate()`, si esta falla, ya no tendremos disponible los valores de entrada del formulario). Para ello, se podrá usar el valor de la entrada antigua mediante la función helper `old()`, que recoge la entrada antigua. Se puede utilizar en la plantilla *Blade*:
+En cuanto a los mensajes de error, estos se encuentran definidos en ***lang/en/validation.php***. Pueden cambiarse a voluntad, así como crear versiones de este archivo traducidas a otro lenguaje.
 
-```html
-<input type="text" name="DNI" id="dniform" value="{{ old('DNI') }}">
+> Si la *request* inicial era asíncrona, el método `validate()` no retornará una redirección sino una respuesta *JSON* conteniendo todos los errores de validación, acompañada de un código *HTTP* 422.
+
+### Validación con *form requests*
+
+Un *form request* es una clase que encapsula la lógica de validación y autorización. Se puede crear así:
+
+```
+php artisan make:request MiRequest
 ```
 
-Por ejemplo, suponiendo un formulario que tenga la línea anterior en un formulario:
+Esto creará la clase ***App\\Http\\Requests\\MiRequest***, en el archivo ***app/Http/Requests/MiRequest.php***. Esta clase dispone de los métodos `authorize()` y `rules()`.
 
-```php
-public function creacion() {  // responde a GET (presenta el formulario vacío)
-    return view('formulario');
-}
+Para que se ejecute este método de validación **no hay que escribir absolutamente nada de código**. Lo único que hay que hacer es inyectar la clase de la *form request* creada en el método de nuestro controlador donde queramos que se produzca la validación. Si no pasa la validación, el método no se ejecutará. Si falla, se procederá como en el caso de `validate()` (redirección o respuesta *JSON*).
 
-public function guardado(Request $req) {  // responde al submit POST, recibe inyección de la request
-    $req->validate([
-        'DNI' => 'min:8|max:9|required',
-        'Nombre' => 'required'
-    ]);
-    return view('formulario');
-}
-```
+La *form request*, de hecho, extiende la clase ***App\\Http\\Request***, de tal modo que la instancia contiene toda la información de la *request* actual.
 
-Si la validación falla, `validate()` terminará el método retornando el anterior formulario con los datos de `old()` disponibles para ese formulario, es decir, se recargará el formulario con las entradas anteriores (de hecho retorna `back()->withInputs()`). En cambio, si tiene éxito la validación, se recargará el formulario nuevo, sin datos en `old()` (normalmente, para poder usar los campos antiguos con `old()` en la siguiente *request*, hay que *flash* los datos en la *request* actual, mediante el método `flash()` de la misma *request*; el método `withInput()` ya ejecuta ese *flash*, con lo que no hace falta volver a hacerlo).
+El método `authorize()` comprueba si el usuario autenticado tiene permisos para realizar la presente acción. Puede accederse a dicho usuario mediante `$this->user()`. Si el método retorna ***false***, se retornará una respuesta 403. En cambio, si retorna un valor verdadero, se seguirá adelante con las validaciones. Para ello se utiliza el valor de retorno del método `rules()`, que de hecho retorna el *array* de validación, que es el que usa el método `validate()`.
 
-Si por ejemplo deseamos un valor por defecto (por ejemplo una ciudad de residencia), cuando no hay valor antiguo que corregir, se puede hacer así:
+Si a nuestra *form request* añadimos una propiedad ***\$stopOnFirstFailure*** establecida en ***true***, tras encontrar el primer error de validación ya no se evalúan los siguientes campos (es equivalente a la validación ***bail***).
 
-```html
-<input type="text" name="ciudad" id="ciudadform" value="{{ old('DNI') ?? 'Sabadell' }}">
-```
+Por defecto se hace una *redirección* `back()`, pero mediante la propiedad ***\$redirect*** definimos la *URI* donde redirigir. También podemos definir la redirección dándole un nombre de una ruta con nombre a la propiedad ***\$redirectRoute***.
 
-Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será 'Sabadell'. Este es el uso del operador `??` de *Blade* (similar al operador ternario).
+### Creación manual de validadores
+
+Es posible crear un objeto validador, el cual disponga del método `validate()`. Aunque en el objeto *request* disponemos ya de un validador, crear uno a medida proporciona mayor control y mucha más funcionalidad. Para más información, véase la documentación oficial.
+
+### Trabajar con los datos validados
+
+Cuando la validación ha sido correcta, tenemos una serie de datos que han sido validados, pero puede haber otros campos que no hayan pasado por la validación (por no ser necesario, o porque se han insertado de forma ilícita). Existe una forma de acceder al subconjunto de datos que han pasado por la validación: el método `validated()` de una *form request* (no de la *request*) o de un validador creado manualmente. Esto retorna un *array* con los datos.
+
+En lugar de este método puede usarse `safe()`, el cual retorna un objeto de tipo ***Illuminate\Support\ValidatedInput***. Este objeto dispone de tres métodos, los cuales retornan un *array* con un subconjunto de los datos validados: `all()` los retorna todos, `only()` retorna solo los que le indicamos en un argumento *array*, y `except()` hace lo contrario. Además, este objeto puede ser iterado y accedido igual que un *array*. También puede convertirse en una *collection* usando el método `collect()`.
 
 ### Reglas de validación personalizadas
 
-Si deseamos añadir una regla de validación (*custom rule*), debemos crear una regla:
+Si las reglas proporcionadas no son suficientes y deseamos añadir una nueva regla de validación (*custom validation rule*), podemos crear un nuevo objeto regla así:
 
 ```
-php artisan make:rule NombreRegla
+php artisan make:rule MiRule
 ```
 
-La regla queda guardada en ***app/Rules***. La regla tendrá los métodos `passes()` y `message()`. El primero recibe el nombre del atributo y su valor (2 parámetros), y debe retornar ***true*** o ***false*** según pase la validación o no. Por su parte, el método `message()` debe retornar el mensaje de error en caso de que falle la validación.
+Esto crea la clase ***App\\Rules\\MiRule*** en el archivo ***app/Rules/MiRule.php***. La regla tendrá los métodos `passes()` y `message()`. El primero recibe el nombre del atributo y su valor (2 parámetros), y debe retornar ***true*** o ***false*** según pase la validación o no. Por su parte, el método `message()` debe retornar el mensaje de error en caso de que falle la validación.
 
-Para utilizar la regla, simplemente se debe pasar una instancia a la lista de validaciones para un atributo:
+Para utilizar la regla, simplemente se debe pasar una instancia a la lista de reglas para un campo concreto:
 
 ```php
 $req->validate([
-    'DNI' => ['min:8', 'max:9', 'required', new NombreRegla],
+    'DNI' => ['min:8', 'max:9', 'required', new MiRule],
     'Nombre' => 'required'
 ]);
 ```
+
+En lugar de crear dicha regla, podemos simplemente utilizar una *closure*, la cual recibe tres parámetros: el nombre del atributo, su valor y otra *closure*, que debe ser llamada en caso de fallo (si no lo hace, se entiende que la validación es correcta).
+
+```php
+$req->validate([
+    'DNI' => [
+        'min:8',
+        'max:9',
+        'required',
+        function($atributo, $valor, $fallo) {
+            if($valor == '666')
+                $fallo('El campo ' . $atributo . ' no puede ser 666...');
+        }],
+    'Nombre' => 'required'
+]);
+```
+
+Cuando un campo no está presente o está vacío, las reglas de validación (incluyendo las *custom rules*) no se ejecutan en él. Si queremos crear una *custom rule* que se ejecute aunque el campo no esté presente o esté vacío, la crearemos con *artisan* añadiendo el *flag* `--implicit`.
 
 ## *Logging*
 
