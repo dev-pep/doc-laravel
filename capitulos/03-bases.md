@@ -1622,6 +1622,24 @@ $req->validate([
 
 Cuando un campo no está presente o está vacío, las reglas de validación (incluyendo las *custom rules*) no se ejecutan en él. Si queremos crear una *custom rule* que se ejecute aunque el campo no esté presente o esté vacío, la crearemos con *artisan* añadiendo el *flag* `--implicit`.
 
+## Tratamiento de errores
+
+Las excepciones levantadas durante la ejecución se loguean y muestran a través de la clase ***App\Exceptions\Handler***. Esta clase permite tener control acerca de cómo y qué se reportará en caso de fallo.
+
+En el archivo de configuración ***config/app.php*** existe una clave, ***debug***, con un valor booleano que indica la cantidad de información que se muestra al usuario en caso de error. Esta variable, por defecto, lee el contenido de ***APP_DEBUG*** en el archivo ***.env***.
+
+### Excepciones *HTTP*
+
+Es posible retornar un código de error *HTTP* mediante el *helper* `abort()`, pasándole como argumento el código específico.
+
+Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene e la excepción *HTTP*, y es del tipo ***Symfony\Component\HttpKernel\Exception\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
+
+*Laravel* ofrece una serie de plantillas de error por defecto, que pueden publicarse y personalizarse adecuadamente. Para publicarlas:
+
+```
+php artisan vendor:publish --tag=laravel-errors
+```
+
 ## *Logging*
 
 *Laravel* usa *Monolog* para realizar el *logging*.
