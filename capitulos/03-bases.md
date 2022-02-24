@@ -1632,7 +1632,7 @@ En el archivo de configuración ***config/app.php*** existe una clave, ***debug*
 
 Es posible retornar un código de error *HTTP* mediante el *helper* `abort()`, pasándole como argumento el código específico.
 
-Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene e la excepción *HTTP*, y es del tipo ***Symfony\Component\HttpKernel\Exception\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
+Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene la excepción *HTTP*, y es del tipo ***Symfony\Component\HttpKernel\Exception\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
 
 *Laravel* ofrece una serie de plantillas de error por defecto, que pueden publicarse y personalizarse adecuadamente. Para publicarlas:
 
@@ -1642,50 +1642,71 @@ php artisan vendor:publish --tag=laravel-errors
 
 ## *Logging*
 
-*Laravel* usa *Monolog* para realizar el *logging*.
+*Laravel* usa la biblioteca *Monolog* para realizar el *logging*.
 
-La configuración de *logging* se encuentra en ***config/logging.php***. El *array* que retorna este archivo tiene una primera clave ***default*** con el nombre del canal por defecto.
+La configuración de *logging* se encuentra en ***config/logging.php***.
 
-La segunda clave es ***channels***, cuyo valor es a su vez un *array* cuyos elementos son los diferentes canales de *logging*. Cada uno de estos elementos consta de una clave con el nombre del canal, y como valor un *array* con las distintas configuraciones del mismo.
+El *array* que retorna este archivo tiene una clave ***default*** con el nombre del canal por defecto.
 
-La clave ***driver*** del canal define el tipo de *log*. El resto de claves configuran el canal. Algunos tipos de *drivers* disponibles por defecto son (clave ***driver***):
+La clave ***deprecations*** indica qué canal se usará para registrar mensajes relativos a *deprecation* de características y bibliotecas. Alternativamente se puede definir un canal con el nombre ***deprecations***. De una u otra forma, los mensajes mencionados se registrarán en este canal automáticamente.
+
+Otra clave importante es ***channels***, que contiene un *array* cuyos elementos definen los diferentes canales de *logging*. Cada uno de estos elementos consta de una clave con el nombre del canal, y como valor un *array* con las distintas configuraciones del mismo.
+
+Dentro de la configuración de cada canal, la clave ***driver*** define el tipo de *log* de dicho canal. El resto de claves dependen de dicho tipo y configuran el canal.
+
+Algunos tipos de *drivers* disponibles por defecto son (clave ***driver***):
 
 - ***stack***: en este caso, una clave ***channels*** tendrá como valor un *array* con los nombres de los canales que forman dicho *stack*.
 - ***single***: se refiere a un simple archivo de *log*, definido en la clave ***path***. La clave ***level*** define el nivel mínimo de *logging*.
 - ***daily***: es como ***single***, pero con *logging* rotativo (el número de días se indica en ***days***).
-- ***monolog***: utiliza un handler *Monolog*, que se le debe pasar en el campo ***handler*** (nombre de la clase). Si este *handler* necesita obtener argumentos, se indicarán a través del campo ***with*** (véase ejemplo). También se puede indicar un *formatter*, a través de los campos ***formatter*** (nombre de la clase) y ***formatter_with*** (*array* con argumentos para el *formatter*).
-- ***custom*** sirve para crear canales a medida.
 
-Ejemplo de canal de tipo *monolog*:
-
-```php
-'logentries' => [
-    'driver'  => 'monolog',
-    'handler' => Monolog\Handler\SyslogUdpHandler::class,
-    'with' => [
-        'host' => 'my.logentries.internal.datahubhost.company.com',
-        'port' => '10000',
-    ],
-]
-```
+Para otros tipos de canal, véase la documentación oficial.
 
 Los *logs* ***single*** y ***daily*** admiten también los siguientes campos:
 - ***bubble***, por defecto ***true***, indica si el mensaje se propaga por el posible *stack* (en caso de formar parte de uno).
 - ***permission*** indica los permisos por defecto del archivo (por defecto 0644).
 - ***locking***, por defecto ***false***, indica si el archivo debe bloquearse antes de escribir en él.
 
-Los niveles de *logging* son, en orden descendente, ***emergency***, ***alert***, ***critical***, ***error***, ***warning***, ***notice***, ***info***, y ***debug***.
+Los niveles de *logging* son, en orden descendente, ***emergency***, ***alert***, ***critical***, ***error***, ***warning***, ***notice***, ***info***, y ***debug***. Cada canal define su nivel mínimo.
 
-A parte de poder indicarse estos nombres como niveles en la configuración, también existen métodos así denominados para enviar mensajes de *log* a través de la *facade* ***Illuminate\Support\Facades\Log***.
+Para enviar mensajes al *log*, se usará la *facade* ***Illuminate\Support\Facades\Log***, utilizando los métodos oportunos, cuyo nombre coincide con el nivel de *logging*.
 
 ```php
 Log::info($mensaje);
 ```
 
-En este caso, el mensaje será enviado al canal por defecto. Para enviarlo a cualquier otro canal:
+Para enviar también información al *array* de contexto, pasaremos tal *array* como segundo argumento del método (en este caso `info()`).
+
+En el ejemplo, el mensaje será enviado al canal por defecto. Para enviarlo a cualquier otro canal:
 
 ```php
 Log::channel('nombre_canal')->info($mensaje);
 ```
 
-Para enviar también información al *array* de contexto, pasaremos tal *array* como segundo argumento del método (en este caso `info()`).
+Si deseamos crear un *stack* sobre la marcha para registrar un mensaje:
+
+```php
+Log::stack(['single', 'monolog'])->info('Mensaje a registrar');
+```
+
+Si el nivel del mensaje es inferior al nivel definido en cada *log* específico, no se registrará.
+
+También podemos crear un canal sobre la marcha para registrar un mensaje:
+
+```php
+Log::build([
+    'driver' => 'single',
+    'path' => storage_path('logs/custom.log'),
+])->info('Mensaje a registrar');
+```
+
+Podemos incluso crear un *stack* sobre la marcha al que podemos pasarle un canal creado sobre la marcha:
+
+```php
+$canal = Log::build([
+    'driver' => 'single',
+    'path' => storage_path('logs/custom.log'),
+]);
+
+Log::stack(['monolog', $canal])->info('Mensaje a registrar');
+```
