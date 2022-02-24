@@ -5,12 +5,11 @@ Estos son mis apuntes de *Laravel* 9.
 ## Tabla de contenido
 
 1. [Primeros pasos](capitulos/01-primeros-pasos.md)
-2. [Arquitectura](capitulos/02-arquitectura.md)
-3. [Las bases](capitulos/03-bases.md)
-4. [Frontend](capitulos/04-frontend.md)
-5. [Seguridad](capitulos/05-seguridad.md)
-6. [Bases de datos](capitulos/06-bases-de-datos.md)
-7. [Profundizando](capitulos/07-profundizando.md)
+1. [Arquitectura](capitulos/02-arquitectura.md)
+1. [Las bases](capitulos/03-bases.md)
+1. [Profundizando](capitulos/04-profundizando.md)
+1. [Seguridad](capitulos/05-seguridad.md)
+1. [Bases de datos](capitulos/06-bases-de-datos.md)
 
 ### Bibliotecas
 
