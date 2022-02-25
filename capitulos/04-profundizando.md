@@ -1,42 +1,74 @@
 # Profundizando
 
+## Colecciones (*collections*)
+
+La clase ***Illuminate\\Support\\Collection*** proporciona un potente mecanismo para el tratamiento de *arrays* de datos.
+
+Para crear una *collection* solo hay que ejecutar el *helper* `collect()`, pasándole como argumento un *array* y recoger la colección retornada.
+
+Las colecciones disponen de numerosos métodos para el tratamiento de los datos. Véase la documentación oficial para una descripción exhaustiva de estos.
+
 ## Eventos
 
-Podemos definir eventos a los que escucharemos mediante *listeners*. Las clases de eventos se guardan por defecto en ***app/Events***, mientras que los *listeners* lo hacen en ***app/Listeners***.
+Podemos definir eventos a los que estaremos atentos (escucharemos) mediante *listeners*. Las clases de eventos se guardan por defecto en ***app/Events***, mientras que los *listeners* lo hacen en ***app/Listeners***.
 
-Un buen sitio para registrar los *listeners* es en el *service provider* ***EventServiceProvider***, el cual tiene una propiedad ***$listen*** que contiene un *array* cuyas claves son los eventos, y cuyos valores son *arrays* de *listeners* (un evento puede tener más de un *listener*).
+Un buen sitio para registrar los *listeners* es en el *service provider* ***EventServiceProvider***, incluido por defecto en *Laravel*, el cual tiene una propiedad ***\$listen*** que contiene un *array* cuyas claves son las clases *fully qualified* de los diferentes eventos, y los valores son *arrays* que contienen las clases de *listeners* asociados. Un evento puede ser escuchado por más de un *listener*, aunque un *listener* no puede escuchar más de un evento.
 
 ```php
 protected $listen = [
-    'App\Events\OrderShipped' => [
-        'App\Listeners\SendShipmentNotification',
+    MiEvento1::class => [
+        MiListener1::class,
+        MiListener2::class
     ],
+    MiEvento2::class => [ MiListener3::class ]
 ];
 ```
 
-Una vez definidos estos eventos de este modo, podríamos proceder a crear los correspondientes archivos de eventos y de *listeners*, pero para evitarnos trabajo, se pueden crear de un plumazo con `artisan`:
+Para ver todos los eventos y *listeners* registrados en la aplicación:
+
+```
+php artisan event:list
+```
+
+Una vez registrados los eventos y *listeners*, podríamos proceder a crear los correspondientes archivos *PHP* con las clases para los eventos y los *listeners*, pero para evitarnos trabajo, se pueden crear de un plumazo con `artisan`:
 
 ```
 php artisan event:generate
 ```
 
-Esto generará todos los archivos necesarios (los ya creados se dejarán igual).
+Esto creará y todos los eventos y *listeners* que estén registrados en el proveedor ***EventServiceProvider*** (los archivos ya creados se dejarán igual).
 
-A parte de registrar los eventos en el *array*, también se pueden asignar *closures* a eventos concretos dentro del método `boot()` del ***EventServiceProvider***.
+Alternativamente, se pueden crear los eventos y *listeners* mediante el comando `make` de *artisan*:
+
+```
+php artisan make:event MiEvento
+php artisan make:listener MiListener --event=MiEvento
+```
+
+En este caso, no se registra ni el evento ni el *listener* en ningún *service provider*. Lo que hace el *flag* `--event` es añadir el tipo de evento en la lista de parámetros del método *handler* del *listener*. Si no se incluye este *flag*, el parámetro se indica sin tipo (véase más adelante).
+
+A parte de registrar los eventos en el *array* ***\$listen*** del *service provider*, también se pueden registrar clases de *listeners* y/o *closures* a eventos concretos dentro del método `boot()` del ***EventServiceProvider***.
 
 ```php
+use App\Events\MiEvento;
+use App\Listeners\MiListener;
+use Illuminate\Support\Facades\Event;
+
 public function boot()
 {
-    parent::boot();
-    Event::listen('event.nombre', function ($foo, $bar) { /*...*/  });
+    Event::listen(
+        MiEvento::class,
+        [MiListener::class, 'handle']
+    );
+Event::listen(function(MiEvento $evento) { /* ... */ });
 }
 ```
 
-El nombre del evento puede incluso incluir *wildcards*, como ***'event.\*'*** para asociar más de un evento a esa closure. De todos modos, todo lo registrado así no será generado automáticamente por `artisan`.
+Nótese el uso de la *facade* ***Illuminate\Support\Facades\Event***. El primer registro asocia el evento ***MiEvento*** al método `handle()` del *listener* ***MiListener***, mientras que el segundo asocia el mismo evento también a la *closure* definida, que recibe una instancia de dicho evento.
 
 ### Autodescubrimiento de eventos
 
-Podemos optar por no registrar absolutamente ningún evento, y permitir a *Laravel* descubrir los eventos y escuchadores automáticamente examinando el directorio ***app/Listeners***. Por defecto, el descubrimiento de eventos está deshabilitado, por lo que hay que habilitar el descubrimiento de eventos *overriding* este método del ***EventServiceProvider***:
+Podemos optar por no registrar absolutamente ningún evento, y permitir a *Laravel* descubrir los eventos y *listeners* automáticamente examinando el directorio ***app/Listeners***. Por defecto, el descubrimiento de eventos está deshabilitado, por lo que hay que habilitarlo *overriding* este método del ***EventServiceProvider***:
 
 ```php
 public function shouldDiscoverEvents() {
@@ -44,26 +76,71 @@ public function shouldDiscoverEvents() {
 }
 ```
 
-Para descubrir eventos, *Laravel* busca en los escuchadores un método que empiece por ***handle***. Entonces lo asocia al evento del tipo especificado en la lista de parámetros de ese método:
+Para descubrir eventos, *Laravel* busca dentro de los *listeners* de la carpeta ***app/Listeners*** un método que empiece por ***handle*** o por ***__invoke***. Entonces lo asocia al evento del tipo especificado su la lista de parámetros:
 
 ```php
-use App\Events\PodcastProcessed;
-
-class SendPodcastProcessedNotification
+class MiListener
 {
-    public function handle(PodcastProcessed $event) { /*...*/  }
+    public function handle(MiEvento $event) { /*...*/  }
 }
 ```
 
-En este caso, el escuchador queda ligado al evento de tipo ***PodcastProcessed***.
+En este caso, el *listener* ***MiListener*** queda escuchando al evento ***MiEvento***.
 
-De todas formas, si también hay eventos en el *array* ***$listen***, también se registrarán.
+De todas formas, se puede combinar el autodescubrimiento con el registro de eventos en el *array* ***\$listen***.
 
-### Definición y despacho de eventos
+### Definición de eventos
 
-Para despachar (generar) un evento se puede usar el *helper* `event()` (desde cualquier parte del código) al que se le pasará una instancia del evento deseado, conteniendo la información que queramos. Para ello, el constructor de la clase evento almacenará adecuadamente la información que reciba su constructor.
+Un evento es un simple contenedor de datos (los datos del evento producido), que serán establecidos en el momento de despachar el evento. Por lo tanto, lo habitual es que posea un simple constructor que almacene los datos recibidos.
 
-Al despacharse el evento, los escuchadores asociados recibirán esa instancia a través de su método *handler*, y lo procesarán adecuadamente.
+### Definición de *listeners*
+
+Pueden tener un constructor, al que se puede inyectar cualquier servicio necesario. Por otro lado reciben, como único parámetro de su método *handler*, una instancia del evento generado. El método *handler* por defecto es `handle()` cuando creamos el *listener* mediante *artisan*.
+
+Es importante tener en cuenta que si el método *handler* retorna ***false***, el evento no se propagará al resto de *listeners* que estén escuchando el evento y no se hayan ejecutado todavía.
+
+### Despacho de eventos
+
+Para despachar (generar) un evento se puede usar el método estático `dispatch()` de la clase del evento concreto. Los argumentos que pasemos a este método serán recibidos por el constructor del evento.
+
+### Suscriptores
+
+Una clase suscriptora es similar a un *listener*, con la diferencia que puede suscribirse a más de un evento. Para ello debe definir, para cada evento, un método *handler* distinto.
+
+En la misma definición de la clase se puede indicar a qué evento corresponde cada método *handler*, mediante el método `subscribe()`, que retornará un *array* con dicha información.
+
+```php
+namespace App\Listeners;
+
+use App\Events\EventoUno;
+use App\Events\EventoDos;
+
+class MiSuscriptor
+{
+    public function handleEventoUno($evento) {
+        /* ... */
+    }
+    public function handleEventoDos($evento) {
+        /* ... */
+    }
+    public function subscribe() {
+        return [
+            EventoUno::class => 'handleEventoUno',
+            EventoDos::class => 'handleEventoDos'
+        ]
+    }
+}
+```
+
+Una vez hecho esto, se registrará el suscriptor, por ejemplo, en ***EventServiceProvider***, en la propiedad ***\$subscribe***:
+
+```php
+protected $subscribe = [
+    MiSuscriptor::class,
+    /* ... */
+]
+```
+
 
 ## *File storage*
 
