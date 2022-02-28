@@ -669,7 +669,7 @@ Para almacenar el archivo, se usará el método `store()` del ***UploadedFile***
 
 Si no deseamos que se guarde el archivo con un nombre autogenerado, usaremos el método `storeAs()`, al que se le debe pasar la ruta donde guardarlo, y el nombre deseado. Un tercer argumento opcional indicará el disco de destino.
 
-Resulta útil recalcar que en un formulario *HTML* la etiqueta `<form>` debe incluir el atributo ***enctype*** con valor ***multipart/form-data***, y que el método *HTTP* debería ser *POST*.
+Hay que tener en cuenta que para que se puedan enviar archivos desde un formulario *HTML*, la etiqueta `<form>` debe incluir el atributo ***enctype*** con valor ***multipart/form-data***, y que el método *HTTP* debe ser *POST*.
 
 ```html
 <form action="subida.php" method="post" enctype="multipart/form-data">

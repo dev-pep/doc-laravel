@@ -141,20 +141,19 @@ protected $subscribe = [
 ]
 ```
 
-
 ## *File storage*
 
-Si queremos permitir la subida de archivos a la aplicación, debemos, primero, tener en cuenta que el formulario de subida debe ser de tipo ***POST***, y que deberá contener el atributo *HTML* `enctype="multipart/form-data"`.
+Si queremos permitir la subida de archivos a la aplicación, hay que tener en cuenta que el formulario de subida debe ser de tipo ***POST***, y que la etiqueta `<form>` debe contener el atributo *HTML* `enctype="multipart/form-data"`.
 
-Por otro lado, *PHP* debe estar configurado para permitir las subidas de archivos, con lo que el archivo ***php.ini*** deberá contener la línea `file_uploads = On`.
+Por otro lado, *PHP* debe estar configurado para permitir las subidas de archivos, con lo que el archivo ***php.ini*** deberá contener la línea `file_uploads=On`.
 
 Finalmente, incluiremos nuestros campos *HTML* `<input type="file" ...>`.
 
-En *Laravel*, la configuración de archivos se encuentra en ***config/filesystems.php***, en el que podemos definir nuestros "discos", caracterizados por un *driver* (admitidos 'local', 'ftp', 'sftp' y 's3') y una ubicación concreta.
+En *Laravel*, la configuración de archivos se encuentra en ***config/filesystems.php***, en el que podemos definir nuestros "discos", caracterizados por un *driver* (admitidos ***local***, ***ftp***, ***sftp*** y ***s3***) y una ubicación concreta.
 
-El *driver* 'local' es el único que no precisa de la instalación de paquetes extra, y nos sirve para almacenar los archivos en las carpetas locales del proyecto. Por convenio y claridad, se suele usar el directorio ***storage*** y sus subcarpetas.
+El *driver* ***local*** es el único que no precisa de la instalación de paquetes extra, y nos sirve para almacenar los archivos en las carpetas locales del proyecto. Por convenio y claridad, se suele usar el directorio ***storage*** y sus subcarpetas.
 
-El archivo también define el disco por defecto.
+El archivo de configuración también define el disco por defecto.
 
 Si queremos definir un disco público, de tal modo que los archivos allí subidos sean accesibles públicamente (a través de su *URL*), usaremos el disco ya preconfigurado por defecto llamado ***public*** (podemos editarlo o cambiarle el nombre). Utiliza el *driver* local, y por defecto está asociado a ***storage/app/public***. Para que se pueda acceder a través de *URL* a sus archivos hay que crear un enlace simbólico en ***public***. Esto se puede hacer fácilmente con el comando:
 
@@ -162,32 +161,96 @@ Si queremos definir un disco público, de tal modo que los archivos allí subido
 php artisan storage:link
 ```
 
-Así, se creará el enlace simbólico ***public/storage***, que enlaza con ***storage/app/public***. A partir de entonces ya podemos acceder a los archivos mediante cosas del tipo `asset('storage/archivo.txt')`.
+Así, se creará el enlace simbólico ***public/storage***, que enlaza con ***storage/app/public***. A partir de entonces ya podemos acceder a los archivos mediante sentencias del tipo `asset('storage/archivo.txt')`.
 
 Este enlace queda definido en el archivo de configuración:
 
 ```php
 'links' => [
-    public_path('storage') => storage_path('app/public');
+    public_path('storage') => storage_path('app/public')
 ]
 ```
 
 Así, podemos definir otros enlaces simbólicos, bien editando ***filesystems.php*** o bien usando `artisan`, que cambiará ese archivo de configuración adecuadamente.
 
-### Operaciones con archivos
+### Requisitos
 
-Las operaciones de disco se realizan mediante la *facade* ***Storage***. Todos los *paths* son relativos a la raíz de nuestro disco definido en la configuración.
+Algunos *drivers* tienen unos prerequisitos que de deben cumplirse. Por ejemplo, el *driver* ***FTP*** necesita el paquete ***flysystem-ftp***:
 
-Suponiendo que la variable ***$filecontents*** almacene el contenido de un archivo, para guardarlo en la carpeta ***avatars*** de nuestro disco llamado ***local***:
-
-```php
-Storage::disk('local') -> put('avatars', $filecontents);
+```
+composer require league/flysystem-ftp "^3.0"
 ```
 
-Si simplemente queremos guardarlo en nuestro disco por defecto:
+Además, habrá que configurarlo en ***config/filesystems.php***:
 
 ```php
-Storage::put('avatars', $filecontents);
+'ftp' => [
+    'driver' => 'ftp',
+    'host' => env('FTP_HOST'),
+    'username' => env('FTP_USERNAME'),
+    'password' => env('FTP_PASSWORD'),
+
+    // Opcional:
+    // 'port' => env('FTP_PORT', 21),
+    // 'root' => env('FTP_ROOT'),
+    // 'passive' => true,
+    // 'ssl' => true,
+    // 'timeout' => 30,
+]
+```
+
+De forma similar, para ***SFTP***:
+
+```
+composer require league/flysystem-sftp-v3 "^3.0"
+```
+
+Configuración:
+
+```php
+'sftp' => [
+    'driver' => 'sftp',
+    'host' => env('SFTP_HOST'),
+
+    // Autenticación básica:
+    'username' => env('SFTP_USERNAME'),
+    'password' => env('SFTP_PASSWORD'),
+
+    // Autenticación mediante clave SSH con password:
+    'privateKey' => env('SFTP_PRIVATE_KEY'),
+    'password' => env('SFTP_PASSWORD'),
+
+    // Opcional:
+    // 'port' => env('SFTP_PORT', 22),
+    // 'root' => env('SFTP_ROOT', ''),
+    // 'timeout' => 30,
+],
+```
+
+### Operaciones con los discos
+
+Las operaciones de disco se realizan mediante la *facade* ***Illuminate\\Support\\Facades\\Storage***. Todos los *paths* son relativos a la raíz de nuestro disco definido en la configuración.
+
+Por ejemplo, suponiendo que la variable ***\$filecontents*** almacene el contenido de un archivo ***foto.png***, para guardarlo en la carpeta ***avatars*** de nuestro disco llamado ***local***:
+
+```php
+Storage::disk('local')->put('avatars/foto.png', $filecontents);
+```
+
+Usando esta *facade*, si no se indica el disco, es como indicar el disco por defecto:
+
+```php
+Storage::put('avatars/foto.png', $filecontents);
+```
+
+Es posible crear un disco sobre la marcha:
+
+```php
+$disk = Storage::build([
+    'driver' => 'local',
+    'root' => '/path/to/root',
+]);
+$disk->put('image.jpg', $content);
 ```
 
 Para obtener el contenido *raw* de un archivo:
@@ -199,9 +262,9 @@ Storage::get('textos/texto5.txt');
 Para saber si un archivo existe o no existe:
 
 ```php
-if(Storage::disk('disco1') -> exists('texto.txt'))
+if(Storage::disk('disco1')->exists('texto.txt'))
     /* ... */
-if(Storage::disk('disco5') -> missing('texto.txt'))
+if(Storage::disk('disco5')->missing('texto.txt'))
     /* ... */
 ```
 
@@ -215,57 +278,65 @@ return Storage::download('catalogo.pdf');
 
 El método `download()` admite un segundo argumento, opcional, con el nombre con el que aparecerá el archivo al cliente. Un tercer argumento, también opcional, será un *array* con cabeceras *HTTP*.
 
-Para obtener la *URL* de un archivo se usa el método `url()` de ***Storage***, que en *driver* local retorna una *URL* relativa al archivo. En driver 's3' (*cloud storage*) retorna una *URL* absoluta.
+Para obtener la *URL* de un archivo se usa el método `url()` de ***Storage***, que en *driver* local retorna una *URL* relativa al archivo. En driver ***s3*** (*Amazon cloud storage*) retorna una *URL* absoluta. El método recibe la ruta del archivo.
 
 Existen otros métodos para obtener información del archivo en disco, como `size()` o `lastModified()`.
+
+El método `path()` retorna la ruta absoluta del archivo (en disco o en la nube).
 
 ### Almacenamiento
 
 Se pueden almacenar archivos, como hemos visto, con el método `put()`, especificando el directorio, y el contenido. Dicho contenido puede ser el contenido en bruto, o un recurso *PHP*.
 
-Para acceder a uno de los archivos subidos en la *request* actual:
+También pueden usarse los métodos `prepend()` y `append()` para añadir al principio y al final del archivo respectivamente. Al igual que `put()`, estos métodos reciben la ruta del archivo (relativa al raíz del disco) y el contenido a escribir.
+
+Para copiar y mover archivos, existen los métodos `copy()` y `move()`, los cuales reciben como argumentos la ruta del archivo origen y la ruta destino.
+
+### Subida
+
+Para acceder a uno de los archivos enviados en la *request* actual:
 
 ```php
-$archivo = $request -> file('docu');
+$archivo = $request->file('docu');
 ```
 En este caso, el archivo se ha subido en un formulario donde el *input* ***docu*** se correspondía a un archivo. Para almacenar ese archivo:
 
 ```php
-$ruta = $request -> file('docu') -> store('archivos');
+$ruta = $request->file('docu')->store('archivos');
 ```
 
-Lo cual guardará ese archivo en la carpeta ***archivos*** del disco por defecto. Sin embargo, esto se guardará con un nombre único en disco, y una extensión basada en el tipo *MIME* del archivo. El método retornará el *path* completo con el nombre que recibirá el archivo en disco.
+Lo cual guardará ese archivo en la carpeta ***archivos*** del disco por defecto (no se especifica nombre de archivo). El archivo recibido se guardará con un **nombre único en disco**, y una extensión basada en el tipo *MIME* del archivo (basado en el contenido). El método retornará el *path* completo con el nombre resultante en disco.
 
 La sentencia anterior es equivalente a:
 
 ```php
-$ruta = Storage::putFile('archivos', $request -> file('docu'));
+$ruta = Storage::putFile('archivos', $request->file('docu'));
 ```
 
 Si queremos que guarde el archivo con un nombre concreto:
 
 ```php
-$ruta = $request -> file('docu') -> storeAs('archivos', 'archivo55.txt');
-
-$ruta = Storage::putFileAs('archivos', $request -> file('docu'), 'archivo55.txt');
+$ruta = $request->file('docu')->storeAs('archivos', 'archivo55.txt');
+$ruta = Storage::putFileAs('archivos', $request->file('docu'), 'archivo55.txt');
 ```
 
 Las dos sentencias son equivalentes.
 
-Si queremos especificar un disco concreto, en el caso de usar ***Storage*** ya sabemos cómo se hace. En el caso de usar `store()`, el nombre del disco se incluirá en un segundo argumento del método. En el caso de `storeAs()`, en un tercer argumento.
+Si queremos especificar un disco concreto, en el caso de la *facade* ***Storage*** se usa el método `disk()`, como hemos visto. En el caso de usar `store()`, el nombre del disco se incluirá en un segundo argumento del método. En el caso de `storeAs()`, en un tercer argumento.
 
 ### Información de archivos
 
 En el caso de archivos subidos en la *request*, podemos obtener otra información de los mismos:
 
 ```php
-$tipo = $request -> file('docu') -> getMimeType();  // tipo MIME
-$size = $request -> file('docu') -> getSize();  // tamaño (bytes)
-$tipo = $request -> file('docu') -> getClientOriginalName();  // nombre original
-$tipo = $request -> file('docu') -> extension();  // extensión
+$size = $request->file('docu')->getSize();  // tamaño (bytes)
+$tipo = $request->file('docu')->getClientOriginalName();  // nombre original
+$tipo = $request->file('docu')->getClientOriginalExtension();  // extensión original
+$tipo = $request->file('docu')->hashName();  // nombre generado
+$tipo = $request -> file('docu') -> extension();  // extensión generada (según contenido)
 ```
 
-Para saber si en la *request* actual viene un archivo:
+Para saber si la *request* actual contiene un archivo concreto:
 
 ```php
 if($request -> hasFile('docu'))
@@ -274,7 +345,7 @@ if($request -> hasFile('docu'))
 
 ### Visibilidad
 
-Para almacenar archivos para que sean accesibles públicamente (desde otras aplicaciones, navegadores, etc.), hay que marcarlos como públicos. Por ejemplo, pasando un tercer argumento 'public' a `put()`, o usando métodos como `storePublicly()` o `storePubliclyAs()`.
+Para almacenar archivos para que sean accesibles públicamente (visibles a otros), hay que marcarlos como públicos. Por ejemplo, pasando un tercer argumento *string* ***public*** a `put()` (de ***Storage***), o usando métodos como `storePublicly()` o `storePubliclyAs()` (del objeto archivo de la *request*).
 
 Para cambiar la visibilidad de archivos ya almacenados:
 
@@ -283,7 +354,26 @@ $visibility = Storage::getVisibility('file.jpg');
 Storage::setVisibility('file.jpg', $vis);
 ```
 
-Aquí, ***$vis*** puede ser ***'public'*** o ***'private'***.
+Aquí, ***$vis*** puede ser un *string* ***public*** o ***private***.
+
+Es posible configurar el significado de público y privado en la configuración del disco *local*:
+
+```php
+'local' => [
+    'driver' => 'local',
+    'root' => storage_path('app'),
+    'permissions' => [
+        'file' => [
+            'public' => 0644,
+            'private' => 0600,
+        ],
+        'dir' => [
+            'public' => 0755,
+            'private' => 0700,
+        ],
+    ],
+],
+```
 
 ### Eliminación de archivos
 
