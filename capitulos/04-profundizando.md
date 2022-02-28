@@ -394,10 +394,10 @@ $files = Storage::files('carpeta');
 
 Si queremos que además se incluyan todas las subcarpetas de la carpeta especificada:
 
-
 ```php
 $files = Storage::allFiles('carpeta');
 ```
+
 Lo mismo, pero en lugar de archivos, directorios:
 
 ```php
@@ -476,7 +476,21 @@ url('user/profile', [532])
 
 La función `secure_url()` es igual, pero retorna una *URL HTTPS*.
 
+#### action()
+
+Genera la *URL* asociada a una acción concreta de un controlador:
+
+```php
+$url = action([MiController::class, 'send']);
+```
+
 ### Varios
+
+#### abort(), abort_if(), abort_unless()
+
+`abort()` lanza una excepción *HTTP*, que será renderizada adecuadamente. Como primer argumento recibe el código de estado *HTTP*. Como argumentos opcionales, está el mensaje de error (*string*) y un *array* con cabeceras.
+
+En cuanto a `abort_if()` debemos añadir como primer argumento una expresión booleana. Solo se lanzará la excepción si la condición es verdadera, justo al contrario que `abort_unless()`.
 
 #### app()
 
@@ -512,6 +526,10 @@ Los datos antiguos están disponibles a través del *helper* `old()`.
 #### bcrypt()
 
 Retorna un *hash* (no desencriptable) del *string* de entrada. Alternativa a la *facade* ***Hash***.
+
+#### collect()
+
+Crea una colección a partir del valor recibido.
 
 #### config()
 
@@ -551,46 +569,19 @@ Retorna el valor de una variable del sistema en ***\$_ENV***, ***\$_SERVER***, o
 $valor = env('REMOTE_USER', 'Pepito');
 ```
 
+#### event()
+
+Despacha el evento indicado.
+
 #### old()
 
-Antes de retornar la respuesta, podemos *flashear* en la sesión actual la entrada del usuario para que esté disponible en la siguiente *request*. Lo haremos así:
-
-```php
-$request -> flash();
-```
-
-Podemos *flash* solo parte de la entrada:
-
-```php
-$request->flashOnly(['username', 'email']);
-$request->flashExcept('password');
-```
-
-Ahora, tras retornar la respuesta, en la siguiente *request* podemos acceder a estos datos con `old()`:
+Proporciona acceso a doatos *flashed* en la anterior *request*.
 
 ```php
 $antiguo_nombre = old('nombre');
 ```
 
-Podemos pasarle un segundo argumento con un valor por defecto en caso de que no encuentre el dato.
-
-Si lo que queremos es redirigir a un formulario con datos incorrectos, de tal modo que esos datos vuelvan a mostrarse en el formulario, deberemos utilizar el valor antiguo en la vista. En la plantilla *Blade* usaremos como valor por defecto del *form input* pertinente el valor retornado por `old()`. Por ejemplo:
-
-```html
-<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad') }}">
-```
-
-Si no hay tal dato antiguo, `old()` retornará un valor nulo, con lo que el campo aparecerá en blanco, correctamente. Si queremos dar un valor por defecto cuando no exista dicho campo por defecto, podemos usar el operador `??`:
-
-```html
-<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad') ?? 'Beijing' }}">
-```
-
-Aunque lo mejor es usar el segundo argumento (valor por defecto) de `old()`:
-
-```html
-<input type="text" id="ciudad" name="ciudad" value="{{ old('ciudad', 'Beijing') }}">
-```
+Podemos pasarle un segundo argumento con un valor por defecto en caso de que no encuentre el dato. De este modo, evitaremos tener que usar el operador `??` en la plantilla *Blade*.
 
 #### redirect()
 
@@ -625,7 +616,7 @@ $objeto = app()->make(UnaClaseOInstancia::class);
 
 #### response()
 
-El *helper* `response()` retorna una instancia de una respuesta del servidor (ver sección de respuestas).
+El *helper* `response()` retorna una instancia de una respuesta del servidor.
 
 #### session()
 
@@ -640,18 +631,14 @@ Sin argumentos retorna el almacén completo de la sesión.
 ```php
 $value = session('key');  // obtener valor
 session(['chairs' => 7, 'instruments' => 3]);  // establecer valores
-
-$value = session() -> get('key');
-session() -> put(['chairs' => 7, 'instruments' => 3]);
+// Equivalente:
+$value = session()->get('key');
+session()->put(['chairs' => 7, 'instruments' => 3]);
 ```
 
-Si queremos que un valor concreto esté disponible **únicamente** en la *request* actual y en la siguiente, debemos usar el método `flash()`:
+#### view()
 
-```php
-session() -> flash('estado', 'archivo enviado con éxito');
-```
-
-Si en la siguiente queremos darle una *request* extra de duración, usaremos el método `reflash()`.
+Retorna una instancia de la vista cuyo nombre le pasamos como argumento.
 
 ## Desarrollo de paquetes
 
