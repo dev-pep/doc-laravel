@@ -640,6 +640,112 @@ session()->put(['chairs' => 7, 'instruments' => 3]);
 
 Retorna una instancia de la vista cuyo nombre le pasamos como argumento.
 
+## Cliente *HTTP*
+
+*Laravel* proporciona una sencilla *API* alrededor del cliente *HTTP Guzzle*, que se incluye por defecto. En caso de haberlo eliminado de las dependencias, hay que volverlo a requerir:
+
+```
+composer require guzzlehttp/guzzle
+```
+
+El punto de acceso principal es la *facade* ***Illuminate\\Support\\Facades\\Http***. La acción más simple es realizar una simple *request GET*:
+
+```php
+$resp = Http::get('http://dominio.com');
+```
+
+Esto retorna un objeto del tipo respuesta *HTTP* (***Illuminate\\Http\\Client\\Response***). Para acceder al contenido de tal respuesta, contiene varios métodos útiles:
+
+```php
+$resp->body() : string;
+$resp->json($key = null) : array|mixed;
+$resp->object() : object;
+$resp->collect($key = null) : Illuminate\Support\Collection;
+$resp->status() : int;
+$resp->ok() : bool;
+$resp->redirect(): bool;
+$resp->header($header) : string;
+$resp->headers() : array;
+```
+
+Para obtener uno de los valores de una respuesta *JSON*, estas dos sentencias son equivalentes:
+
+```php
+$nombre = $resp->json('nombre');
+$nombre = $resp['nombre'];
+```
+
+Si queremos pasar argumentos a una petición *GET*, tenemos dos opciones: añadir una *query string* a la *URL* que pasamos al método `get()`, o pasar como segundo argumento un *array* asociativo con los argumentos y sus valores.
+
+Por otro lado, existen los métodos `post()`, `put()`, `patch()` y `delete()`, que funcionan igual que `get()`, aunque para pasarles argumentos solo puede hacerse a través de un segundo argumento con el *array* asociativo correspondiente. En cambio, `head()` también acepta *query string*.
+
+### Archivos
+
+Para enviar un archivo, hay que enviar una solicitud *multi-part* con método *POST*:
+
+```php
+$resp = Http::attach(
+    'anexo', file_get_contents('foto.jpg'), 'foto.jpg'
+)->post('http://ejemplo.com/anexos');
+```
+
+El primer argumento al método `attach()` es el nombre del campo archivo del formulario que estamos enviando. El segundo es el contenido del archivo. Como tercer argumento, opcional, el nombre del archivo.
+
+### Encabezados
+
+Para incluir *headers* en la petición, usaremos el método `withHeaders()`, al que pasaremos un *array* con los encabezados y sus valores:
+
+```php
+$resp = Http::withHeaders([
+    'X-Primero' => 'contenido del primer header',
+    'X-Segundo' => 'contenido del segundo'
+])->post('http://ejemplo.com/users', ['name' => 'Taylor']);
+```
+
+### Tipo de respuesta
+
+Para indicar que la respuesta debe ser de tipo *JSON*:
+
+```php
+$resp = Http::acceptJson()->get('http://ejemplo.com/usuarios');
+```
+
+### Autenticación
+
+Para indicar las credenciales *basic* o *digest*:
+
+```php
+// Autenticación basic:
+$resp = Http::withBasicAuth('nombreusuario', 'password')->post(/*...*/);
+
+// Autenticación digest:
+$resp = Http::withDigestAuth('nombreusuario', 'password')->post(/*...*/);
+```
+
+### Timeout y reintentos
+
+Se puede especificar un *timeout*, en segundos:
+
+```php
+$resp = Http::timeout(3)->get(/*...*/);
+```
+
+Para indicar el número de reintentos:
+
+```php
+$resp = Http::retry(3, 100)->get(/*...*/);
+```
+
+El primer argumento a `retry()` es el número máximo de reintentos, mientras que el segundo es el tiempo, en milisegundos, que se esperará entre intentos.
+
+### Errores
+
+El objeto respuesta posee varios métodos para el tratamiento de errores:
+
+`successful()` retorna ***true*** si el código de respuesta es un 2xx. `failed()` hace lo propio para códigos 4xx y 5xx. `clientError()` es verdadero si la respuesta es 4xx, y `serverError()` si es 5xx.
+
+El método `onError()`, al que debe pasarse un *callable* como argumento, ejecutará dicho callable si existe algún tipo de error (de cliente o servidor).
+
 ## Desarrollo de paquetes
 
 Cuando desarrollamos un paquete, lo normal es incluir **todo** (rutas, vistas, *middlewares*...) dentro de una sola carpeta, por ejemplo ***src***. Lo normal es que en la raíz de esa carpeta ***src*** incluyamos un *service provider* que registre todas esas rutas, vistas, etc. Resulta conveniente que todo lo que registre ese *service provider* defina rutas de archivo relativas a la ubicación de tal *provider* (mediante el uso de ***\_\_DIR\_\_***).
