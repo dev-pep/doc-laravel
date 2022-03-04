@@ -746,6 +746,109 @@ El objeto respuesta posee varios métodos para el tratamiento de errores:
 
 El método `onError()`, al que debe pasarse un *callable* como argumento, ejecutará dicho callable si existe algún tipo de error (de cliente o servidor).
 
+## Localización
+
+Soporte multilenguage incorporado en *Laravel*.
+
+Los *strings* de idiomas están en el directorio ***lang***. En este directorio deben ubicarse las carpetas de cada lenguage: ***en***, ***es***, etc. En estas carpetas se almacenan los archivos de *strings*.
+
+Lo único que hacen los archivos de *strings* es retornar un *array* cuyos elementos tienen como clave un *string* que sirve como identificador del *string* con el texto concreto.
+
+El lenguaje (*locale*) por defecto está definido en ***config/app.php***, pero se puede establecer en *run time* mediante la *facade* ***App***:
+
+```php
+Route::get('welcome/{locale}', function($locale) {
+    if(in_array($locale, ['en', 'es', 'fr']))
+        App::setLocale($locale);
+});
+```
+
+En este caso, el *locale* queda definido **para la** ***request*** **actual únicamente**.
+
+El código identificador de un *locale* concreto debe seguir la nomenclatura de *ISO 15897*, por lo que si es un lenguaje con diferencias territoriales, el formato es del tipo ***en_GB*** (no ***en-gb***).
+
+También hay un *fallback locale*, definido en ***config/app.php*** (clave ***fallback_locale***), cuyos *strings* se usan cuando no existe traducción de un *string* en el *locale* actual.
+
+Para saber cuál es el *locale* actual, se usa `App::currentLocale()`. Para saber si el *locale* actual se corresponde con uno específico, se puede usar:
+
+```php
+if(App::isLocale('en'))
+    //...
+```
+
+### Definición de los *strings*
+
+Se deben crear los archivos deseados dentro de los directorios de cada *locale*. Cada archivo debe retornar un *array* con la clave (*ID* o *short key* de cada *string*).
+
+Por ejemplo, en ***lang/es/mensajes.php*** podríamos tener:
+
+```
+<?php
+    return [
+        'bienvenida' => 'Bienvenido a nuestra aplicación.',
+        'gracias' => 'Gracias por visitar nuestra web.'
+    ];
+```
+
+En el fichero de traducción al inglés (***lang/en/mensajes.php***), tendríamos:
+
+```
+<?php
+    return [
+        'bienvenida' => 'Welcome to our application.',
+        'gracias' => 'Thanks for visiting our website.'
+    ];
+```
+
+Y el acceso a los *strings* se haría de la siguiente forma:
+
+```php
+echo __('mensajes.bienvenida');
+```
+
+En este caso, la función `__()` retornará el mensaje de bienvenida en el idioma del *locale* actual. Si no existe traducción para dicho *locale*, la función simplemente retornará la clave (en este caso, ***mensajes.bienvenida***).
+
+Dentro de una plantilla *Blade*, pueden incluirse *strings* de dos formas (equivalentes):
+
+```
+{{ __('mensajes.bienvenida') }}
+```
+
+Cuando las aplicaciones se vuelven grandes, guardar las traducciones mediante *short keys* se puede llegar a hacer muy farragoso y confuso. Es por ello que también se pueden definir las traducciones utilizando como clave la "traducción por defecto". Estos archivos se almacenan como *JSON* en el directorio ***lang*** directamente, y tendrán como nombre el nombre del *locale* (y extensión *json*). Por ejemplo, el archivo ***lang/en.json*** podría contener:
+
+```json
+{
+    "Bienvenido a nuestra aplicación.": "Welcome to our application",
+    "Gracias por visitar nuestra web.": "Thanks for visiting our website."
+}
+```
+
+En este caso, el acceso al *string* se hace igual, indicando la traducción por defecto (en este caso, en español):
+
+```php
+echo __('Bienvenido a nuestra aplicación.');
+```
+
+### Parámetros en los *strings*
+
+Pueden definirse parámetros en los *strings*, prefijando dos puntos (***:***):
+
+```php
+'bienvenida' => 'Bienvenido a nuestra aplicación, :nombre.',
+```
+
+A la hora de acceder al *string* se debe añadir un *array* con los argumentos:
+
+```php
+echo __('bienvenida', ['nombre' => 'Doyle']);
+```
+
+Si en la definición del *string* el *placeholder* del parámetro está todo en mayúsculas o tiene únicamente la primera letra en mayúsculas, el valor que se le pase será cambiado para coincidir con esa capitalización.
+
+Para traducir (o cambiar el texto) *strings* de paquetes que tengan sus propios *language files*, en lugar de editar esos ficheros del paquete, se pueden *override* creando *language files* en ***lang/vendor/\<paquete>/\<locale>/\<archivo>***.
+
+Por ejemplo, supongamos que el paquete ***skyrim/hearthfire*** (recordemos que esto es *vendor/paquete*) tiene un archivo de lenguaje en inglés llamado ***messages.php***. Entonces solo tenemos que crear un archivo ***lang/vendor/hearthfire/es/messages.php*** con nuestros propios *strings*.
+
 ## Desarrollo de paquetes
 
 Cuando desarrollamos un paquete, lo normal es incluir **todo** (rutas, vistas, *middlewares*...) dentro de una sola carpeta, por ejemplo ***src***. Lo normal es que en la raíz de esa carpeta ***src*** incluyamos un *service provider* que registre todas esas rutas, vistas, etc. Resulta conveniente que todo lo que registre ese *service provider* defina rutas de archivo relativas a la ubicación de tal *provider* (mediante el uso de ***\_\_DIR\_\_***).
