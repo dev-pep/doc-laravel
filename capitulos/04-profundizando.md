@@ -849,6 +849,99 @@ Para traducir (o cambiar el texto) *strings* de paquetes que tengan sus propios 
 
 Por ejemplo, supongamos que el paquete ***skyrim/hearthfire*** (recordemos que esto es *vendor/paquete*) tiene un archivo de lenguaje en inglés llamado ***messages.php***. Entonces solo tenemos que crear un archivo ***lang/vendor/hearthfire/es/messages.php*** con nuestros propios *strings*.
 
+## Correo electrónico
+
+*Laravel* proporciona una *API* para el envío de correos electrónicos, que por debajo utiliza la biblioteca *Symphony Mailer*. La configuración se halla en ***config/mail.php***. Es posible escoger entre varios *drivers* (*mailers*) para enviar correo electrónico. Cada uno de ellos tiene su propia configuración.
+
+En el *array* ***mailers*** del archivo de configuración se encuentran todos los *mailers* disponibles, junto a su configuración. A parte, se puede definir el *mailer* por defecto, y el remitente *from* (dirección y nombre).
+
+Nos centraremos en el envío por *SMTP*. Para otros *mailers*, véase la documentación oficial.
+
+### Los *mailables*
+
+Cada tipo de correo que enviamos se corresponde con una clase *mailable*. Estas clases se almacenan en ***app/Mail***. Se pueden crear mediante *artisan*:
+
+```
+php artisan make:mail PwdCaducado
+```
+
+Esta clase posee, a parte de su constructor, un método `build()`, que es donde se configura el correo a enviar. Este correo debe retornar una instancia del *mailable*. El objeto retornado contiene toda la información del correo a enviar: remitente, destinatiario(s), contenido, asunto, etc.
+
+Para ello, lo habitual es utilizar como base la propia instancia, a través de ***\$this***, añadiéndole información a través del encadenado de métodos (no importa el orden).
+
+#### Remitente
+
+El método `from()` permite especificar un remitente válido. El primer argumento que recibe es in *string* con la dirección de correo del remitente, y el segundo, el nombre del mismo (opcional). Si la dirección de respuesta debe ser distinta, se puede usar el método `replyTo()`, que tiene los mismos argumentos que `from()`.
+
+Se puede utilizar un remitente configurado globalmente en ***config/mail.php***. Además, se puede indicar la dirección *reply to* (si es distinta a *from*):
+
+```php
+'from' => ['address' => 'pepe@ejemplo.com', 'name' => 'Nombre del remitente'],
+'reply_to' => ['address' => 'paco@ejemplo.com', 'name' => 'Nombre a quien respondemos'],
+```
+
+Si existe tal configuración, los métodos `from()` y `replyTo()` tienen prioridad sobre ella.
+
+#### Asunto
+
+Para especificar el asunto, simplemente se incluirá en la cadena el método `subject()`, que recibe un *string* con el asunto.
+
+Si no se especifica, el asunto, por defecto, es el nombre de la clase *mailable*.
+
+#### Contenido
+
+Para especificar el contenido, se puede usar una plantilla *Blade*, cuyo nombre se pasará como argumento al método `view()`. Un segundo argumento podrá contener un *array* con argumentos para la plantilla.
+
+Es posible definir una versión en texto plano mediante el método `text()`, que usa como base también una plantilla *Blade*, que se usará como texto. Recibe los mismos argumentos que `view()`.
+
+La plantilla *Blade* utilizada tendrá acceso a todas las propiedades públicas del *mailable*, a parte de los argumentos que reciba. También se puede usar el método `with()`, al que se le pasará un *array* de argumentos para la plantilla (o plantillas: *Blade* y texto).
+
+#### Adjuntos
+
+Se puede añadir un adjunto mediante el método `attach()`. El primer argumento a dicho método es la ruta (completa) del archivo. Como segundo argumento, opcional, se puede pasar un *array* con el nombre que tendrá el archivo y/o el tipo del mismo.
+
+```php
+public function build()
+{
+    return $this->view('emails.orders.shipped')
+                ->attach('/path/to/file', [
+                    'as' => 'name.pdf',
+                    'mime' => 'application/pdf',
+                ]);
+}
+```
+
+Por otro lado, el método `attachFromStorage()` toma como primer argumento la ruta de archivo **relativa** al directorio ***storage***. En este caso, el segundo argumento (opcional) será el nombre que tendrá el archivo en el correo. Como tercer argumento, también opcional, podemos incluir el *array* de opciones (con el tipo *MIME*, por ejemplo). Similar a este método, `attachFromStorageDisk()` adjunta un archivo en uno de los discos definidos. El nombre del disco es el primer argumento. El segundo argumento es la ruta absoluta del archivo dentro de ese disco. También acepta opcionalmente el nombre con el que se enviará y el *array* de opciones.
+
+El método `attachData()` recibe como primer argumento una cadena de *bytes*, como segundo el nombre del archivo (solo nombre, no ruta). Opcionalmente puede incluirse un *array* de opciones.
+
+### Envío de correo
+
+Para enviar un correo, se utiliza la *facade* ***Illuminate/Support/Facades/Mail***. En este caso, debemos especificar el destinatario o destinatarios, copias, copias ocultas, etc. El método `to()` acepta un *string* con la dirección de correo electrónico, o un objeto. En el caso de un objeto, se usarán sus propiedades ***mail*** y ***name*** para el envío. Pero también acepta un *array* con *strings* y/o objetos, si queremos enviarlo a varios destinatarios.
+
+También pueden encadenarse métodos como `cc()` (*carbon copy*, copia), `cco()` (*blind carbon copy*, copia oculta), con el mismo formato de argumentos que `to()`.
+
+**Al final de la cadena** de métodos, se debe escribir el método `send()`, al que se le pasará una instancia del *mailable* a enviar.
+
+```php
+Mail::to($request->user())
+    ->cc($moreUsers)
+    ->bcc($evenMoreUsers)
+    ->send(new OrderShipped(33));
+```
+
+Si en lugar de usar el *mailer* por defecto deseamos usar otro:
+
+```php
+Mail::mailer('postmark')
+    ->to($request->user())
+    ->send(new OrderShipped($order));
+```
+
+### Previsualización de *mailables*
+
+Para ver una previsualización de un *mailable*, no es necesario enviarlo. Simplemente si como *response* retornamos la instancia concreta de dicho *mailable*, podremos verlo en pantalla.
+
 ## Desarrollo de paquetes
 
 Cuando desarrollamos un paquete, lo normal es incluir **todo** (rutas, vistas, *middlewares*...) dentro de una sola carpeta, por ejemplo ***src***. Lo normal es que en la raíz de esa carpeta ***src*** incluyamos un *service provider* que registre todas esas rutas, vistas, etc. Resulta conveniente que todo lo que registre ese *service provider* defina rutas de archivo relativas a la ubicación de tal *provider* (mediante el uso de ***\_\_DIR\_\_***).
