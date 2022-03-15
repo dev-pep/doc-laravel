@@ -944,73 +944,108 @@ Para ver una previsualización de un *mailable*, no es necesario enviarlo. Simpl
 
 ## Desarrollo de paquetes
 
-Cuando desarrollamos un paquete, lo normal es incluir **todo** (rutas, vistas, *middlewares*...) dentro de una sola carpeta, por ejemplo ***src***. Lo normal es que en la raíz de esa carpeta ***src*** incluyamos un *service provider* que registre todas esas rutas, vistas, etc. Resulta conveniente que todo lo que registre ese *service provider* defina rutas de archivo relativas a la ubicación de tal *provider* (mediante el uso de ***\_\_DIR\_\_***).
+Los paquetes pueden ser *standalone*, es decir, funcionan en cualquier proyecto *PHP* (incluyendo proyectos *Laravel*). Otros están específicamente diseñados para integrarse en *Laravel* (con sus rutas, vistas, controladores y configuración). Para los primeros, simplemente hay que requerirlos mediante *composer*, y solo se debe tener cuidado en que el paquete tenga una correcta configuración del apartado ***autoload*** en el archivo ***composer.json*** **del mismo paquete**, para que se produzca la autocarga de clases de forma adecuada.
 
-Al incluir nuestro paquete dentro de un proyecto, este quedará copiado en ***vendor/<creador>/<paquete>***. Normalmente consistirá en la carpeta ***src***, junto a otros archivos, como la licencia, o un ***composer.json*** con las dependencias del propio paquete y otras configuraciones.
+En el archivo ***composer.json*** del paquete, estarán especificadas también las dependencias de otros posibles paquetes.
 
-Cuando el paquete se incluya en otro proyecto (mediante `composer`, típicamente), se copiarán los archivos específicos en ***vendor***, y típicamente se deberá añadir (a mano) una referencia al *service provider* del paquete en la lista de *service providers* a cargar (en ***config/app.config***). Sin embargo, si no queremos que el usuario haga esta operación a mano, podemos definir el *service provider* (o más de uno) en el ***composer.json*** **del paquete**, en la sección ***extra*** (que también se puede usar para definir alias de nuestras *facades*):
+En este apartado veremos los pasos adicionales que se deben realizar en el desarrollo de un paquete específico para *Laravel*.
+
+### Descubrimiento de paquetes
+
+En el archivo ***composer.json*** **del paquete** se puede incluir la configuración destinada a *Laravel* incluyendo una subsección ***laravel*** dentro la sección ***extra***. Allí podemos indicar los proveedores de servicio que se deberían cargar en la aplicación automáticamente. De este modo, evitamos tener que añadir el nombre del proveedor en la sección ***providers*** del archivo ***config/app.php*** (aunque podríamos elegir hacerlo así, por cualquier motivo). También se pueden indicar *alias* para las *facades* que pueda definir el paquete (sección ***aliases***).
+
+Supongamos que estamos creando un paquete ***developer/acme***. Dentro de una aplicación, este paquete se instalará en ***vendor/developer/acme***.
 
 ```json
+"autoload": {
+    "psr-4": {"Acme\\": "src/"},
+    "psr-4": {"Acme\\Fuu\\": "src2/"}
+},
+
 "extra": {
     "laravel": {
         "providers": [
-            "Barryvdh\\Debugbar\\ServiceProvider"
+            "Acme\\ServiceProvider",
+            "Acme\\Fuu\\ServiceProvider"
         ],
         "aliases": {
-            "Debugbar": "Barryvdh\\Debugbar\\Facade"
+            "UnaFacade": "Acme\\Fuu\\UnaFacade"
         }
     }
 },
 ```
 
-Al configurarlo así, cuando el paquete se instale se aplicará el **autodescubrimiento** del paquete, y no habrá que configurarlo a mano.
+Con este ***composer.json*** (del paquete), las clases de tipo ***Acme\\NombreClase*** se buscarán en al archivo ***vendor/developer/acme/src/NombreClase.php***. Lógicamente, este archivo contendrá:
 
-Sin embargo, a veces nos interesará que no se aplique tal autodescubrimiento en algún paquete concreto. Si es el caso, en el ***composer.json*** **del proyecto global** (no el del paquete) habrá que indicarlo, con una lista de paquetes que excluir de tal autodescubrimiento (también en la sección ***extra***):
+```php
+namespace Acme;
+```
+
+Por otro lado, las clases de tipo ***Acme\\Fuu\\NombreClase*** se buscarán en al archivo ***vendor/developer/acme/src2/NombreClase.php***. En el archivo:
+
+```php
+namespace Acme\Fuu;
+```
+
+Clases definidas en subdirectorios deberán seguir un esquema adecuado de *namespaces* anidados.
+
+En el ejemplo, el paquete define dos *namespaces* y dos *service providers*. En este caso, se cargarán dichos *service providers*, en ***vendor/developer/acme/src/ServiceProvider.php*** y ***vendor/developer/acme/src2/ServiceProvider.php***.
+
+Por otro lado, si la aplicación que requiere ese paquete no desea que este sea descubierto, y por lo tanto que no se cargue su (o sus) *service providers*, en el ***composer.json*** **de la aplicación** se incluirá:
 
 ```json
 "extra": {
     "laravel": {
         "dont-discover": [
-            "barryvdh/laravel-debugbar"
+            "developer/acme"
         ]
-    }
-},
-```
-
-Si indicamos el nombre `"*"` se excluyen **todos** los paquetes del autodescubrimiento.
-
-### Namespace
-
-Por otro lado, hay que definir el *namespace* (o *namespaces*) del paquete en la sección de *autoload* del ***composer.json***.
-
-```json
-"autoload": {
-    "psr-4": {
-        "Barryvdh\\Debugbar\\": "src/"
     }
 }
 ```
 
-### Publicación
+Si la aplicación no desea que **ningún paquete** sea descubierto:
 
-Tras ser incluido y registrado (o autodescubierto) el *service provider*, en ocasiones son necesarios algunos archivos extra, fuera del árbol de directorios del paquete (por ejemplo, un archivo de configuración en la carpeta ***config*** del proyecto). En este caso, hay que aplicar otro paso: la publicación del paquete mediante `artisan`:
+```json
+"extra": {
+    "laravel": {
+        "dont-discover": [
+            "*"
+        ]
+    }
+}
+```
+
+### Service providers
+
+Cargar el *service provider* de un paquete es sinónimo de cargar el paquete. Pero, ¿qué es lo que hacen estos *services providers*?
+
+- Registrar en el *service container* los servicios (clases) que proporciona el paquete (método `register()`).
+- Informar a *Laravel* acerca de dónde encontrar los recursos que proporciona (vistas, localización, configuración, etc.), mediante el método `boot()`.
+
+### Recursos
+
+#### Configuración
+
+Una vez requerido e instalado el paquete, es frecuente que su configuración deba publicarse (en el directorio ***config***). Para ello habrá que invocar el método `publishes()` del *service provider*, pasándole la configuración concreta.
+
+```php
+public function boot()
+{
+    $this->publishes([
+        __DIR__.'/../config/courier.php' => config_path('courier.php'),
+    ]);
+}
+```
+
+Para publicar la configuración tras requerir el paquete, usaremos *artisan*:
 
 ```
 php artisan vendor:publish --provider=<NombreServiceProvider>
 ```
 
-El *service provider* se refiere al (o a los) *provider(s)* de nuestro paquete, que deberá(n) invocar al método `publishes()` dentro de la definición del método `boot()`. Hay que indicar el *provider fully qualified* en la línea de comandos:
+El nombre del *service provider* debe indicarse *fully qualified*.
 
-```
-php artisan vendor:publish --provider=Barryvdh\\Debugbar\\ServiceProvider
-```
-
-```php
-$this -> publishes([__DIR__ . '/path/to/folder' => public_path('/folder/destino'),
-    __DIR__ . 'path/to/file' => config_path('nombreArchivo')]);
-```
-
-En el ejemplo, se copiará la carpeta ***/path/to/folder***, que se localizará en ***public/folder/destino*** dentro del proyecto.
+En el caso del método `boot()` del ejemplo, el contenido del archivo especificado se copiará en la carpeta de configuración de la aplicación, con el nombre indicado (la ruta especificada es relativa a ***\_\_DIR\_\_***, es decir, relativa al *service provider*).
 
 El método `publishes` toma un segundo parámetro opcional, que es un *tag* para categorizar el tipo de publicación. Algunos *tags* habituales son ***public***, ***config***, ***migrations***, etc. Pero podemos definir nuestros *tags* específicos.
 
@@ -1018,76 +1053,175 @@ El método `publishes` toma un segundo parámetro opcional, que es un *tag* para
 php artisan vendor:publish --tag=config
 ```
 
-En este ejemplo se publicarán todos los archivos y directorios con la etiqueta ***public*** de todos los proveedores que la definan.
+Si se omite el *flag* `--provider` y el `--tag`, aparecerá un menú para elegir el proveedor o *tag* deseado.
 
-Si no especificamos *provider* ni *tag*, nos aparecerá un menú con las opciones a publicar.
+La publicación no sobrescribe archivos ya existentes. Para forzar una publicación aunque ya exista el archivo, se añadirá `--force` para sobrescribir.
 
-Para forzar una publicación aunque ya exista, se añadirá `--force` para sobrescribir.
+Evidentemente, lo habitual es que el destino de las configuraciones sea el directorio ***config***, pero de hecho se puede indicar cualquier otro directorio de la aplicación.
 
-Para publicar parte de la configuración dentro del archivo de configuración del paquete se usa `mergeConfigFrom()`. Supongamos que nuestro archivo de configuración es ***courier.php***.
+Por otro lado, en lugar de publicar el archivo como un bloque, se pueden publicar únicamente las opciones (configuraciones) que no existan en la configuración de la aplicación. De este modo, el usuario del paquete puede decidir qué configuraciones serán añadidas y cuáles no, configurando a mano, antes de publicar, las opciones que desea mantener. Para ello, se usará el método `mergeConfigFrom()`, que recibe, por una parte, el archivo de configuración de nuestro paquete, y por otra, el **nombre** del archivo de configuración (sin ruta ni extensión):
 
 ```php
-$this->mergeConfigFrom(__DIR__.'/path/to/config/courier.php', 'courier');
+public function register() {
+    $this->mergeConfigFrom(__DIR__ . '/../config/courier.php', 'courier');
+}
 ```
 
 Este ejemplo fusiona todas las claves del archivo ***courier.php*** en el archivo correspondiente publicado ya. Solo añadirá las claves que no estén publicadas. Solo actúa en el primer nivel, es decir, si el valor de una clave es un *array*, no entrará a mirar qué claves tiene.
 
-Este otro ejemplo fusiona solo el contenido de una clave (***key***):
+> IMPORTANTE: este método debe llamarse desde el método `register()` del *service provider*, no desde `boot()`.
+
+#### Rutas
+
+Para cargar un archivo con rutas, se debe usar el método `loadRoutesFrom()` del proveedor de servicios.
 
 ```php
-$this->mergeConfigFrom(__DIR__.'/path/to/config/courier.php', 'courier.key');
+public function boot() {
+    $this->loadRoutesFrom(__DIR__ . '/../routes/rutas.php');
+}
 ```
 
-### Carga de recursos
+Esto equivale a definir las rutas mediante la *facade* `Route`. Se podrían definir las rutas dentro de `boot()` usando esa *facade*, pero queda mucho más claro haciéndolo mediante el archivo de rutas.
 
-Si nuestro paquete tiene rutas, se pueden cargar así, dentro de la definición de `boot()` de nuestro *service provider*:
-
-```php
-$this->loadRoutesFrom($rutaArchivo);
-```
-
-Es importante recordar que las rutas en el directorio estándar (***routes***) de la aplicación, se cargan automáticamente a través del ***RouteServiceProvider*** por defecto de *laravel*. Este proveedor, les aplica a estas, el *middleware* ***web*** o ***api***, según sea el caso. Pero este *middleware* no se aplica a rutas cargadas por nuestro proveedor, con lo que deberíamos aplicarlo a mano:
+Es importante recordar que por defecto, las rutas en el directorio estándar (***routes***) de la aplicación, se cargan automáticamente a través del ***RouteServiceProvider*** por defecto de *Laravel*. Este proveedor aplica el *middleware* ***web*** o ***api*** a estas rutas, según sea el caso. Pero este *middleware* no se aplica a las rutas que cargamos mediante nuestro proveedor de servicios, con lo que en caso de interesar, debemos indicarlo específicamente:
 
 ```php
-Route::middleware('web')
-    -> group(function() {
-        // Carga de rutas:
-        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
-        // Equivaldría a definir aquí las rutas con Route::...
+public function boot() {
+    Route::middleware('web')
+        -> group(function() {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/rutas.php');
     });
+}
 ```
 
 Por simplicidad, esto es equivalente a:
 
 ```php
-Route::middleware('web')
-    -> group(__DIR__ . '/routes/web.php');
+public function boot() {
+    Route::middleware('web')
+        -> group(__DIR__ . '/../routes/rutas.php');
+}
 ```
 
-En el siguiente ejemplo definimos las rutas *API* para controladores en el *namespace* ***Barryvdh\Debugbar\Controllers***:
-
-```php
-Route::namespace('Barryvdh\Debugbar\Controllers')  // se buscarán en este namespace todos los controladores involucrados
-    -> middleware('api')
-    -> prefix('/api')
-    -> group(__DIR__ . '/routes/api.php');
-```
-
-Para cargar traducciones y vistas en directorios no estándar:
-
-```php
-$this -> loadTranslationsFrom($rutaDirectorio, $proyecto);
-$this -> loadViewsFrom($rutaDirectorio, $proyecto);
-```
-
-La variable ***\$proyecto*** es un *string* con el nombre del proyecto. Si su valor es, por ejemplo ***Debugbar***, entonces para acceder, por ejemplo a la vista ***home***, se haría así:
-
-```php
-view('Debugbar::home');
-```
+#### Migraciones
 
 Para registrar migraciones:
 
 ```php
-$this -> loadMigrationsFrom($rutaDirectorio);
+public function boot() {
+    $this -> loadMigrationsFrom('/../database/migrations');
+}
 ```
+
+De esta forma, al ejecutar `php artisan migrate` se ejecutarán las migraciones correspondientes, sin necesidad de copiarlas al directorio ***database/migrations*** de la aplicación.
+
+#### Traducciones
+
+Para publicar traducciones, se usa el método `loadTranslationsFrom()` del *service provider*. Este método necesita como primer argumento el directorio del paquete donde se encuentran los archivos de traducción, y como segundo argumento el nombre del proyecto, que se utilizará como prefijo para acceder a estas traducciones, para que no interfiera con las traducciones definidas en la misma aplicación.
+
+Para acceder a estas traducciones, se usa el formato ***paquete::archivo.texto***.
+
+```php
+public function boot()
+{
+    $this->loadTranslationsFrom(__DIR__ . '/../lang', 'courier');
+}
+```
+
+En este caso, accederíamos a la traducción ***welcome*** del archivo ***mensajes*** de este modo:
+
+```php
+echo trans('courier::mensajes.welcome');
+```
+
+#### Vistas
+
+Para publicar vistas se usa el método `loadViewsFrom()`:
+
+```php
+public function boot()
+{
+    $this->loadViewsFrom(__DIR__ . '/../resources/views', 'courier');
+}
+```
+
+En este caso, hay que especificar dos parámetros: la ruta del directorio del paquete que contiene las rutas, y el nombre del paquete, que se usará como prefijo para que no haya colisiones con las vistas de la aplicación.
+
+De este modo, accederemos a la vista ***home*** del paquete de esta forma:
+
+```php
+view('courier::home');
+```
+
+#### *View components*
+
+Si el paquete contiene *view components*, utilizaremos el método `loadViewComponentsAs()` del *service provider*. Este método recibe dos argumentos: el nombre del paquete y un *array* con los nombres *fully qualified* de las clases correspondientes.
+
+```php
+use Courier\Components\Alert;
+use Courier\Components\Button;
+
+public function boot()
+{
+    $this->loadViewComponentsAs('courier', [
+        Alert::class,
+        Button::class,
+    ]);
+}
+```
+
+Una vez publicados los componentes se puede hacer uso de ellos de esta forma:
+
+```html
+<x-courier-alert />
+
+<x-courier-button />
+```
+
+#### Otros
+
+Para publicar cualquier otro tipo de archivo, como *assets* públicos, simplemente se puede usar el método `publishes()`. Por otro lado, si deseamos separar la publicación en grupos separados de archivos podemos utilizar etiquetas e invocar este método varias veces, cada una con una etiqueta distinta.
+
+## Planificación de tareas
+
+Es posible planificar tareas que se realicen de forma periódica en el servidor. El planificador se encuentra en la clase ***app/Console/Kernel.php***, en el método `schedule()`, el cual recibe una instancia de la clase ***Illuminate\Console\Scheduling\Schedule***. Esta instancia contiene los métodos necesarios para registrar las tareas a ejecutar.
+
+El método `call()` del objeto ***Schedule*** recibe cualquier *callable PHP* como primer argumento. Si este precisa a su vez argumentos, se pueden pasar en un *array* como segundo argumento de `call()`.
+
+El objeto retornado por este método `call()` tiene métodos que permiten definir la periodicidad con la que se debe ejecutar el *callable*. Algunos de estos métodos son `everyMinute()`, `everyFiveMinutes()`, `everyFifteenMinutes()`, `everyThirtyMinutes()`, `hourly()`, `ourlyAt()` (recibe como argumento el minuto, de 0 a 59), `everyTwoHours()`, `daily()`, `dailyAt()` (argumento *string* del tipo ***13:30***), `twiceDaily()` (dos argumentos numéricos con la hora, de 0 a 23), `weekly()` (se ejecuta el domingo a las 0:00), `weeklyOn()` (dos argumentos: día de la semana de 0 a 6 empezando en domingo, y *string* con la hora de tipo ***13:30***), `monthly()` (día 1 a las 0:00), `monthlyOn()` (argumentos: día del mes y *string* con la hora), `twiceMonthly()` (día primero, día segundo y *string* con la hora), `lastDayOfMonth()` (*string* con la hora), `quarterly()` (primer día del cuatrimestre, a las 0:00), `yearly()` (1 de enero a las 0:00), `yearlyOn()` (mes, día, *string* con la hora) o `timezone()` (*string* con el *timezone*).
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->call(function () {/* ... */})
+        ->daily();
+}
+```
+
+De forma similar a `call()` puede usarse el método `command()`, que recibe un *string* con un comando *artisan*, o `exec()`, que recibe un *string* con un comando *shell*.
+
+Junto a los métodos de periodicidad, puede encadenarse uno o varios métodos que restringen esa periodicidad. Algunos de estos métodos son `weekdays()`, `weekends()`, `sundays()` hasta `saturdays()`, `days()` (recibe un *array* con días de la semana de 0 a 6 empezando en domingo), `between()` (recibe dos *strings* con hora inicial y final), `unlessBetween()` (2 *strings* con hora inicial y final) o `when()` (recibe una *closure* que retorna un booleano).
+
+Para ver qué acciones están planificadas se puede usar el comando *artisan*:
+
+```
+php artisan schedule:list
+```
+
+Las tareas planificadas no se ejecutan en modo de mantenimiento. Sin embargo, si se desea que alguna de ellas se ejecute incluso en dicho modo, hay que encadenar el método `evenInMaintenanceMode()` al definirla.
+
+### Ejecución del planificador
+
+Las tareas se ejecutan en el servidor cuando se invoca el comando *artisan* `schedule:run`. Esto evaluará qué tareas deben ejecutarse según su periodicidad. Por lo tanto, se deberá configurar una entrada `cron` en el servidor que ejecute cada minuto este comando:
+
+```
+php artisan schedule:run
+```
+
+En el entorno local en el que desarrollamos la aplicación no es necesario agregar una entrada `cron`. Podemos simplemente ejecutar:
+
+```
+php artisan schedule:work
+```
+
+Esto simplemente ejecutará `schedule:run` cada minuto (no lo hace desde el *background*, con lo que para detenerlo simplemente se deberá presionar ***Ctrl-C***).
