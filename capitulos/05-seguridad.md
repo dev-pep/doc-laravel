@@ -2,61 +2,64 @@
 
 ## Autenticación
 
->*Laravel* permite la creación *out of the box* de un *frontend* para la autenticación de usuarios, con sus controladores y vistas. Esto se hace, en primer lugar, instalando el paquete de *Composer* llamado ***laravel/ui***, y ejecutando después:
->
->```
->php artisan ui vue --auth
->```
->
->Hay otras opciones para el *frontend*, con lo que si en lugar de `vue` queremos presentarlo con `bootstrap` también podemos hacerlo.
->
->En todo caso, esto debería hacerse solo en proyectos en estado inicial, antes de cualquier modificación del mismo.
->
->Es posible crear un proyecto nuevo que incluya el *frontend* de autenticación usando el instalador de *Laravel* mediante `laravel new nombreProyecto --auth`.
->
->Sin embargo aquí no utilizaremos este *frontend*. Lo haremos desde cero, usando la *facade* ***Auth***.
+El mecanismo de autenticación que proporciona *Laravel* pasa por los *guards* (definen cómo se autentica el usuario) y los proveedores (bases de datos de usuarios).
 
-La **configuración** del mecanismo de autenticación que viene con *Laravel* se halla en el archivo ***config/auth.php***.
+>*Laravel* permite la creación *out of the box* de todo el sistema de autenticación mediante una serie de *starter kits*. Para una descripción detallada de estos, véase la documentación oficial.
+
+La **configuración** de la autenticación en *Laravel* se halla en el archivo ***config/auth.php***.
 
 Este archivo retorna un *array* que tiene varios elementos, cuyas claves son ***defaults***, ***guards***, ***providers***, ***passwords*** y ***password_timeout***.
 
-- La clave ***providers*** describe los proveedores, es decir, las fuentes persistentes de las que se extraen los datos de usuario. Su valor es un *array* cuyos elementos son dichos proveedores: cada proveedor tendrá una clave con el nombre que daremos a ese proveedor, y su valor es un *array*:
+- La clave ***providers*** describe los proveedores, es decir, las fuentes persistentes de las que se extraen los datos de usuario. Su valor es un *array* cuyos elementos son dichos proveedores: cada proveedor tiene una clave con el nombre que daremos a ese proveedor, y su valor es, a su vez, un *array*, con estos elementos:
     - El elemento con clave ***driver*** podrá tener el valor ***eloquent*** si el proveedor es un modelo *Eloquent*, o ***database*** si el proveedor es simplemente una tabla, sin modelo asociado.
-    - El elemento ***model*** almacenará el nombre de la clase del modelo (si el proveedor es un modelo), o el nombre de la tabla.
-- En ***guards*** definimos el guardián (método) de autenticación. Su valor es un *array* cuyos elementos son dichos *guards*: cada uno de ellos tendrá una clave con el nombre que daremos a ese *guard*, y su valor es un *array*:
-    - El elemento ***driver*** indica el método de autenticación, que puede ser ***session*** o ***token***.
+    - El elemento ***model*** almacenará el nombre de la clase del modelo si el proveedor es un modelo. En caso contrario, tendrá un elemento ***table*** con el nombre de la tabla.
+- En ***guards*** definimos el guardián (método) de autenticación. Su valor es un *array* cuyos elementos son dichos *guards*: cada uno de ellos tendrá una clave con el nombre que daremos a ese *guard*, y su valor es un *array*, con estos elementos:
+    - El elemento ***driver*** indica el método de autenticación. Actualmente solo admite el valor ***session*** (para *requests web*). Para autenticación de *requests API* es necesario crear código para gestionarla, o instalar paquetes adicionales que se encarguen de ello.
     - El elemento ***provider*** es el nombre de uno de los proveedores que hemos definido.
-    - Se puede definir un elemento ***hash*** con valor ***false*** para indicar que no debe almacenar la contraseña *hashed*.
-- El elemento ***defaults*** indica varias cosas, de las que solo nos interesa una: define cuál es el *guard* por defecto.
+- El elemento ***defaults*** indica, en su clave ***guard***, cuál es el *guard* por defecto.
 
-En cuanto a los otros elementos de la configuración, son más bien utilizados por los mecanismos de gestión de autenticación que genera *Laravel* automáticamente, con lo que no nos interesan.
+Por defecto, *Laravel* proporciona un modelo *Eloquent* ***App\\Models\\User***, válido para acceder a la tabla de usuarios, y su correspondiente migración (tabla ***users***). Si queremos definir los campos de la tabla de usuarios nosotros mismos, hay que tener en cuenta que debe existir un campo ***password*** de mínimo 60 caracteres de anchura (si usamos `string()` en el esquema de la migración sin especificar anchura será un ***VARCHAR*** *MySQL* de 255 caracteres, lo cual ya está bien). Por otro lado, si queremos disponer de la característica *remember me*, la tabla debe contener un campo llamado ***remember_token*** de 100 caracteres.
 
-Por defecto, *Laravel* proporciona un modelo ***User***, que se utiliza para acceder a la tabla de usuarios, con su correspondiente migración (tabla ***users***). Si queremos definir los campos de la tabla de usuarios nosotros mismos, hay que tener en cuenta que el campo ***password*** debe tener, como mínimo, 60 caracteres de anchura (si usamos `string()` sin especificar anchura será un ***VARCHAR*** de 255 caracteres, lo cual ya está bien). Por otro lado, debe contener un campo ***remember_token*** de 100 caracteres (para opción *remember me*).
+### Mecanismo
 
-### *Login*
+La autenticación funciona almacenando las credenciales del usuario en la sesión de este (las sesiones se guardan en el servidor). Por otro lado, se envía una *cookie* con el *ID* de la sesión al navegador, con lo que en cada *request* se enviará dicha *ID* para que el servidor pueda saber de qué sesión se trata, y asociar así la sesión al usuario correcto. Si la sesión incluye credenciales válidas, se considerará al usuario como autenticado.
 
-Para autenticar a un usuario, se usa el método `attempt()` (intento de autenticación) de la *facade* ***Auth***, al que se le pasa un *array* con campos de la tabla de usuarios, para ver si tal usuario se encuentra en ella. Como mínimo, debería estar el campo que usemos para autenticarnos (nombre de usuario, normalmente) y la contraseña. Cuando esta está en el campo ***password***, *Laravel* le aplica un *hash* y la compara con la de la tabla (que está *hashed*). Si todo coincide, se inicia automáticamente una sesión autenticada. Este método, además, retorna ***true*** si la autenticación es correcta, o ***false*** en caso contrario.
+Por otro lado, una *request API* no dispone de tal mecanismo, ya que estas peticiones no están asociadas a la navegación de un usuario (puede ser un servicio remoto intentando obtener datos, una petición asíncrona, etc.). Para autenticarse, las peticiones *API* envían un *API token* en cada petición. Ese *token* se compara con la lista de *tokens* válidos en la base de datos, de tal modo que así puede saberse qué usuario (o grupo de usuarios) está asociado a tal *token*. Dado que este *token* se suele enviar en la *query string*, en necesario renovarlo con frecuencia.
+
+En *Laravel* se accede a los mecanismos de autenticación a través de las *facades* ***Illuminate\\Support\\Facades\\Auth*** y ***Illuminate\\Support\\Facades\\Session***, para conseguir autenticación basada en sesión (navegadores *web*).
+
+### Autenticación de usuarios
+
+Para autenticar a un usuario, se usa el método `attempt()` (intento de autenticación) de la *facade* ***Auth***, al que se le pasa un *array* con campos de la tabla de usuarios, para ver si tal usuario se encuentra en ella. Como mínimo, debería estar el campo que usemos para autenticarnos (nombre de usuario, normalmente) y la contraseña. Cuando esta está en el campo ***password***, *Laravel* le aplica automáticamente un *hash* y la compara con la de la tabla (que está *hashed*). Si todo coincide, se inicia automáticamente una sesión autenticada. Este método, además, retorna ***true*** si la autenticación es correcta, o ***false*** en caso contrario.
 
 ```php
 public function authenticate(Request $request)
 {
     $credentials = $request->only('username', 'password');
-    if(Auth::attempt($credentials))
-        return redirect('dashboard');  // autenticación OK
+    if(Auth::attempt($credentials)) {
+         $request->session()->regenerate();  // regeneramos la sesión
+         return redirect('dashboard');  // autenticación OK
+    }
     return redirect('inicio');  // autenticación fallida
 }
 ```
 
-Por otro lado, al método `attempt()` le podemos pasar en su lugar una serie de condiciones en un *array*:
+***Auth*** usará el *guard* por defecto, accediendo al modelo o tabla para buscar la información del usuario.
+
+La regeneración de la sesión cambia la *session ID*, y es útil para evitar el ataque de *session fixation*.
+
+> **Session fixation:** el *hacker* envía un enlace a la víctima para que entre en https://elbanco.com?sessionid=23498jhwefpi8ufasd9p8yu. Como vemos, el *hacker* conoce el campo donde va la *session ID*, con lo que se inventa un *ID* y lo añade en la *query string*. La víctima hace clic en el enlace. Como esta sesión es nueva, le pide sus credenciales del banco. El usuario se loguea tranquilamente. Una vez logueado, el *hacker* puede acceder al sitio usando esa *session ID*, y estará logueado sin necesidad de conocer las credenciales.
+>
+> Por otro lado, si cuando la víctima se loguea la *session ID* se regenera, entonces ese *ID* que tiene el *hacker* no le sirve para nada.
+
+Por otro lado, el método `attempt()` acepta más campos, a parte del usuario y el *password*:
 
 ```php
 if(Auth::attempt(['username' => $usname, 'password' => $password, 'active' => 1]))
     // ...
 ```
 
-Se iniciará la sesión autenticada y retornará ***true*** solo si se cumplen todas las condiciones (en este caso, también comprueba que el usuario esté marcado como activo).
-
-### Uso de otros *guards*
+Se iniciará la sesión autenticada y retornará ***true*** solo si coinciden todos los campos (en este caso, también comprueba que el usuario esté marcado como activo).
 
 Si queremos que la autenticación se realice mediante un *guard* que no sea el *default*, usaremos el método `guard()` antes de la llamada a `attempt()`:
 
@@ -65,19 +68,27 @@ if(Auth::guard('un_guard')->attempt($credentials))
     // ...
 ```
 
-### *Logout*
+Para saber si existe usuario autenticado, lo haremos mediante `Auth::check()`, que retorna ***true*** si el usuario está autenticado.
 
-Para hacer *logout*, simplemente hay que invocar `Auth::logout()`.
+Existen dos formas de acceder al usuario autenticado actualmente: mediante `Auth::user()`, o a través del método `user()` de la *request*. El usuario obtenido es el modelo *Eloquent* o registro de la tabla pertinente.
+
+Por otro lado, para obtener el *ID* del usuario autenticado, se puede hacer con `Auth::id()`.
+
+### *Middleware* de autenticación
+
+*Laravel* tiene un *middleware* cuyo nombre es ***auth***, que puede aplicarse a todas las rutas que necesiten usuario autenticado para acceder. En tal caso, si accedemos a una ruta de estas sin usuario autenticado, se realizará automáticamente una redirección a la ruta cuyo nombre sea ***login***.
+
+Simplemente se añadirá el método `middleware('auth')` a la cadena de métodos aplicados a la ruta (o grupo de rutas). Por otro lado, si deseamos que se aplique un *guard* concreto a estas rutas, se añadirá `middleware('auth:admin')` (en este caso, el *guard* ***admin***).
 
 ### Recordar al usuario
 
-Si queremos autenticar a un usuario activando la opción *remember me*, pasaremos a `attempt()` como segundo argumento (opcional) un booleano verdadero. De este modo, el usuario permanece logueado permanentemente (hasta que hace *logout* explícitamente). Este mecanismo utiliza el campo ***remember_token*** de la tabla o modelo de usuarios.
+Si queremos autenticar a un usuario activando la opción *remember me*, pasaremos a `attempt()` como segundo argumento (opcional) un valor ***true***. De este modo, el usuario permanece logueado permanentemente (hasta que hace *logout* explícitamente). Este mecanismo utiliza el campo ***remember_token*** de la tabla o modelo de usuarios.
 
 Es posible saber si un usuario logueado lo ha hecho a través de un *login* corriente o a través de un *remember me*, usando el método `Auth::viaRemember()`, que retorna ***true*** en el último caso.
 
 ### Otras formas de autenticación
 
-Es posible autenticar a uno de los usuarios de la tabla. Simplemente se debe obtener el registro deseado de la tabla o modelo, y pasarlo al método `login()`:
+Es posible autenticar a un usuario concreto. Simplemente se debe obtener el registro deseado de la tabla o modelo, y pasarlo al método `login()` (no es necesario *password*):
 
 ```php
 $user = User::where('username', 'manolito')->first();
@@ -90,34 +101,58 @@ También se puede autenticar a un usuario por su clave primaria:
 Auth::loginUsingId(476378);
 ```
 
-Esto métodos funcionan de forma similar a `attempt()` en cuanto a especificar el *guard* deseado, activar *remember me*, etc.
+Estos dos métodos funcionan de forma similar a `attempt()` en cuanto a especificar el *guard* deseado o activar *remember me*.
 
-Por otro lado se puede autenticar a un usuario del mismo modo que si se tratase de `attempt()` pero solo para la *request* actual, de tal modo que no se generarían *cookies*, ni sesiones, ni nada (*stateless API*). Para ello se usaría el método `once()`.
+Por otro lado se puede autenticar a un usuario del mismo modo que si se tratase de `attempt()` pero solo para la *request* actual, de tal modo que no se generarían *cookies*, ni sesiones, ni nada. Resulta útil para una petición *API*, por ejemplo. Para ello simplemente se usaría el método `once()`.
 
-#### Autenticación *web* vs. *API*
+### Autenticación *HTTP* básica
 
-En la navegación *web*, el estado de autenticación se guarda en la información de sesión (en el servidor). El navegador dispone de la *cookie* de sesión, que envía el *ID* de dicha sesión, con lo que a pesar de que *HTTP* es un protocolo sin conexión, la sesión se mantiene entre llamadas.
+El *middleware* (incluido por defecto) ***auth.basic*** proporciona un mecanismo de entrada de credenciales sin una página de *login* específica. Por defecto, este *middleware* asume como nombre de usuario el campo ***email*** de la tabla de usuarios.
 
-Por el contrario, los accesos *API* no tienen estado, ya que no se trata de una sesión de navegación, sino de acceso a datos, producido normalmente por una petición asíncrona, o quizá hecha por una aplicación que obtiene datos de un servicio *web*. En tal caso, no procede autenticarse mediante un usuario y contraseña. Pero si se desea dotar de seguridad estos accesos, se debe enviar un *API token*. El servidor accede a una base de datos para comprobar si existe algún usuario que posea dicho *token*, y si es así, servir los datos (a nombre de dicho usuario). Dado que dicho *token* se suele mandar mediante *GET*, resulta necesario renovarlo con frecuencia.
+En algunos casos, si el servidor es *Apache*, podría ser necesario añadir esta configuración en el servidor:
 
-En cuanto a cuándo expira la sesión, depende del navegador usado. En algunos sistemas y navegadores, la sesión termina al cerrar el navegador, mientras en otros no es así.
-
-### Obtener información de autenticación
-
-Para saber si el usuario está autenticado, `Auth::check()` retornará ***true*** si lo está, y ***false*** si no.
-
-Para obtener el usuario que está autenticado:
-
-```php
-$usuario = Auth::user();  // instancia  del usuario
-$usuario_id = Auth::id();  // clave primaria del usuario autenticado
+```
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 ```
 
-Al decir instancia del usuario nos referimos a un registro de la tabla (o modelo *Eloquent*) de usuarios.
+Es decir, si se trata de la cabecera de autenticación, se creará una variable del servidor con el contenido de dicha cabecera.
 
-Otra forma de obtener una instancia del usuario autenticado es mediante el método `user()` de la *request* actual.
+Por otro lado, podríamos crear un *middleware* que realizara esta autenticación básica para peticiones *API* (autenticación *stateless*). Para ello, se haría la autenticación mediante `Auth::onceBasic()`. Si retornara ***true***, el *middleware* seguiría para adelante.
 
-Existen *middlewares* ya hechos en *Laravel* que pueden ser útiles, por ejemplo, a la hora de interceptar una *request* hacia una página por parte de un usuario no autorizado, por ejemplo. En todo caso podemos crear nuestro propio *middleware*, o controladores adecuados.
+Recordemos que luego habría que registrar este *middleware* (propiedad ***\$routeMiddleware*** de ***app/Http/Kernel.php***) y asignarlo a la ruta (o grupo de rutas) con el método `middleware()`.
+
+De todas formas, solicitar credenciales para peticiones *API* no tiene por qué ser una buena idea normalmente.
+
+### *Log out*
+
+Para desautenticar al usuario, simplemente hay que ejecutar `Auth::logout()`. Esto elimina la información de autenticación de la sesión.
+
+Es aconsejable tras el *logout* invalidar la sesión actual y regenerar el *token CSRF*:
+
+```php
+public function logout(Request $request)
+{
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/');
+}
+```
+
+
+
+
+> En cuanto a la caducidad de la sesión, depende del navegador usado. En algunos sistemas y navegadores, la sesión termina al cerrar el navegador, mientras en otros no es así. No debemos asumir que una sesión se ha cerrado si no lo hemos hecho explícitamente.
+
+
+
+
+
+
+
+
+
 
 ## Autorización
 

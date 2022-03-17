@@ -1513,6 +1513,8 @@ $request->validate([
 
 Si la validación falla, el código posterior a `validate()` no se ejecuta, y se retorna automáticamente una redirección a la *URL* anterior (la presentación del formulario). En cambio, si la validación es correcta, podemos seguir con el código para tratar los valores recibidos del *submit*.
 
+El valor de retorno del método `validate()` es un *array* asociativo con los datos validados.
+
 Las reglas de validación pueden pasarse como un *array* también: `['required', 'unique:posts', 'max:255']`. Véase la documentación oficial para una explicación de los tipos de validación disponibles.
 
 > Los campos opcionales deberían ser marcados como ***nullable*** en la validación, ya que *Laravel*, por defecto convierte las cadenas vacías en ***null***.
@@ -1581,7 +1583,7 @@ Es posible crear un objeto validador, el cual disponga del método `validate()`.
 
 ### Trabajar con los datos validados
 
-Cuando la validación ha sido correcta, tenemos una serie de datos que han sido validados, pero puede haber otros campos que no hayan pasado por la validación (por no ser necesario, o porque se han insertado de forma ilícita). Existe una forma de acceder al subconjunto de datos que han pasado por la validación: el método `validated()` de una *form request* (no de la *request*) o de un validador creado manualmente. Esto retorna un *array* con los datos.
+Cuando la validación ha sido correcta, tenemos una serie de datos que han sido validados, pero puede haber otros campos que no hayan pasado por la validación (por no ser necesario, o porque se han insertado de forma ilícita). Existe una forma de acceder al subconjunto de datos que han pasado por la validación: por un lado, el método `validate()` de la *request*, y por otro, el método `validated()` de una *form request* (no de la *request*) o de un validador creado manualmente. Estos métodos retornan un *array* con los datos.
 
 En lugar de este método puede usarse `safe()`, el cual retorna un objeto de tipo ***Illuminate\Support\ValidatedInput***. Este objeto dispone de tres métodos, los cuales retornan un *array* con un subconjunto de los datos validados: `all()` los retorna todos, `only()` retorna solo los que le indicamos en un argumento *array*, y `except()` hace lo contrario. Además, este objeto puede ser iterado y accedido igual que un *array*. También puede convertirse en una *collection* usando el método `collect()`.
 
