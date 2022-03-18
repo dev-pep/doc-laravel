@@ -140,27 +140,15 @@ public function logout(Request $request)
 }
 ```
 
-
-
-
 > En cuanto a la caducidad de la sesión, depende del navegador usado. En algunos sistemas y navegadores, la sesión termina al cerrar el navegador, mientras en otros no es así. No debemos asumir que una sesión se ha cerrado si no lo hemos hecho explícitamente.
-
-
-
-
-
-
-
-
-
 
 ## Autorización
 
-Se utilizan dos mecanismos para gestionar la autorización de un usuario a utilizar recursos. Son las *gates* (puertas) y *policies* (políticas).
+Se utilizan dos mecanismos para gestionar la autorización de un usuario a utilizar recursos. Son las *gates* (puertas) y las *policies* (políticas).
 
 ### *Gates*
 
-Las puertas son *closures* (o métodos) que definen si un usuario está autorizado a realizar cierta acción. Se registran en un *service provider*. Por conveniencia, se puede hacer en la clase ***App\\Providers\\AuthServiceProvider*** que viene por defecto en *Laravel*. Un *gate* recibe por defecto una instancia del usuario, y otros argumentos opcionales.
+Las puertas se definen mediante *closures* (o métodos) que indican si un usuario está autorizado a realizar cierta acción. Se registran en un *service provider*. Por conveniencia, se puede hacer en el proveedor ***App\\Providers\\AuthServiceProvider***, incluido por defecto. Una *gate* recibe por defecto una instancia del usuario, y otros argumentos opcionales.
 
 En el método `boot()` del proveedor de servicios registraremos la puerta mediante el método `define()` de la *facade* ***Gate***:
 
@@ -170,15 +158,15 @@ Gate::define('update-post', function ($user, $post) {
     });
 ```
 
-El primer argumento a `define()` es el nombre que damos a esa puerta. El segundo, es una *closure* que retornará ***true*** o ***false*** según se permita la acción o no. En nuestro caso, definimos una puerta relacionada con la acción de actualizar un *post* en un blog. La acción se permitirá si y solo si el usuario autenticado es el autor del *post*. Para ello, vemos que la *closure* recibe dos argumentos: en primer lugar, una instancia del usuario autenticado (que se le pasa automáticamente). Después de este primer parámetro, vienen los otros argumentos que deseemos darle (en este caso, una instancia del *post*, que incluye información del autor).
+El primer argumento a `define()` es el nombre que damos a esa puerta. El segundo, es en este caso una *closure* que retornará ***true*** o ***false*** según se permita la acción o no. En nuestro caso, definimos una puerta relacionada con la acción de actualizar un *post* en un blog. La acción se permitirá si y solo si el usuario autenticado es el autor del *post*. Para ello, vemos que la *closure* recibe dos argumentos: en primer lugar, una instancia del usuario autenticado (que se le pasa automáticamente). Después de este primer parámetro, vienen los otros argumentos que deseemos darle (en este caso, una instancia del *post*, que incluye información del autor).
 
-En lugar de una *closure* podemos indicar un *string* del tipo 'Clase@método', igual que con los controladores.
+En lugar de una *closure* podemos indicar un método de una clase:
 
 ```php
-Gate::define('update-post', 'App\Policies\PostPolicy@update');
+Gate::define('update-post', [PostPolicy::class, 'update']);
 ```
 
-Una vez hemos registrado la puerta, ya podemos utilizarla desde cualquier parte del código:
+Una vez hemos registrado la *gate*, ya podemos utilizarla desde cualquier parte del código, para comprobar si permite el acceso (métodos `allows()` y `denies()`). Es en este punto en el que indicamos el valor a los argumentos opcionales que recibe la *gate*:
 
 ```php
 if(Gate::allows('update-post', $post))
@@ -187,9 +175,14 @@ if(Gate::denies('update-post', $post))
     { /* NO autorizado */ }
 ```
 
-Como vemos, tanto `allows()` como su contrario `denies()` toman, como primer argumento, el nombre de la puerta. Si al definir la puerta hemos indicado un parámetro adicional (en este caso ***$post***), estos métodos lo recibirán como segundo argumento. Sin embargo, si hemos definido más de uno, los recibirán en un *array*.
+Como vemos, tanto `allows()` como su contrario `denies()` toman, como primer argumento, el nombre de la puerta. Si al invocar uno de estos métodos hemos indicado un parámetro adicional (en este caso ***$post***), este se enviará como segundo argumento de la *gate*. Sin embargo, si queremos enviar varios argumentos a la puerta, debemos invocar estos métodos con un segundo argumento consistente en un *array* con todos esos valores.
 
-Se puede comprobar una autorización, no solo para el usuario autenticado, sino para cualquiera de ellos:
+```php
+if(Gate::allows('nombre-gate', [$val1, $val2, $val3]))
+    // ...
+```
+
+El usuario autenticado se envía automáticamente como primer argumento a la *gate*. Pero si deseamos comprobar la *gate* para un usuario distinto:
 
 ```php
 if(Gate::forUser($usuario)->allows('update-post', $post))
@@ -200,17 +193,17 @@ if(Gate::forUser($usuario)->denies('update-post', $post))
 
 Si deseamos saber si un usuario tiene autorización para pasar por lo menos una de las puertas indicadas, usaremos el método `any()`, al que, en lugar del nombre de la puerta pasaremos un *array* con varios nombres. De forma similar, si queremos saber si el usuario no tiene autorización para pasar ninguna de las puertas indicadas, usaremos `none()`.
 
-Existen también directivas *Blade* para comprobar si el usuario tiene autorización (`@can`, `@cannot`, `@canany`), que reciben los argumentos de forma análoga a los métodos de comprobación.
-
-Se pueden registrar funciones que se llevarán a cabo antes y después de todas las comprobaciones de autorización (con `allows()`, etc.). La sintaxis es similar a `define()`, pero sin ese primer parámetro con el nombre de la puerta (se ejecutan siempre). Así, su primer parámetro es la instancia del usuario autenticado.
+Se pueden registrar funciones que se llevarán a cabo antes y después de todas las comprobaciones de autorización (con `allows()`, etc.). La sintaxis es similar a `define()`, pero sin ese primer parámetro con el nombre de la puerta (se ejecutan siempre, para todas las *gates*).
 
 Por un lado, el método `before()` definirá las acciones a realizar antes de cualquier chequeo. Si retorna un valor no nulo, ese será el resultado final de las comprobaciones. Si retorna ***null***, el resultado de la comprobación dependerá de las funciones sucesivas.
 
 En cuanto a `after()`, se ejecuta después de las comprobaciones habituales. Si retorna un valor no nulo, *overrides* el valor de la comprobación.
 
+Tanto `before()` como `after()` reciben como único parámetro la *closure* o método a ejecutar, que, al igual que sucedía con `register()`, tendrá como primer parámetro una instancia del usuario, seguido de los parámetros opcionales.
+
 ### *Policies*
 
-Las políticas organizan el acceso a recursos o modelos concretos. Si por ejemplo tenemos un modelo ***Coche***, podríamos tener una política ***CochePolicy***. La podríamos crear así:
+Las políticas definen el acceso a recursos o modelos concretos. Si por ejemplo tenemos un modelo ***Coche*** (en ***app/Models***), podríamos tener una política ***CochePolicy*** (en ***app/Policies***). La podríamos crear así:
 
 ```
 php artisan make:policy CochePolicy
@@ -222,9 +215,9 @@ Creará una clase vacía para esa política en ***app/Policies/CochePolicy.php**
 php artisan make:policy CochePolicy --model=Coche
 ```
 
-Las políticas son resueltas por el *sevice container*, con lo que pueden ser inyectadas automáticamente en nuestras clases.
+Las políticas pueden registrarse en el *sevice container*, con lo que pueden ser inyectadas automáticamente en nuestras clases.
 
-Para registrar las políticas, podemos hacerlo en ***App\\Providers\\AuthServiceProvider***, donde disponemos ya de la propiedad ***policies***. Esta es un *array* que asocia cada modelo a la política de acceso a él:
+Para registrar las políticas, lo haremos a través de un *service provider* que extienda la clase ***Illuminate\\Foundation\\Support\\Providers\\AuthServiceProvider***. Por ejemplo, podríamos usar el proveedor ***App\\Providers\\AuthServiceProvider*** (disponible por defecto). En este proveedor usaremos la propiedad ***\$policies***. Esta propiedad es un *array* que mapea cada modelo a la política de acceso al mismo:
 
 ```php
 protected $policies = [
@@ -232,50 +225,95 @@ protected $policies = [
     ];
 ```
 
+Posteriormente, en el método `boot()` se debe indicar que se registren las *policies*, mediante el método `registerPolicies()` del mismo *service provider*.
+
+```php
+public function boot()
+{
+    $this->registerPolicies();
+}
+```
+
 De todas formas, *Laravel* autodescubre las políticas existentes, siempre que se cumpla:
 
+- La política debe estar en una carpeta ***Policies*** dentro de la carpeta donde reside el modelo, o dentro de una carpeta superior.
 - La política debe estar asociada a un modelo concreto de tal modo que el nombre de la política sea el mismo que el del modelo, con el sufijo ***Policy***.
-- La política debe estar en una carpeta ***Policies*** dentro de la carpeta donde reside el modelo.
 
-Si lo deseamos podemos definir nuestras propias formas de autodescubrimiento. Eso se realiza registrando estas formas así:
+Si lo deseamos podemos definir nuestras propias formas de descubrimiento de *policies*. Eso se realiza registrando estas formas así:
 
 ```php
 Gate::guessPolicyNamesUsing(function ($modelClass) {
-    // retornar el nombre de la clase de la política
+    return $policyClass;
 });
 ```
 
-Esto debería hacerse, típicamente, dentro del método `boot()` de ***AuthServiceProvider***. En este caso, ***$modelClass*** es el nombre de la clase del modelo.
+Esto debería hacerse, típicamente, dentro del método `boot()` de ***AuthServiceProvider***. En este caso, ***\$modelClass*** es el nombre *fully qualified* de la clase del modelo, mientras que ***\$policyClass*** es el de la clase de la *policy* asociada.
 
-Por otro lado, las asociaciones realizadas en la propiedad ***$policies*** del *service provider* tienen preferencia sobre cualquier tipo de autodescubrimiento.
+Por otro lado, las asociaciones realizadas en el *service provider* tienen preferencia sobre cualquier tipo de autodescubrimiento.
 
-Al desarrollar una política, debemos escribir métodos en ella, para cada una de las acciones que deseemos controlar. Estos métodos recibirán normalmente un primer argumento con el usuario autenticado, y un segundo con una instancia del modelo. El método retornará ***true*** si se autoriza el acceso, y ***false*** en caso contrario.
+#### Escribir *policies*
+
+Al desarrollar una política, debemos incluir métodos para cada una de las acciones que deseemos controlar. Estos métodos recibirán normalmente un primer argumento con el usuario autenticado, y un segundo con una instancia del modelo. El método retornará ***true*** si se autoriza el acceso, y ***false*** en caso contrario.
 
 Las acciones de la política que podemos describir son, por ejemplo, `view()`, `create()`, `update()`, `delete()` o `restore()`.
 
-En algunos casos, como `create()`, el método solo recibirá un argumento: el usuario autenticado.
+Los métodos correspondientes de la *policy* reciben como primer parámetro una instancia del usuario, y como segundo parámetro una instancia del modelo. El método debe retornar ***true*** o ***false*** según se permita ese acceso al modelo o no.
+
+La *policy* podría definirse así:
+
+```php
+class CochePolicy
+{
+    public function update(User $user, Coche $modelo) {
+        // ...
+    }
+    public function create(User $user) {
+        // ...
+    }
+}
+```
+
+Métodos como `create()` o `viewAny()` solo reciben un argumento (instancia del usuario).
 
 Una vez definida la política, ya podemos usarla. Existen varios modos.
 
-Una manera es a través del modelo ***User*** que viene incluido en *Laravel*. En este caso, tras obtener una instancia del usuario, esta dispone de los métodos `can()` y `cant()`, a los que se pasará, en primer lugar, el nombre de la acción a comprobar; y en segundo lugar, una instancia del modelo sobre el que el usuario desea ejecutar esa acción:
+#### Autorizar mediante modelo *User*
+
+Una manera es a través del modelo ***User*** que viene incluido en *Laravel*. En este caso, tras obtener una instancia del usuario, esta dispone de los métodos `can()` y `cannot()`, a los que se pasará, en primer lugar, el nombre de la acción a comprobar, coincidente con el nombre del método concreto de la *policy*; y en segundo lugar, una instancia del modelo sobre el que el usuario desea ejecutar esa acción, y que está directamente asociado (registrado) a esa *policy*:
 
 ```php
 if($user->can('update', $coche))
     { /* ... */ }
 ```
 
-En el caso de comprobar acciones como `create`, más que una instancia del modelo (que no existe), le pasaremos el nombre de la clase:
+En el caso de comprobar acciones como `create` o `viewAny`, más que una instancia del modelo (que no existe), le pasaremos el nombre de la clase del modelo que se desea comprobar:
 
 ```php
-use App\Coche;
-
 if($user->can('create', Coche::class))
     { /* ... */ }
 ```
 
-Existe otro modo de usar las políticas, y es mediante las directivas *Blade* `@can`, `@cannot` y `@canany`.
+#### Autorizar con *helper* del controlador
 
-```html
+Se pueden usar las políticas mediante el método `authorize()` del controlador, que acepta los mismos argumentos que el método `can()` del modelo ***User***:
+
+```php
+class MiController extends Controller
+{
+    public function miFunc(Coche $coche) {
+        $this->authorize('update', $coche);
+        // Si llegamos aquí, está autorizado...
+    }
+}
+```
+
+En este caso, si el usuario autenticado no está autorizado por la política, el método se interrumpirá y se generará automáticamente una respuesta 403.
+
+#### Autorizar con plantillas *Blade*
+
+Existe otro modo de usar las políticas, y es mediante las directivas *Blade* `@can`, `@cannot` y `@canany`. Estas permiten que fragmentos de la página se muestren o no según el estado de autorización.
+
+```
 @can('update', $coche)
     <!-- código html para usuarios que pueden actualizar el elemento $coche -->
 @elsecan('create', App\Coche::class)
@@ -287,7 +325,7 @@ Sería similar para un bloque `@cannot` - `@elsecannot` (opcional) - `@endcannot
 
 El ejemplo anterior equivale exactamente a:
 
-```html
+```
 @if(Auth::user()->can('update', $coche))
     <!-- código html para usuarios que pueden actualizar el elemento $coche -->
 @elseif(Auth::user()->can('create', App\Coche::class))
@@ -299,21 +337,25 @@ El inverso a `@can('update', $coche)` sería `@unless(Auth::user()->can('update'
 
 También podemos comprobar si el usuario tiene por lo menos una de las capacidades listadas en un array mediante la directiva `@canany`:
 
-```html
+```
 @canany(['update', 'view', 'delete'], $coche)
     <!-- para usuarios que pueden actualizar, ver o borrar el elemento $coche -->
-@elsecanany(['create'], \App\Coche::class)
+@elsecanany(['create'], App\Coche::class)
     <!-- para usuarios que no pueden hacer lo anterior pero sí crear un coche -->
 @endcanany
 ```
 
 Como hemos visto en los ejemplos, en acciones que no precisan de instancia del modelo (como `create`), se pasa el nombre de la clase.
 
+#### Contexto extra
+
+Si deseamos que los métodos de la *policy* reciban otros parámetros, a la hora de autorizar, en lugar de indicar como segundo parámetro el modelo (o nombre de clase), se incluirá un *array* cuyo primer elemento es ese modelo (o nombre de clase) y los siguientes son los valores que irán tomando el resto de parámetros del método.
+
 ## Encriptación
 
 Toda la encriptación en *Laravel* se realiza internamente a través de la *facade* ***Crypt***. *Laravel* la utiliza para encriptar *cookies* (para asegurarse de que no se modifican en el lado del cliente), etc. Para ello, esta *facade* necesita una clave, configurada en ***config/app.php***, y que por defecto toma su valor de la variable ***APP_KEY*** en el archivo ***.env***.
 
-Al crear un nuevo proyecto con *Composer*, o mediante el instalador de *Laravel*, se genera una clave automáticamente, pero al clonar una aplicación, puesto que el archivo ***.env*** no suele formar parte del repositorio, no se obtiene una clave por defecto. Además, aunque la clave también se clonara, no sería buena idea utilizarla: no es buena idea que nuestra aplicación use una clave que ya usa otra aplicación. Nuestra clave debería ser única y existir solo en nuestra aplicación. Por lo tanto, cuando **clonamos** un proyecto deberemos crear nuestra propia clave para la aplicación:
+Al crear un nuevo proyecto con *Composer*, o mediante el instalador de *Laravel*, se genera una clave automáticamente, pero al clonar una aplicación, puesto que el archivo ***.env*** no suele formar parte del repositorio, no se obtiene una clave por defecto. Además, aunque la clave también se clonara, no sería buena idea utilizarla: no es buena idea que nuestra aplicación use una clave que ya se usa en otro despliegue. Nuestra clave debería ser única y existir solo en nuestra aplicación. Por lo tanto, cuando **clonamos** un proyecto deberemos crear nuestra propia clave:
 
 ```
 php artisan key:generate
@@ -321,8 +363,24 @@ php artisan key:generate
 
 Al ejecutar este comando, se cambia la clave por una aleatoria, y si no existe el archivo ***.env*** se crea uno automáticamente.
 
-Hay que indicar que los *passwords* en *Laravel* no son encriptados, sino *hashed* (mediante el método `make()` de la *facade* ***Hash***, o con el *helper* equivalente `bcrypt()`), con lo que no usan la clave de la aplicación, lo que significa que generar una clave nueva no afectará a los *passwords* almacenados. En este caso, el *hash* es *one-way*, mientras que la encriptación es de ida y vuelta, y **simétrica** (la misma clave de la aplicación se puede aplicar para encriptar y para desencriptar), ya que usa *AES-256-CBC*.
-
-Si deseamos rotar la clave de la aplicación, hay que tener en cuenta que al cambiarla, las *cookies* encriptadas existentes serán invalidadas, y cualquier dato almacenado que hayamos encriptado con ***Crypt*** ya no será desencriptable. Si nuestra aplicación es servida desde varios servidores, hay que configurar la misma clave en todos ellos.
-
 Para encriptar un *string* se usa `Crypt::encryptString()`; se le pasa el *string* a encriptar y retorna en *string* encriptado. Exactamente lo contrario que `Crypt::decryptString()`.
+
+Si deseamos rotar la clave de la aplicación, hay que tener en cuenta que al cambiarla, las *cookies* encriptadas existentes serán invalidadas, y cualquier dato almacenado que hayamos encriptado con ***Crypt*** ya no será desencriptable. Si nuestra aplicación es servida desde varios servidores a la vez, hay que configurar la misma clave en todos ellos.
+
+## *Hashing*
+
+Los *passwords* de usuario que almacena *Laravel* no son encriptados, sino *hashed*. Por lo tanto, la clave de la aplicación no influye en este caso.
+
+Es posible elegir entre varios *drivers* de *hashing* en la configuración (***config/hashing.php***). El método por defecto es ***bcrypt*** (algoritmo *Bcrypt*), pero también se puede indicar ***argon*** (*Argon2i*) o ***argon2id*** (*Argon2id*).
+
+Para generar un *hash* se usa el valor de retorno del método `make()` de la *facade* ***Hash***. El primer argumento de este método es el texto al que se aplicará el *hash*. El segundo argumento, opcional, permite especificar los parámetros del algoritmo concreto mediante un *array* asociativo. Si no se indica este argumento, se utilizará la configuración por defecto (en ***config/hashing.php***).
+
+### *Bcrypt*
+
+El parámetro extra para este algoritmo es ***rounds*** (número de iteraciones).
+
+El *helper* `bcrypt()` realiza el *hash* del *string* indicado, utilizando *Bcrypt*, independientemente de la configuración.
+
+### *Argon2i*, *Argon2id*
+
+Para configurar los algoritmos *Argon2i* y *Argon2id* disponemos de los parámetros ***memory*** (memoria requerida), ***threads*** (grado de paralelismo) y ***time*** (tiempo de ejecución).
