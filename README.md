@@ -10,6 +10,7 @@ Estos son mis apuntes de *Laravel* 9.
 1. [Profundizando](capitulos/04-profundizando.md)
 1. [Seguridad](capitulos/05-seguridad.md)
 1. [Bases de datos](capitulos/06-bases-de-datos.md)
+1. [Eloquent](capitulos/07-eloquent.md)
 
 ### Bibliotecas
 
