@@ -310,7 +310,7 @@ Por otro lado, si lo que deseamos es escribir en la tabla, necesitamos un bloque
 
 ### Depuración
 
-De forma similar a los *helpers* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como componentes de la cadena (no hay que pasarles ningún argumento).
+Los métodos `dd()` y `dump()` proporcionan información sobre la consulta *SQL* asociada al *query builder* en ese momento. El primero termina la ejecución. Por otro lado, el método `toSql()` retorna un *string* con la consulta *SQL*.
 
 ## Migraciones
 
