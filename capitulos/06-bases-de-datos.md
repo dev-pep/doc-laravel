@@ -61,7 +61,7 @@ $datos =  DB::connection('sqlite')
     ->select('SELECT * FROM coches');
 ```
 
-### Transacciones
+## Transacciones
 
 Es posible agrupar varias *queries* en una sola transacción mediante el método `transaction()`, al que pasaremos una *closure* que contendrá todas las *queries*. Si dentro de la *closure* se llega a producir alguna excepción, se realizará el *rollback* automáticamente.
 
@@ -95,29 +95,67 @@ php artisan db pgsql
 
 ## *Query builders*
 
-El *query builder* es un mecanismo de acceso a los datos. Se trata de métodos que retornan una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***), que es un objeto que representa una consulta *SQL*, asociada a una tabla específica. Se pueden ir añadiendo elementos a esa consulta, e irla refinando a base de métodos disponibles (que retornan a su vez un *query builder* modificado). Estos métodos se pueden ir encadenando uno tras otro.
+El *query builder* es un mecanismo que permite construir *queries* a la base de datos mediante el encadenamiento de métodos. Las *queries* construidas así son inmunes a los ataques de inyección de *SQL*.
 
-Normalmente, los métodos encadenables van retornando a su vez un objeto *query builder*, hasta que recojamos los datos deseados en un último método que suele retornar otro tipo de datos (típicamente un tipo *array-like*). Un *query builder* no es un conjunto de resultados hasta que se le aplica un método, como por ejemplo `get()` que lo convierte en otra cosa, en este caso en una *collection* (***Illuminate\\Support\\Collection***), un tipo que funciona como un *array* de registros. Estos registros que componen la colección permiten también acceder a sus campos mediante la sintaxis de acceso a propiedades.
+Cada uno de estos métodos retorna una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***). Se puede ir refinando la *query* en la cadena de métodos. Al final de la cadena utilizaremos un método que transforme el *query builder* deseado en otro tipo de objeto, como *array* o *collection* (***Illuminate\\Support\\Collection***) de registros.
 
-El método inicial de creación de un *query builder* es `DB::table()`, que es un *select* de la tabla entera.
+El método inicial para empezar el *query builder* es `DB::table()`. Empezaremos simplemente indicando la tabla sobre la que trabajar (se trata de un *select* de la tabla entera), indicada como argumento *string*. Este método retorna, lógicamente, una instancia del *query builder*.
+
+El método final es frecuentemente `get()`, un método del objeto *query builder* que retorna una *collection* cuyos elementos son objetos genéricos correspondientes a los registros del *query builder*. Estos objetos tienen como propiedades los campos de la tabla.
 
 ```php
-$user = DB::table('users')->where('name', 'John')->first();
+$tablaCoches = DB::table('coches')->get();
+$marcaCoche2 = $tablaCoches[2]->marca;
 ```
 
-Este ejemplo toma la tabla ***users***, le aplica un *where* (`name=John`) mediante el método `where()`, y luego retorna el primero de los elementos. El método `first()` retorna el registro, no una colección ni un *array*. Este objeto retornado permite acceder a sus campos mediante sintaxis de acceso a propiedades.
+Una forma de aplicar un filtro al query builder es mediante `where()` (se verá en detalla más adelante). Por otro lado, en lugar de convertir el *query builder* en una *collection* de objetos, se puede convertir en un solo objeto mediante el método `first()`. En este caso, el objeto es el primero de los registros de la *query*.
 
-`value()` retorna únicamente un valor: el del campo cuyo nombre le pasamos por parámtero, en el primer registro de la *query*.
+```php
+$user = DB::table('coches')->where('marca', 'Volvo')->first();
+```
 
-`find()` retorna un simple objeto con el registro en que su clave primaria (campo ***id***) tiene el valor que pasamos como argumento.
+Este ejemplo toma la tabla ***coches***, le aplica un *where* (`marca=Volvo`) mediante el método `where()`, y luego retorna el primero de los elementos. El método `first()` retorna el registro, no una colección. Este objeto retornado permite acceder a sus campos mediante sintaxis de acceso a propiedades.
 
-`pluck()` retorna todos los valores que tiene la columna (campo) cuyo nombre le pasamos como argumento. El tipo de retorno es una *collection*.
+`value()` retorna únicamente un valor simple: el del campo cuyo nombre le pasamos por parámetro (*string*), en el primer registro de la *query*. El resultado retornado es un *string*.
 
-Métodos agregación: `count()` (número de registros), `max('campo')`, `min('campo')`, `avg('campo')`, `sum('campo')`. Retornan un valor numérico.
+`find()` retorna un simple objeto con el registro tal que su clave primaria (campo con nombre ***id***) tiene el valor que pasamos como argumento. Si no encuentra dicho registro, retorna ***null***.
+
+`pluck()` retorna todos los valores que tiene la columna (campo) cuyo nombre le pasamos como argumento. El tipo de retorno es una *collection*. Si le pasamos un segundo argumento con en nombre de otro campo, los elementos de la *collection* retornada tendrán como clave el valor de ese segundo campo.
+
+### Fragmentos (*chunks*)
+
+Si hay que trabajar sobre miles de registros, en lugar de leer todos los registros de golpe y trabajar sobre ellos, se pueden ir leyendo por fragmentos de un número determinado de registros. Para ello, el método `chunk()` lo hace automáticamente. El método espera el tamaño máximo del fragmento, y una *closure* con el código a aplicar a esos registros. La *closure* recibe una *collection* con los registros del *chunk* como objetos estándar. Para garantizar que el orden de los registros es el mismo cada vez que se lee un *chunk*, es obligatorio especificar una cláusula *order by* de *SQL* para utilizar este método. Más adelante se verá el método `orderBy()`:
+
+```php
+DB::table('coches')->orderBy('id')
+    ->chunk(100, function($registros) {
+    foreach($registro as $registros)
+        { /* ... */ }
+});
+```
+
+El mecanismo del ejemplo es el siguiente: se leen los primeros 100 registros. Se procesan con el código de la *closure*. Si esta retorna ***false***, se termina la ejecución. En caso contrario, se lee el siguiente *chunk*, hasta que se han procesado todos los registros de la tabla (el último *chunk* puede ser inferior a 100 elementos).
+
+El problema puede aparecer cuando a medida que se van procesando los archivos se insertan o eliminan registros. Esto puede hacer que los fragmentos obtenidos no sean correctos. Para evitarlo, en lugar de fragmentar según el orden, se puede hacer por *id*. Es decir, no se trata de ordenar por *id* y tomar los N primeros, los N siguientes, etc. Se trata de tomar los registros según el valor de dicho *id*. En este caso, añadir y borrar registros es seguro, aunque cambiar el valor del campo *id* de los registros puede conllevar problemas a su vez.
+
+```php
+DB::table('coches')->chunkById(100, function ($registros) {
+    foreach($registro as $registros)
+        { /* ... */ }
+});
+```
+
+En este caso no es necesario el *order by*.
+
+### Agregación
+
+Métodos agregación: `count()` (número de registros), `max()`, `min()`, `avg()`, `sum()`. A excepción del primero, toman un argumento con el nombre del campo deseado. Retornan un valor numérico.
 
 Para comprobar si existen registros: `exists()` y `doesntExist()`. Retornan un booleano.
 
-Para seleccionar campos, método `select()` (retorna un *query builder*):
+### Sentencias *select*
+
+Para seleccionar campos, se puede refinar el *query builder* con el método `select()`:
 
 ```php
 $users = DB::table('users')->select('name', 'email as user_email')->get();
@@ -125,7 +163,7 @@ $users = DB::table('users')->select('name', 'email as user_email')->get();
 
 El método `distinct()` retorna un *query builder* en el que se han eliminado los registros duplicados. El método `addSelect()` añade campos al *query builder*.
 
-En un método como `select()`, `where()`, etc. se puede pasar como argumentos una *raw expression*. En este caso se usará el método `raw()`:
+En un método como `select()`, `where()`, etc. se puede pasar como argumentos una expresión *SQL* literal (*raw expression*). En este caso se usará el método `raw()`:
 
 ```php
 $users = DB::table('users')
@@ -135,11 +173,11 @@ $users = DB::table('users')
                  ->get();
 ```
 
-Dependiendo de a qué método deseemos pasar una expresión *raw*, podemos utilizar una sintaxis más breve, mediante los métodos `selectRaw()`, `whereRaw()`, `orWhereRaw()`, `groupByRaw`, etc.
+Dependiendo de a qué método deseemos pasar una expresión literal, podemos utilizar una sintaxis más compacta, mediante los métodos `selectRaw()`, `whereRaw()`, `orWhereRaw()`, `havingRaw()`, `orHavingRaw()`, `orderByRaw()` o `groupByRaw()`.
 
 ### *Joins* y uniones
 
-Para hacer un *inner join* con otra tabla, se usa el método `join()`. El primer argumeto es la tabla con la que hacer el *join*, y los siguientes especifican las restricciones de columna del mismo (se pueden encadenar varios *joins*):
+Para hacer un *inner join* con otra tabla, se usa el método `join()`. El primer argumento es la tabla con la que hacer el *join*, y los siguientes especifican las restricciones de columna del mismo (se pueden encadenar varios *joins*):
 
 ```php
 $users = DB::table('users')
@@ -149,13 +187,15 @@ $users = DB::table('users')
             ->get();
 ```
 
-De foma similar, podemos hacer un *left join* (`leftJoin()`) o un *right join* (`rightJoin()`). También se puede hacer un *cross join* (`crossJoin()`).
+De forma similar, podemos hacer un *left join* (`leftJoin()`) o un *right join* (`rightJoin()`).
+
+También se puede hacer un *cross join* (`crossJoin()`). En este caso solo se especifica como parámetro la tabla con la que hacer el producto cartesiano.
 
 Con `union()` se pueden unir dos *query builders* (se le debe pasar como argumento el *query builder* a unir).
 
 ### *Where*
 
-El método `where()` retorna un *query builder*. Espera como primer argumento el campo a comparar, como segundo, el operador de comparación, y como tercero el segundo operando de la comparación. Si queremos comparar por igualdad, se puede obviar el operador. Los operadores pueden ser ***=***, ***\<>***, ***>=***, ***like***, etc. Se puede pasar un *array* de condiciones:
+El método `where()` retorna un *query builder* filtrado según la condición indicada. Espera como primer argumento el campo a comparar, como segundo el operador de comparación, y como tercero el segundo operando de la comparación. Si queremos comparar por igualdad, se puede obviar el operador. Los operadores pueden ser ***=***, ***\<>***, ***>=***, ***like***, etc. Se puede, alternativamente, pasar un *array* de condiciones:
 
 ```php
 $users = DB::table('users')->where([
@@ -164,25 +204,53 @@ $users = DB::table('users')->where([
 ])->get();
 ```
 
-Se pueden encadenar varios `where()` (se aplica *and*), `orWhere()` (se aplica *or*), `whereIn()`, `whereNotIn()`, etc. Existen otros métodos como `whereDate()`, `whereMonth()`, `whereColumn()`, `orWhereColumn()`, etc.
+Se pueden encadenar varios `where()` (se aplica *and*), `orWhere()` (se aplica *or*), `whereNot()`, `orWhereNot()`, `whereBetween()`, `orWhereBetween()`, `whereNotBetween()`, `orWhereNotBetween()`, `whereIn()`, `whereNotIn()`, `orWhereIn()`, `orWhereNotIn()`, etc.
 
-### Agrupación, ordenación, limitación
+Para agrupar cláusulas *where* adecuadamente teniendo en cuenta las *and* y *or*, puede ser necesario usar *closures*:
 
-Todos estos métodos son encadenables, esto es, retornan un *query builder*.
+```php
+$users = DB::table('users')
+           ->where('name', '=', 'John')
+           ->where(function ($query) {
+               $query->where('votes', '>', 100)
+                     ->orWhere('title', '=', 'Admin');
+           })
+           ->get();
+```
 
-`orderBy()` toma como primer argumento la columna por la que ordenar, mientras que el segundo argumento puede ser ***'asc'*** o ***'desc'***. Si se quiere ordenar por varias columnas, se encadenan varios `orderBy()`.
+### Orden
 
-Con `latest()` y `oldest()` se ordenan por fecha (por defecto según el campo ***created_at***). `inRandomOrder()` ordena aleatoriamente. `reorder()` elimina los órdenes anteriores.
+El método `orderBy()` toma como primer argumento la columna por la que ordenar, mientras que el segundo argumento puede ser un *string* con ***asc*** o ***desc***. Si se quiere ordenar por varias columnas, se deben encadenan varios `orderBy()`.
 
-Con `groupBy()` se agrupa por el campo (o campos) que se le pasa como argumento(s). Se puede combinar con `having()`.
+Con `latest()` y `oldest()` se ordenan por fecha (por defecto según el campo ***created_at***). `inRandomOrder()` ordena aleatoriamente. `reorder()` elimina las ordenaciones anteriores.
 
-Para limitar el número de registros resultante, tenemos el método `take()`, al que se le pasa el número de registros deseado. También está el método `skip()`, que se salta los primeros registros (el argumento especifica cuántos se saltarán).
+### Agrupación
 
-> Al parecer, si usamos `skip()` debemos usar posteriormente `take()`.
+Con `groupBy()` se agrupa por el campo (o campos) que se le pasa como argumento(s). Se puede combinar con `having()` (y otros como `havingBetween()`).
+
+### Límites y *offset*
+
+Para limitar el número de registros resultante, tenemos el método `take()` (o `limit()`), al que se le pasa el número de registros deseado. También está el método `skip()` (u `offset()`), que se salta los primeros registros (el argumento especifica cuántos se saltarán).
+
+Si usamos `skip()` (u `offset()`) debemos usar también `take()` (o `limit()`).
+
+### Cláusulas condicionales
+
+Es posible aplicar un método en la cadena solamente si una determinada condición es verdadera, a través del método `when()`.
+
+```php
+$coches = DB::table('coches')
+              ->when($marca, function($query, $marca) {
+                    $query->where('marca', $marca);
+              })
+              ->get();
+```
+
+En este caso, al *query builder* se le aplicará la cláusula *where* cuando la variable ***\$marca*** exista y se evalúe a ***true***. La *closure* como primer argumento el *query builder* que estamos construyendo, y como segundo, el primer argumento a `when()`.
 
 ### Inserciones
 
-Para insertar, debemos pasar un registro (en un *array* de pares campo, valor) o varios (en un *array* de registros) a través del método `insert()`.
+Para insertar, debemos pasar al *query builder* un registro (en un *array* de pares campo/valor) o varios (en un *array* de registros) a través del método `insert()`.
 
 ```php
 DB::table('users')->insert([
@@ -191,11 +259,28 @@ DB::table('users')->insert([
 ]);
 ```
 
-Si usamos `insertOrIgnore()` se ignorarán los registros duplicados. Si la tabla tiene una clave primaria autoincremental, asignara valor a esa clave si insertamos mediante `insertGetId()`, que retorna ese *id*.
+Si en su lugar usamos `insertOrIgnore()` se ignorarán los registros duplicados. Si la tabla tiene una clave primaria autoincremental, asignará valor a esa clave si insertamos mediante `insertGetId()`, que retorna además ese *id*.
 
-### Cambios
+### *Upserts*
 
-De forma similar a las inserciones, un cambio se realiza mediante un *array* de pares campo, valor pasado al método `update()`; se puede restringir el cambio a los registros que especifiquemos mediante *wheres*.
+Un *upsert* es un híbrido entre un *insert* y un *update*. A través del método `upsert()`, se especifican una serie de registros. Para cada registro, si este tiene una coincidencia en la tabla, se actualizará adecuadamente. De lo contrario, el registro será insertado.
+
+Para ello, el método `upsert()` recibe un primer argumento consistente en un *array* de registros. Cada registro es a su vez un *array* con pares clave/valor (campos con sus valores correspondientes). El segundo argumento es un *array* con los nombres de los campos que se usarán para comprobar la existencia del registro en la base de datos. El tercer *array* indica el campo a actualizar en caso de que el registro exista en la tabla.
+
+```php
+DB::table('flights')->upsert([
+    ['departure' => 'Oakland', 'destination' => 'San Diego', 'price' => 99],
+    ['departure' => 'Chicago', 'destination' => 'New York', 'price' => 150]
+], ['departure', 'destination'], ['price']);
+```
+
+En este ejemplo, se intentan insertar estos dos registros. Pero si existe ya un registro cuyos campos ***departure*** y ***destination*** coinciden con el registro a insertar, simplemente se actualizará el valor de su columna ***price***.
+
+> A excepción de SQL Server, será necesario que el segundo argumento de `upsert()` contenga por lo menos un campo único o una clave primaria.
+
+### Actualizaciones
+
+De forma similar a las inserciones, una actualización o cambio (*update*) se realiza mediante un *array* de pares campo/valor pasado al método `update()`; se puede restringir el cambio a los registros que especifiquemos mediante *wheres*.
 
 ```php
 $affected = DB::table('users')
@@ -205,17 +290,27 @@ $affected = DB::table('users')
 
 El método `update()` retorna el número de registros afectados.
 
-El método `updateOrInsert()` toma dos argumentos: un *array* con una serie de condiciones, y otro con el registro a añadir a la base de datos. Si existen registros en la tabla que cumplen las condiciones, serán actualizados con el registro del segundo argumento. De lo contrario, ese registro será añadido a la tabla.
+El método `updateOrInsert()` toma dos argumentos: un *array* con una serie valores de campos (uno o varios elementos clave/valor), y otro con los campos a actualizar (también uno o más campos con sus valores). Si existen registros en la tabla que coinciden (campos del primer argumento), recibirán la actualización de los campos indicados en el segundo argumento. De lo contrario, ese registro será añadido a la tabla, con los campos de ambos argumentos combinados.
 
-Para incrementar o decrementar un campo numérico, tenemos `increment()` y `decrement()`. Si se le pasa el nombre del campo, actuará en él. Si además le damos un número, ese cambio no será de 1 sino de lo que indiquemos.
+Para incrementar o decrementar un campo numérico, tenemos `increment()` y `decrement()`. Debemos indicar el nombre del campo. Si además especificamos un número (siempre positivo), ese cambio no será de 1 sino de lo que indiquemos. Si además indicamos un *array* con pares campo/valor, ese campo será también actualizado.
+
+```php
+DB::table('coches')->increment('km', 100, ['estado' => 'usado']);
+```
 
 ### Borrado
 
-Cuando la cadena de métodos termina en `delete()`, se borran los registros seleccionados. `truncate()` está pensado para eliminar todos los registros de la tabla y resetear el contador de *id* a 0.
+Cuando la cadena de métodos termina en `delete()`, se borran los registros seleccionados. El método `truncate()` está pensado para eliminar **todos** los registros de la tabla y resetear el contador de *id* a 0; la cadena debería tener solo dos métodos: `table()` y `truncate()`.
+
+### Bloqueos
+
+Para que toda la transacción se ejecute con un *shared lock* (usado para lectura), se incluirá en la cadena el método `sharedLock()`. Este tipo de bloqueo no permite la escritura por parte de otro proceso hasta que hemos terminado de obtener los datos.
+
+Por otro lado, si lo que deseamos es escribir en la tabla, necesitamos un bloqueo para escritura, lo cual se consigue mediante la inclusión de `lockForUpdate()`, que no permite ni la escritura ni la selección hasta finalizar la transacción.
 
 ### Depuración
 
-De forma similar los *helpers* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como componentes de la cadena (no hay que pasarles ningún argumento).
+De forma similar a los *helpers* `dd()` y `dump()`, disponemos de dos métodos de igual denominación y funcionamiento como componentes de la cadena (no hay que pasarles ningún argumento).
 
 ## Migraciones
 
