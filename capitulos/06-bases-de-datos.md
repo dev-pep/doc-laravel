@@ -314,30 +314,34 @@ Los métodos `dd()` y `dump()` proporcionan información sobre la consulta *SQL*
 
 ## Migraciones
 
-La base de datos puede administrarse desde una herramienta externa (como *phpMyAdmin* o similar), pero *Laravel* proporciona, como alternativa, un potente mecanismo para el mantenimiento a través de `artisan`. Este mecanismo permite trasladar fácilmente la estructura de la base de datos a otros desarrolladores y a personal de sistemas, de tal modo que el mismo `artisan` se encarga de hacer las modificaciones pertienentes en la estructura de la base de datos. Este mecanismo se realiza a través de las llamadas *migraciones*.
+La base de datos puede administrarse desde una herramienta externa (como *phpMyAdmin* o similar), pero *Laravel* proporciona, como alternativa, un potente mecanismo para el mantenimiento a través de `artisan`. Este mecanismo permite trasladar fácilmente la estructura de la base de datos a otros desarrolladores y al personal de sistemas encargado de los despliegues, de tal modo que es `artisan` quien se encarga de crear y modificar la estructura de la base de datos adecuadamente. Este mecanismo se realiza a través de las llamadas *migraciones*.
 
-Una migración especifica la estructura de una tabla, y puede indicar cómo se crea esta, o una modificación de esta. Por ejemplo, para crear una migración que especifique cómo se debe producir la creación de una tabla ***coches***:
+Una migración especifica la estructura de una tabla, y puede indicar cómo se crea esta, o cómo debe modificarse. Por ejemplo, para crear una migración que especifique cómo se debe producir la creación de una tabla ***coches***:
 
 ```
-php artisan make:migration crea_tabla_coches --create=coches
+php artisan make:migration create_coches_table
 ```
 
-En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***\<timestamp>\_crea_tabla_coches.php***, donde ***\<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. Con `--create` se indica que es una migración de creación y se proporciona el nombre de la tabla.
+En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***\<timestamp>\_create_coches_table.php***, donde ***\<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. Además, las migraciones ya aplicadas deberán ignorarse.
 
-El archivo de migración del ejemplo contiene la clase (creada automáticamente) ***CreaTablaCoches***. En ella debe haber dos métodos: `up()`, que especifica el cambio o creación, y `down()`, opcional, que especifica cómo deshacer tal cambio (en caso de *rollback*).
+*Laravel* intentará deducir el nombre de la tabla a partir del nombre de la migración, y si se trata de una tabla que hay que crear, o una que hay que modificar. En el ejemplo, la tabla será ***coches***. En caso de que no sea posible tal deducción, simplemente habrá que editar el archivo de migración.
 
-La creación de una tabla se realiza mediante el método `create()` de la *facade* ***Schema***, que recibe como primer argumento el nombre de la tabla, y como segundo una *closure* que recibe un objeto ***Blueprint*** que servirá para definir la tabla nueva. Un ejemplo de migración para la creación de una tabla:
+Dicho archivo, en el ejemplo, contiene una clase anónima (`return new class extends Migration`). De este modo, no hay colisión de nombres en las migraciones. En esta clase debe haber dos métodos: `up()`, que especifica el cambio o creación, y `down()`, opcional, que especifica cómo deshacer tal cambio (en caso de *rollback*).
+
+La creación de una tabla se realiza mediante el método `create()` de la *facade* ***Schema***, que recibe como primer argumento el nombre de la tabla, y como segundo una *closure* que a su vez recibe un objeto ***Illuminate\\Database\\Schema\\Blueprint***, el cual servirá para definir la tabla nueva. Si *Laravel* puede deducir a través del nombre que se trata de una migración de creación, se creará este código automáticamente:
 
 ```php
-class CreaTablaCoches extends Migration
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
 {
     public function up()
     {
         Schema::create('coches', function (Blueprint $table) {
             $table->id();
-            $table->char('marca', 50);
-            $table->char('modelo', 40);
-            $table->date('fecha_fabric')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -345,18 +349,20 @@ class CreaTablaCoches extends Migration
     {
         Schema::dropIfExists('coches');
     }
-}
+};
 ```
 
 Para destruir una tabla, se usa también ***Schema***, y sus métodos `drop()` o `dropIfExists()`. Para renombrarla, `rename()`.
 
-Si la migración no crea una tabla nueva, sino que modifica una existente, se usa `--table` en lugar de `--create`:
+Si la migración está pensada para una conexión concreta de base de datos, hay que especificarlo en la propiedad ***\$connection*** de la migración:
 
-```
-php artisan make:migration modifica1_tabla_coches --table=coches
+```php
+protected $connection = 'pgsql';
 ```
 
-En este caso, en lugar del método `create()`, utilizará el método `table()` para modificar la tabla.
+En las migraciones de modificación, en lugar del método `create()` se usa el método `table()` para modificar la tabla.
+
+### Ejecución de las migraciones
 
 Una vez creadas las migraciones que queramos, se ejecutarán así:
 
@@ -364,7 +370,13 @@ Una vez creadas las migraciones que queramos, se ejecutarán así:
 php artisan migrate
 ```
 
-Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía (archivos con *timestamp* posterior a la última migración, ejecutada con `artisan migrate`).
+Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía (archivos con *timestamp* posterior a la última migración ejecutada con `artisan migrate`).
+
+Para ver el estado de las migraciones, es decir, qué migraciones se han aplicado actualmente:
+
+```
+php artisan migrate:status
+```
 
 Para revertir la última migración:
 
@@ -377,17 +389,28 @@ Para revertir varios pasos a la vez:
 ```
 php artisan migrate:rollback --step=5
 ```
+
 Para revertir **todas** las migraciones del proyecto:
 
 ```
 php artisan migrate:reset
 ```
 
-### Definición de tablas
+El comando de *artisan* `make:refresh` realiza *rollback* de todas las migraciones y ejecuta el comando `migrate`, es decir, regenera la base de datos completamente.
 
-Ya hemos visto cómo definir campos a través del método `create()`. Existen otros métodos útiles en la *facade* ***Schema***: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe el campo; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
+### Creación de columnas
 
-El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos *MySQL*. En general, estos métodos toman un argumento con el nombre del campo. Veamos algunos de ellos:
+Ya hemos visto cómo definir campos a través del método `create()` de la *facade* ***Schema***. Existen otros métodos útiles esta *facade*: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe el campo; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
+
+El método `table()` de ***Schema*** tiene el mismo uso que `create()`, pero en lugar de crear la tabla la modifica.
+
+Si deseamos especificar una conexión de base de datos en lugar de usar la conexión por defecto, se debe usar el método `connection()`:
+
+```php
+Schema::connection('sqlite')->create('tabla', function(Blueprint $table) { /*...*/ });
+```
+
+El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos propios de la base de datos (normalmente *SQL*). En general, estos métodos toman un argumento con el nombre del campo. Veamos algunos de ellos (asumiremos tipos *MySQL*):
 
 Para crear **claves primarias autoincrementales**: `bigIncrements()` es un ***UNSIGNED BIGINT***. `id()` equivale a `bigIncrements('id')`. También `increments()` (***UNSIGNED INTEGER***), `mediumIncrements()` (***UNSIGNED MEDIUMINT***), `smallIncrements()` (***UNSIGNED SMALLINT***), `tinyIncrements()` (***UNSIGNED TINYINT***).
 
@@ -413,13 +436,43 @@ A los métodos anteriores se les puede encadenar métodos modificadores:
 
 `first()` coloca la columna en primera posición.
 
-`nullable($value = true)` establece la columna como *nullable* (puede contener ***null***).
+`nullable($value=true)` establece la columna como *nullable* (puede contener ***null***).
 
 `unsigned()` establece una columna de tipo entero como *unsigned*.
 
+### Modificación de columnas
+
+Se usa el método `Schema::table()` para la modificación de tablas existente. Si se desea añadir nuevas columnas, se hace del mismo modo que en `Schema::create()`.
+
+Si necesitamos modificar columnas ya existentes, es necesario instalar el paquete *doctrine/dbal*:
+
+```
+composer require doctrine/dbal
+```
+
+> Hay otras configuraciones a realizar si deseamos modificar campos creados con `timestamp()`.
+>
+> Si la base de datos es *SQL Server*, hay que instalar `doctrine/debal:^3.0`.
+
+Si redefinimos una columna ya existente, hay que hacerlo como en el caso de la creación de columnas, pero se debe encadenar al final el método `change()`:
+
+```php
+Schema::table('coches', function (Blueprint $tabla) {
+    $tabla->string('marca', 50)->nullable()->change();
+});
+```
+
+Si se desea renombrar una columna, se usa el método `renameColumn()`, al que se debe indicar el nombre antiguo y el nuevo.
+
+### Eliminación de columnas
+
+En este caso también es necesario el paquete *doctrine/dbal*, pero solo cuando trabajemos con bases de datos *SQLite*.
+
+Para eliminar una columna existente, se usa el método `dropColumn()` del objeto ***Blueprint***, al que se le pasa el nombre de la columna, o un *array* de nombres de columnas (en el caso de *SQLite* solo acepta la eliminación de una columna a la vez).
+
 ### Índices
 
-Se puede crear un índice sobre una columna, encadenándole simplemente `unique()` en la definición de la columna.
+Se puede crear un índice sobre una columna, encadenando simplemente `unique()` en la definición de dicha columna.
 
 ```php
 $tabla->string('email')->unique();
@@ -439,7 +492,7 @@ $tabla->unique(['email', 'nombre', 'fecha']);
 
 Este método acepta un segundo parámetro que será el nombre del índice. Si no se especifica, se creará un nombre por defecto, basado en el nombre de la tabla, columnas, etc.
 
-En lugar de `unique()`, se puede usar `index()` si queremos que se repitan valores en la columna. Otra alternativa es `primary()`, que lo que crea es una clave primaria.
+En lugar de `unique()`, se puede usar `index()` si queremos que se repitan valores en la columna. Otra alternativa es `primary()`, que lo que crea es una clave primaria. Todos estos métodos aceptan un segundo argumento opcional con el nombre del índice.
 
 Para **cambiar el nombre** de un índice, se usará el método `renameIndex()` al que se pasa el nombre antiguo y el nuevo.
 
@@ -447,41 +500,44 @@ Para **eliminar un índice**, dependiendo del tipo que sea, usaremos `dropPrimar
 
 ### Restricciones de llave externa
 
-Las *Foreign Key Constraints* son un mecanismo para ayudar a mantener la integridad referencial.
+Las restricciones de llave externa (*foreign key constraints*) son un mecanismo para ayudar a mantener la integridad referencial.
 
-Supongamos que añadimos a una tabla existente ***posts*** una columna ***user_id***, que referencia a una clave primaria ***id*** en una tabla ***users***. Para añadir esta columna y crear esa restricción de clave externa:
+Supongamos que añadimos a una tabla ***coches*** una columna ***color_id***, que referencia a una clave primaria ***id*** en una tabla ***colores***. Para añadir esta columna y crear esa restricción de clave externa:
 
 ```php
-Schema::table('posts', function (Blueprint $table) {
-    $table->unsignedBigInteger('user_id');  // crea la columna
-    $table->foreign('user_id')->references('id')->on('users');  // crea la restricción
+Schema::table('coches', function (Blueprint $tabla) {
+    $tabla->unsignedBigInteger('color_id');  // crea la columna
+    $tabla->foreign('color_id')->references('id')->on('colors');  // crea la restricción
 });
 ```
 
 El código completo de la función puede sustituirse por una forma más resumida:
 
 ```php
-$table->foreignId('user_id')->constrained();
+$table->foreignId('color_id')->constrained();
 ```
 
-Por un lado, `foreignId()` es un alias de `unsignedBigInteger()`. Y por otro lado, es importante el nombre que le demos a la nueva columna, puesto que es lo que utilizará *Laravel* para expandir al código anterior.
+Por un lado, `foreignId()` es un alias de `unsignedBigInteger()`. Y por otro lado, es importante el nombre que le demos a la nueva columna, puesto que es lo que utilizará *Laravel* para deducir y expandir el código anterior. En caso de que el nombre de la tabla no siga la convención de *Laravel*, debe indicarse el nombre de la misma al método `constrained()`. Supongamos que en lugar de ***colors*** la tabla se llama ***colores*** (lo cual no sigue el convenio):
 
-Naturalmente, antes de `constrained()` se pueden incluir otros métodos modificadores del campo, como de costumbre (es importante indicarse antes).
+```php
+$table->foreignId('color_id')->constrained('colores');
+```
+
+Naturalmente, **antes** de `constrained()` se pueden incluir otros métodos modificadores del campo, como de costumbre.
 
 Por otro lado, es posible definir cláusulas ***ON DELETE*** y ***ON UPDATE*** mediante los métodos `onDelete()` y `onUpdate()` respectivamente, que se colocarán **después** de `constrained()`. En el caso, por ejemplo, de ***MySQL***, tenemos las siguientes posibilidades:
 
 - ***ON DELETE***:
-    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Levantan error si se intenta eliminar una registro referenciado en otra tabla como llave externa.
-    - ***SET NULL*** pone las referencias a un valor nulo.
-    - ***CASCADE*** elimina también los registros que referencian al registro a eliminar.
-
+    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Producen un error si se intenta eliminar un registro referenciado en otra tabla como llave externa.
+    - ***SET NULL*** pone un valor nulo a las referencias al registro eliminado.
+    - ***CASCADE*** elimina también los registros que referencian al registro eliminado.
 - ***ON UPDATE***:
-    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Levantan error si se intenta cambiar la clave primaria referenciada en otra tabla como llave externa.
-    - ***SET NULL*** pone las referencias de otras tablas a un valor nulo.
-    - ***CASCADE*** cambia las referencias en las otras tablas.
+    - ***RESTRICT*** y ***NO ACTION*** son sinónimos, y el **comportamiento por defecto**. Producen error si se intenta cambiar la clave primaria referenciada en otra tabla como llave externa.
+    - ***SET NULL*** pone un valor nulo a las referencias a la clave modificada.
+    - ***CASCADE*** cambia el valor de las referencias para que coincidan con la clave modificada.
 
 ```php
-$table->foreignId('user_id')
+$table->foreignId('color_id')
     -> constrained()
     -> onDelete('restrict')
     -> onUpdate('cascade');
@@ -489,13 +545,15 @@ $table->foreignId('user_id')
 
 A la hora de definir la restricción, la tabla a la que pertenece la clave a la que hacemos referencia debe existir ya en la base de datos.
 
-Para eliminar una de estas restricciones, es decir, para eliminar una *foreign key*, hay que usar `dropForeign()`, al que le pasaremos el nombre de esta. La convención del nombre es como sigue: nombre de la tabla, nombre del campo y el sufijo ***foreign***, todo separado por guiones bajos (***\_***). En nuestro caso sería:
+Por conveniencia existen métodos como `cascadeOnUpdate()`, `restrictOnUpdate()`, `cascadeOnDelete()`, `restrictOnDelete()`, y `nullOnDelete()`.
+
+Para eliminar una de estas restricciones y eliminar una *foreign key*, hay que usar `dropForeign()`, al que le pasaremos el nombre de esta. El convenio del nombre es como sigue: nombre de la tabla, nombre del campo y sufijo ***foreign***, todo separado por guiones bajos (***\_***). En nuestro caso sería:
 
 ```php
-$table->dropForeign('posts_user_id_foreign');
+$table->dropForeign('coches_color_id_foreign');
 ```
 
-Esto no elimina la columna, sino simplemente la restricción.
+Esto no elimina la columna, sino simplemente la clave externa (y la correspondiente restricción).
 
 Para habilitar y deshabilitar las restricciones de clave externa en nuestras migraciones:
 
@@ -503,3 +561,5 @@ Para habilitar y deshabilitar las restricciones de clave externa en nuestras mig
 Schema::enableForeignKeyConstraints();
 Schema::disableForeignKeyConstraints();
 ```
+
+> *SQLite* deshabilita las claves externas por defecto. Debemos asegurarnos de habilitarlas en ***config/database.php***.
