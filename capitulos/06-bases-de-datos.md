@@ -563,3 +563,35 @@ Schema::disableForeignKeyConstraints();
 ```
 
 > *SQLite* deshabilita las claves externas por defecto. Debemos asegurarnos de habilitarlas en ***config/database.php***.
+
+## *Seeding*
+
+El proceso para rellenar las tablas con datos de ejemplo (aleatorios en muchos casos) se denomina *seeding*.
+
+Para ello, *Laravel* utiliza unas clases llamadas *seeders*. Para crear un *seeder*:
+
+```
+php artisan make:seeder CochesSeeder
+```
+
+Esto creará la clase ***Database\\Seeders\\CochesSeeder*** (en el archivo ***database/seeders/CochesSeeder.php***). Un seeder tiene un método `run()` que es ejecutado cuando se invoca al *seeder* (a través de *artisan*):
+
+```
+php artisan db:seed --class=CochesSeeder
+```
+
+El método `run()` puede hacer lo que queramos, pero en principio debería insertar uno o más registros en la tabla ***coches*** (usando la *facade* ***DB*** o un modelo *Eloquent*).
+
+A parte de esto, se pueden invocar otros *seeders* desde este método, de tal modo que otras tablas sean rellenadas también (cuidado con las invocaciones circulares). Para ello se utiliza el método `call()` del *seeder*, pasándole un *array* con los nombres *fully qualified* de todas las clases *seeder* deseadas:
+
+```php
+public function run()
+{
+    $this->call([
+        UnSeeder::class,
+        OtroSeeder::class
+    ]);
+}
+```
+
+Cuando se ejecuta el comando *artisan* sin el *flag* `--class`, se invoca el *seeder* por defecto incluido en *Laravel*: ***DatabaseSeeder***.
