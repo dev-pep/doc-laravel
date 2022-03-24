@@ -398,6 +398,8 @@ php artisan migrate:reset
 
 El comando de *artisan* `make:refresh` realiza *rollback* de todas las migraciones y ejecuta el comando `migrate`, es decir, regenera la base de datos completamente.
 
+En cambio, `make:fresh` lo que hace es eliminar todas las tablas existentes en la base de datos, limpiar el registro de migraciones realizadas, y ejecutar `migrate`.
+
 ### Creación de columnas
 
 Ya hemos visto cómo definir campos a través del método `create()` de la *facade* ***Schema***. Existen otros métodos útiles esta *facade*: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe el campo; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
@@ -410,9 +412,9 @@ Si deseamos especificar una conexión de base de datos en lugar de usar la conex
 Schema::connection('sqlite')->create('tabla', function(Blueprint $table) { /*...*/ });
 ```
 
-El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos propios de la base de datos (normalmente *SQL*). En general, estos métodos toman un argumento con el nombre del campo. Veamos algunos de ellos (asumiremos tipos *MySQL*):
+El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos propios de la base de datos (normalmente *SQL*). En general, estos métodos toman un argumento con el nombre del campo; algunos admiten otros argumentos. Veamos algunos de ellos (asumiremos tipos *MySQL*):
 
-Para crear **claves primarias autoincrementales**: `bigIncrements()` es un ***UNSIGNED BIGINT***. `id()` equivale a `bigIncrements('id')`. También `increments()` (***UNSIGNED INTEGER***), `mediumIncrements()` (***UNSIGNED MEDIUMINT***), `smallIncrements()` (***UNSIGNED SMALLINT***), `tinyIncrements()` (***UNSIGNED TINYINT***).
+Para crear **claves primarias autoincrementales**: `bigIncrements()` es un ***UNSIGNED BIGINT***. `id()` equivale a `bigIncrements('id')`, y no precisa argumento. También `increments()` (***UNSIGNED INTEGER***), `mediumIncrements()` (***UNSIGNED MEDIUMINT***), `smallIncrements()` (***UNSIGNED SMALLINT***), `tinyIncrements()` (***UNSIGNED TINYINT***).
 
 Métodos para la creación de tipos numéricos: `bigInteger()` (equivale a ***BIGINT***), `boolean()` (***BOOLEAN***), `integer()` (***INTEGER***), `mediumInteger()` (***MEDIUMINT***), `smallInteger()` (***SMALLINT***), `tinyInteger()` (***TINYINT***), `decimal()` (***DECIMAL***, con tamaño total, y posiciones decimales), `double()` y `float()` (***DOUBLE*** y ***FLOAT***, con tamaño total, y posiciones decimales), `unsignedBigInteger()` (***UNSIGNED BIGINT***), `unsignedDecimal()` (***UNSIGNED DECIMAL***, con tamaño total, y posiciones decimales), `unsignedInteger()` (***UNSIGNED INTEGER***), `unsignedMediumInteger()` (***UNSIGNED MEDIUMINT***), `unsignedSmallInteger()` (***UNSIGNED SMALLINT***), `unsignedTinyInteger()` (***UNSIGNED TINYINT***).
 
@@ -423,6 +425,8 @@ Para tipos *string*: `binary()` (***BLOB***, *binary large object*), `char()` (*
 Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión), `time()` (***TIME***). El tipo ***DATETIME*** acepta un número de dígitos decimales, hasta 6 (microsegundos); el valor por defecto es 0.
 
 Para otros tipos: `json()` (***JSON***).
+
+El método `timestamps()` crea los campos ***created_at*** y ***updated_at***, que son utilizados automáticamente por *Eloquent* (ver más adelante).
 
 A los métodos anteriores se les puede encadenar métodos modificadores:
 

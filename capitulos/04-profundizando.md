@@ -6,7 +6,7 @@ La clase ***Illuminate\\Support\\Collection*** proporciona un potente mecanismo 
 
 Para crear una *collection* solo hay que ejecutar el *helper* `collect()`, pasándole como argumento un *array* y recoger la colección retornada.
 
-Las colecciones disponen de numerosos métodos para el tratamiento de los datos. Véase la documentación oficial para una descripción exhaustiva de estos.
+Las colecciones son iterables (con `foreach`) y disponen de numerosos métodos para el tratamiento de los datos. Véase la documentación oficial para una descripción exhaustiva de estos.
 
 ## Eventos
 
