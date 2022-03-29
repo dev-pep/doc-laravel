@@ -37,10 +37,10 @@ protected $attributes = [ 'delayed' => false, 'city' => 'Sabadell' ];
 Una vez tenemos nuestro modelo y su tabla correspondiente en la base de datos, podemos leer el contenido entero de la tabla:
 
 ```php
-$coches = App\Coche::all();
+$coches = Coche::all();
 ```
 
-El método `all()` retorna una *collection* de tipo ***Illuminate\\Database\\Eloquent\\Collection***, que extiende el tipo colección de *Laravel*, y cuyos elementos son modelos *Eloquent* (en el ejemplo, de tipo ***App\\Coche***).
+El método `all()` retorna una *collection* de tipo ***Illuminate\\Database\\Eloquent\\Collection***, que extiende el tipo colección de *Laravel*, y cuyos elementos son modelos *Eloquent* (en el ejemplo, de tipo ***App\\Models\\Coche***).
 
 Estas *collections* de *Eloquent* aceptan métodos análogos a los de los *query builders*, los cuales retornan a su vez una *collection Eloquent*, de tal modo que se pueden ir encadenando métodos, al igual que sucedía con los *query builders*. Por lo tanto, en el caso de las colecciones *Eloquent* no hay que llamar a `get()` al final de la cadena.
 
@@ -48,9 +48,9 @@ En cambio, si el primer método llamado es el correspondiente a un *query builde
 
 ```php
 // Las dos sentencias son equivalentes:
-$coches1 = App\Coche::all()
+$coches1 = Coche::all()
     ->where('id', '>', '5');
-$coches2 = App\Coche::where('id', '>', '5')
+$coches2 = Coche::where('id', '>', '5')
     ->get();
 ```
 
@@ -60,7 +60,7 @@ Para pasar de colección a *builder* y viceversa, disponemos de los métodos `to
 
 Si como primer método indicamos `find()` con un *array* de claves primarias, recibiremos, de forma similar a `all()`, una **colección** de registros coincidentes (si los hay), no un *builder*.
 
-En el caso de los métodos que retornan un solo registro (como `find()` con un solo valor, no *array*, o `first()`), el tipo retornado es el del modelo (en este caso ***App\\Coche***). Estos métodos están disponibles tanto en colecciones como en *builders*, así como en el mismo modelo (por lo que pueden estar en primer lugar: `Coche::first()`).
+En el caso de los métodos que retornan un solo registro (como `find()` con un solo valor, no *array*, o `first()`), el tipo retornado es el del modelo (en este caso ***App\\Models\\Coche***). Estos métodos están disponibles tanto en colecciones como en *builders*, así como en el mismo modelo (por lo que pueden estar en primer lugar: `Coche::first()`).
 
 > Podemos definir tantos métodos como queramos en el modelo. De hecho, toda la lógica relacionada con la base de datos debería estar definida en los modelos.
 >
@@ -96,50 +96,90 @@ También existe el método `firstOr()`, el cual recibe una *closure* que se ejec
 
 Por otro lado, los métodos `findOrFail()` y `firstOrFail()` levantarán una excepción si no hay resultados en la consulta. Si la excepción no se captura, se retornará al cliente un código de respuesta 404.
 
-Otra aproximación es la del método `firstOrCreate()`. En este caso, el primer argumento es un *array* con pares clave/valor que se utilizará para localizar un registro en la tabla. Si existe alguno, el valor retornado será el modelo con los datos del primer registro con estos valores. En caso de no encontrarlo, se creará un nuevo registro en la base de datos cuyos campos serán los de este primer argumento, mezclado con los valores indicados en el segundo argumento (otro *array* con valores para los campos). El valor retornado será el de este modelo con los datos encontrados, o con los datos del nuevo registro.
+Otra aproximación es la del método `firstOrCreate()`. En este caso, el primer argumento es un *array* con pares clave/valor que se utilizará para localizar un registro en la tabla. Si existe algún registro coincidente, el valor retornado será el modelo con los datos del primer registro con estos valores. En caso de no encontrarlo, se creará un nuevo registro en la base de datos cuyos campos serán los de este primer argumento, mezclado con los valores indicados en el segundo argumento (otro *array* con valores para los campos). El valor retornado será el de este modelo con los datos encontrados, o con los datos del nuevo registro.
 
 El método `firstOrNew()` hace lo mismo que `firstOrCreate()`, con la diferencia que en caso de no encontrar el registro indicado, el nuevo modelo creado no es persistido en la base de datos. Para hacerlo, se deberá indicar explícitamente más tarde (método `save()`, como veremos).
 
 En lugar de modelos es posible obtener valores agregados mediante métodos como `count()`, `sum()`, `max()`, etc. Estos métodos retornan un valor escalar, no un modelo.
 
-
-
-
-## Insertar o modificar registros
+## Insertar registros
 
 Para añadir un registro, se crea una nueva instancia del modelo, se le dan los valores pertinentes, y se invoca el método `save()` del mismo.
 
 ```php
 $coche = new Coche;
-$coche->name = $req->name;  // por ejemplo
+$coche->name = $req->name;  // etc.
 $coche->save();
 ```
 
-Si queremos modificar un registro:
+### Inserción masiva
+
+Es posible insertar un registro en la base de datos a través del modelo, en una sola línea, usando el método `create()`. Por defecto, la inserción masiva está deshabilitada por representar un potencial problema de seguridad.
+
+## Modificar registros
+
+Si queremos modificar un registro, usaremos también el método `save()`, pero en este caso, la clave primaria del modelo ya existe en la base de datos:
 
 ```php
-$coche = App\Coche::find(1);
-$coche->name = $req->name;  // por ejemplo
+$coche = Coche::find(1);
+$coche->name = $req->name;  // etc.
 $coche->save();
 ```
 
-Para inserciones y/o modificaciones, se pueden usar los métodos de *query builder* del modelo (`insert()`, `update()`, etc.).
+### Modificación masiva
+
+Es posible modificar una colección completa de modelos, mediante el método `update()`:
+
+```php
+Coche::where('marca', 'Tesla')
+    ->update(['electrico' => 1]);
+```
+
+Dicho método acepta un *array* de campos con los respectivos valores que deben tener en la base de datos. Retorna el número de registros afectados.
+
+## Examinar cambios
+
+El método `isDirty()` del modelo retorna un booleano que indica si dicho modelo ha sido modificado desde que se leyó de la base de datos. Es el inverso de `isClean()`. Si a estos métodos se les pasa un *string* con un nombre de campo o un *array* con varios nombres de campo, la comprobación se reduce al campo o campos indicados.
+
+De forma similar, el método `wasChanged()` indica si el modelo ha sido grabado en la base de datos con valores distintos a los que tenía cuando se leyó de dicha base de datos. La comprobación también puede reducirse a los campos deseados.
+
+El método `getOriginal()` retorna un *array* con los valores de los campos en el momento que se leyó de la base de datos, independientemente de los cambios que haya sufrido. Si se le pasa el nombre de un campo, retornará el valor que tenía ese campo.
+
+## *Upserts*
+
+El método `updateOrCreate()` funciona de forma análoga a `firstOrCreate()`. La diferencia es que si el registro es encontrado (primer *array*), se actualiza con los valores indicados (segundo *array*).
+
+Si se quieren hacer varios de estos *upserts* de un golpe, existe el método `upsert()`, que funciona de forma análoga al método de mismo nombre de los *query builders* de la *facade* ***DB***.
 
 ## Eliminación de registros
 
-Para eliminar un registro, usaremos el método `delete()` sobre un solo elemento, sobre una colección o sobre un *query builder*.
+Para eliminar un registro, usaremos el método `delete()` sobre un solo elemento (instancia del modelo), sobre una colección *Eloquent* o sobre un *query builder Eloquent*.
 
 ```php
-$coche = App\Coche::find(['1', '2', '3']);
+$coche = Coche::find(['1', '2', '3']);
 $coche->delete();
 ```
 
-Si conocemos las claves primarias de los registros a eliminar, podemos usar `destroy()`:
+También es posible eliminar todos los registros de la tabla asociada al modelo mediante el método `truncate()` (sin argumentos).
+
+Si conocemos las claves primarias de los registros a eliminar, podemos usar `destroy()` sobre una o varias claves primarias, un *array* o una colección de las mismas:
 
 ```php
-App\Coche::destroy(1, 2, 3);
-App\Coche::destroy(25);
-App\Coche::destroy([21, 22, 23]);
+Coche::destroy(1, 2, 3);
+Coche::destroy(25);
+Coche::destroy([21, 22, 23]);
+Coche::destroy(collect([21, 22, 23]));
+```
+
+## Comparación de modelos
+
+Para saber si un modelo concreto es el mismo que otro, es decir, si ambos tienen la misma conexión de base de datos y corresponden a la misma clave primaria en la misma tabla, tenemos los métodos `is()` e `isNot()`:
+
+```php
+if($coche1->is($coche2))
+    // ...
+if($coche1->isNot($coche2))
+    // ...
 ```
 
 ## *Mutators*
