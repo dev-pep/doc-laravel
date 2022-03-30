@@ -18,7 +18,7 @@ Los modelos se almacenan por defecto en ***app/Models***, quedando en el *namesp
 
 En cuanto a los nombres de los modelos *Eloquent*, existen algunos **convenios importantes**:
 
-- El nombre de la tabla será el mismo que la clase modelo, pero **en plural** (se añade la letra ***s***) y en ***snake case*** (todo minúsculas y guiones bajos). En este caso, el modelo ***Coche*** guardará sus registros en la tabla ***coches***. Si el modelo fuese ***CarType***, la tabla sería ***car_types***. Por otro lado, si deseamos asociar el modelo a una tabla con un nombre distinto, hay que definir el nombre de la tabla mediante la propiedad (*protected*) ***\$table*** del modelo, que almacenará el nombre de la tabla.
+- El nombre de la tabla será el mismo que la clase modelo, pero **en plural** (se añade la letra ***s***) y en *snake case* (todo minúsculas y guiones bajos). En este caso, el modelo ***Coche*** guardará sus registros en la tabla ***coches***. Si el modelo fuese ***CarType***, la tabla sería ***car_types***. Por otro lado, si deseamos asociar el modelo a una tabla con un nombre distinto, hay que definir el nombre de la tabla mediante la propiedad (*protected*) ***\$table*** del modelo, que almacenará el nombre de la tabla.
 - Cada tabla tendrá un campo con nombre ***id***, que será la clave primaria. Para que se use otro nombre, se debe definir una propiedad protegida en la clase del modelo llamada ***\$primaryKey***, con el nombre del campo con la clave primaria. También se asume que la clave primaria es un entero que se autoincrementa. Si queremos una clave primaria no autoincremental o no numérica, hay que definir la propiedad pública ***\$incrementing*** a ***false***. Además, si el tipo no es numérico, habría que definir la propiedad protegida ***\$keyType*** con un *string* con el valor ***string***.
 - Cada tabla tendrá las columnas ***created_at*** y ***updated_at***, que actualizará *Eloquent* automáticamente. Si deseamos que no lo haga, se incluirá la propiedad pública ***\$timestamps*** con valor ***false***. Si queremos cambiar los nombres de los campos donde se guardarán los *timestamps*, se deben definir en la clase las constantes *CREATED_AT* y/o *UPDATED_AT*, conteniendo *strings* con los nombres deseados.
 
@@ -182,60 +182,26 @@ if($coche1->isNot($coche2))
     // ...
 ```
 
-## *Mutators*
+## Relaciones
 
-Este mecanismo permite gestionar el acceso a los atributos de un modelo *Eloquent*.
+<!-- TODO -->
 
-### *Accessors*
+## *Casting* de atributos
 
-Un *accessor* es un método definido dentro de la clase del modelo que define el acceso a un atributo concreto. El formato del nombre de este método debe ser del tipo ***get + NombreDelCampo + Attribute***, y se refiere a una columna de la tabla cuyo nombre es del tipo ***nombre_del_campo***. Obsérvese la disposición de mayúsculas y guiones bajos. Por ejemplo, el método ***getCilindradaMotorAttribute()*** se referiría al atributo (campo) del modelo ***cilindrada_motor***. El método debe retornar el valor del campo.
-
-Si el campo ya existe en la tabla, este método permite manipular su valor, recibiendo el valor original en la tabla como primer parámetro:
-
-```php
-public function getCilindradaMotorAttribute($valor)
-{
-    return $valor . ' c.c.';
-}
-```
-
-En cambio si no existe tal campo en la tabla, no recibe ningún valor, y permite retornar algún tipo de campo calculado, normalmente a partir del valor de otros campos del registro. Se puede acceder a ellos a través de `$this->atributo`.
-
-### *Mutators*
-
-Un *mutator* tiene el mismo formato de nombre que un *accessor*, pero en lugar de retornar un valor, establece un valor de atributo. La forma correcta de hacerlo, es dando valor al elemento correspondiente de la propiedad ***\$attributes***:
-
-```php
-public function getMarcaAttribute($valor)
-{
-    $this->attributes['marca'] = strtolower($valor);
-}
-```
-
-En este caso, suponiendo que ***\$registro*** contenga un modelo de ***Coche***, al hacer ```$registro->marca = 'BMW'```, el valor del atributo ***marca*** será ***bmw***, ya que el valor pasará a través del *mutator*, que lo pasa a minúsculas.
-
-### *Mutators* de fechas
-
-Por defecto, *Eloquent* traduce los campos ***created_at*** y ***updated_at*** a tipo ***Carbon***, que es una extensión del ***DateTime*** de *PHP*. Si tenemos otros campos de fecha que deseamos que sean mapeados a tipo ***Carbon***, debemos añadir sus nombres al array ***\$dates***:
-
-```php
-protected $dates = ['fecha_inicio', 'fecha_fin'];
-```
-
-Cuando es así, podemos dar valor a un campo fecha del modelo usando un *timestamp UNIX*, un *date string* ***Y-m-d***, un *date-time string*, una instancia de ***DateTime*** o una instancia de ***Carbon***.
-
-### *Casting* de atributos
-
-Podemos tener más control sobre el mapeo entre tipos de la base de datos y tipos *PHP* mediante este mecanismo. En el *array* ***\$casts*** podemos definir el tipo al que se mapeará un campo concreto de la tabla. Las claves del *array* son los nombres de los campos y los valores los tipos. Existen estos tipos predeterminados: ***integer***, ***real***, ***float***, ***double***, ***decimal:N***, ***string***, ***boolean***, ***object***, ***array***, ***collection***, ***date***, ***datetime*** y ***timestamp***.
+Podemos tener más control sobre el mapeo entre tipos de la base de datos y tipos *PHP* mediante este mecanismo. En la propiedad ***\$casts*** del modelo podemos definir mediante un *array* el tipo al que se mapeará cada campo concreto de la tabla. Las claves del *array* son los nombres de los campos y los valores son los tipos *PHP*. Estos son algunos de los tipos que existen por defecto: ***integer***, ***real***, ***float***, ***double***, ***decimal:N***, ***string***, ***boolean***, ***object***, ***array***, ***collection***, ***date***, ***datetime*** y ***timestamp***.
 
 En el caso de ***decimal*** se debe indicar el número de dígitos (p.e. ***decimal:5***).
 
 ```php
 protected $casts = [
-        'is_admin' => 'boolean',
-        'nombre' => 'string',
-        'fecha' => 'date'
+        'es_electrico' => 'boolean',
+        'marca' => 'string',
+        'marca' => 'string',
+        'km' => 'integer',
+        'matriculacion' => 'date'
     ];
 ```
 
-A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\Contracts\Database\Eloquent\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$casts***, se indicará como valor el nombre *fully qualified* de la clase (o mediante `::class`).
+A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\Contracts\Database\Eloquent\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$casts***, se indicará como valor el nombre *fully qualified* de la clase.
+
+Tanto el método `get()` como el `set()` reciben como argumentos: una instancia del modelo, un *string* con la clave del campo, otro con el valor del mismo, y finalmente un *array* con atributos. Cada método retorna el valor del tipo adecuado (traducido).
