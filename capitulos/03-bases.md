@@ -825,7 +825,7 @@ Los argumentos son la ruta del archivo en disco, y un *array* de cabeceras opcio
 
 Contienen el *HTML* servido, y separa la lógica de presentación de todo lo demás.
 
-Se almacenan en ***resources/Views***, y tienen extensión ***.blade.php***.
+Se almacenan en ***resources/views***, y tienen extensión ***.blade.php***.
 
 Cuando definimos una ruta con el *helper* `view()`:
 
@@ -835,7 +835,7 @@ Route::get('/', function() {
 });
 ```
 
-En este ejemplo, estamos retornando el contenido de la plantilla *Blade* ***resources/Views/saludo.blade.php***. En este caso estamos un segundo parámetro opcional con dos argumentos para la vista.
+En este ejemplo, estamos retornando el contenido de la plantilla *Blade* ***resources/views/saludo.blade.php***. En este caso estamos un segundo parámetro opcional con dos argumentos para la vista.
 
 Si organizamos las vistas jerárquicamente, podemos usar *dot notation* en la especificación del nombre:
 
@@ -845,7 +845,7 @@ Route::get('/', function() {
 });
 ```
 
-En este caso, retornamos la vista ***resources/Views/admin/saludo.blade.php*** (sin argumentos).
+En este caso, retornamos la vista ***resources/views/admin/saludo.blade.php*** (sin argumentos).
 
 Debido a esta notación, los subdirectorios de las vistas no deben contener el carácter punto (***.***).
 

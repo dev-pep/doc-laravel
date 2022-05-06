@@ -1145,7 +1145,7 @@ public function boot()
 }
 ```
 
-En este caso, hay que especificar dos parámetros: la ruta del directorio del paquete que contiene las rutas, y el nombre del paquete, que se usará como prefijo para que no haya colisiones con las vistas de la aplicación.
+En este caso, hay que especificar dos parámetros: la ruta del directorio del paquete que contiene las vistas, y el nombre del paquete, que se usará como prefijo para que no haya colisiones con las vistas de la aplicación.
 
 De este modo, accederemos a la vista ***home*** del paquete de esta forma:
 
