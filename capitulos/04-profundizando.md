@@ -679,6 +679,18 @@ Si queremos pasar argumentos a una petición *GET*, tenemos dos opciones: añadi
 
 Por otro lado, existen los métodos `post()`, `put()`, `patch()` y `delete()`, que funcionan igual que `get()`, aunque para pasarles argumentos solo puede hacerse a través de un segundo argumento con el *array* asociativo correspondiente. En cambio, `head()` también acepta *query string*.
 
+### Posible problema SSL
+
+Al intentar acceder a una página mediante protocolo *HTTPS*, puede aparecer un mensaje de error relacionado con *curl* (modo con que *PHP* establece la conexión.
+
+Este error se debe a que *PHP* no localiza los certificados necesarios para el protocolo *SSL*. Para arreglarlo, se debe ir a la página de `curl` (https://curl.se) y en el apartado de documentación buscar el *CA Bundle* (https://curl.se/docs/caextract.html). Descargar archivo ***cacert.pem*** y guardarlo en algún directorio del servidor. Tras esto, editar ***php.ini***, variable ***curl.cainfo*** (sección ***[curl]***), dándole el *full path* de ese archivo descargado. Tras reiniciar el servidor *web*, debería funcionar bien.
+
+Por ejemplo, la línea de *php.ini* podría quedar, en un servidor *WAMP*:
+
+```
+curl.cainfo = "c:\wamp64\bin\php\cacert.pem"
+```
+
 ### Archivos
 
 Para enviar un archivo, hay que enviar una solicitud *multi-part* con método *POST*:
