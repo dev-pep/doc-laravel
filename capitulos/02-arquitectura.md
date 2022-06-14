@@ -16,7 +16,7 @@ Una vez han sido cargados todos los *service providers*, se pasará la petición
 
 ## *Routing*
 
-Uno de los *service providers* más importantes es ***App\Providers\RouteServiceProvider***, que carga los archivos de rutas presentes en el directorio ***routes***. Tras esto, cada petición entrante será despachada por el enrutador hacia una ruta o controlador, pasando por el *middleware* necesario.
+Uno de los *service providers* más importantes es ***App\\Providers\\RouteServiceProvider***, que carga los archivos de rutas presentes en el directorio ***routes***. Tras esto, cada petición entrante será despachada por el enrutador hacia una ruta o controlador, pasando por el *middleware* necesario.
 
 Una vez procesada la *request*, el controlador o ruta retornará una *response*, que pasará a su vez por otro *middleware* (de "salida") el método `handle()` del *kernel* retorna esa *request*. Finalmente, ***index.php*** envía esa respuesta al navegador del usuario.
 

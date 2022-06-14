@@ -80,7 +80,7 @@ En ese momento, las bibliotecas que no lo hayan hecho, contribuirán con sus arc
 
 ### Variables de entorno
 
-El *helper* `env()` tiene acceso a las variables de entorno del sistema, así como a los valores de las superglobales *PHP* ***\$_ENV*** y ***\$_SERVER***. En caso de no existir la variable de entorno o la variable superglobal, se buscará el valor en el archivo ***.env***.
+El *helper* `env()` tiene acceso a las variables de entorno del sistema, así como a los valores de las superglobales *PHP* ***\$\_ENV*** y ***\$\_SERVER***. En caso de no existir la variable de entorno o la variable superglobal, se buscará el valor en el archivo ***.env***.
 
 ```php
 $d = env('APP_DEBUG', false);
@@ -88,7 +88,7 @@ $d = env('APP_DEBUG', false);
 
 El segundo parámetro (opcional) es el valor por defecto que retornará la función si no encuentra tal variable de entorno (o superglobal), y tampoco un valor en el archivo ***.env***.
 
-Las variables del sistema y superglobales tienen, pues, prioridad sobre las definiciones en ***.env***. Si se llega a utilizar un valor en este archivo, se incluye dentro del *array* ***\$_ENV***.
+Las variables del sistema y superglobales tienen, pues, prioridad sobre las definiciones en ***.env***. Si se llega a utilizar un valor en este archivo, se incluye dentro del *array* ***\$\_ENV***.
 
 Las variables establecedas en ***.env*** se leen como *strings*, y se pueden usar valores como ***true***, ***false***, ***null***, o ***empty*** (que se interpretará como un *string* vacío).
 

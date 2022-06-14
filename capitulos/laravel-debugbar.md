@@ -22,7 +22,7 @@ Seguidamente, generaremos los archivos de configuración necesarios para su func
 php artisan vendor:publish --provider="Barryvdh\Debugbar\ServiceProvider"
 ```
 
-El *namespace* base del paquete es ***Barryvdh\Debugbar***, y se corresponde con el directorio ***vendor/barryvdh/laravel-debugbar/src***.
+El *namespace* base del paquete es ***Barryvdh\\Debugbar***, y se corresponde con el directorio ***vendor/barryvdh/laravel-debugbar/src***.
 
 ## Configuración
 
@@ -30,7 +30,7 @@ La barra se activa automáticamente. Por un lado, se muestra solo cuando la apli
 
 Por otro lado, la publicación del paquete genera el archivo ***config/debugbar.php***, en el que puede controlarse la habilitación o inhabilitación de la barra a través de la clave ***enabled***, que por defecto es ***null***. Si embargo podemos sobrescribir la activación de la barra mediante la variable ***DEBUGBAR_ENABLED*** del archivo ***.env*** estableciéndola en ***true*** o ***false***.
 
-Por otro lado, el paquete define automáticamente un *alias*: el nombre ***Debugbar*** (en el espacio global) se refiere a la *facade* ***Barryvdh\Debugbar\Facade***.
+Por otro lado, el paquete define automáticamente un *alias*: el nombre ***Debugbar*** (en el espacio global) se refiere a la *facade* ***Barryvdh\\Debugbar\\Facade***.
 
 ## Uso
 

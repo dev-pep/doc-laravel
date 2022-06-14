@@ -64,7 +64,7 @@ Event::listen(function(MiEvento $evento) { /* ... */ });
 }
 ```
 
-Nótese el uso de la *facade* ***Illuminate\Support\Facades\Event***. El primer registro asocia el evento ***MiEvento*** al método `handle()` del *listener* ***MiListener***, mientras que el segundo asocia el mismo evento también a la *closure* definida, que recibe una instancia de dicho evento.
+Nótese el uso de la *facade* ***Illuminate\\Support\\Facades\\Event***. El primer registro asocia el evento ***MiEvento*** al método `handle()` del *listener* ***MiListener***, mientras que el segundo asocia el mismo evento también a la *closure* definida, que recibe una instancia de dicho evento.
 
 ### Autodescubrimiento de eventos
 
@@ -563,7 +563,7 @@ Al igual que `dd()`, acepta una o más expresiones como argumentos, que presenta
 
 #### env()
 
-Retorna el valor de una variable del sistema en ***\$_ENV***, ***\$_SERVER***, o en archivo ***.env*** (este último tiene prioridad). Acepta un segundo argumento con valor por defecto.
+Retorna el valor de una variable del sistema en ***\$\_ENV***, ***\$\_SERVER***, o en archivo ***.env*** (este último tiene prioridad). Acepta un segundo argumento con valor por defecto.
 
 ```php
 $valor = env('REMOTE_USER', 'Pepito');
@@ -1196,7 +1196,7 @@ Para publicar cualquier otro tipo de archivo, como *assets* públicos, simplemen
 
 ## Planificación de tareas
 
-Es posible planificar tareas que se realicen de forma periódica en el servidor. El planificador se encuentra en la clase ***app/Console/Kernel.php***, en el método `schedule()`, el cual recibe una instancia de la clase ***Illuminate\Console\Scheduling\Schedule***. Esta instancia contiene los métodos necesarios para registrar las tareas a ejecutar.
+Es posible planificar tareas que se realicen de forma periódica en el servidor. El planificador se encuentra en la clase ***app/Console/Kernel.php***, en el método `schedule()`, el cual recibe una instancia de la clase ***Illuminate\\Console\\Scheduling\\Schedule***. Esta instancia contiene los métodos necesarios para registrar las tareas a ejecutar.
 
 El método `call()` del objeto ***Schedule*** recibe cualquier *callable PHP* como primer argumento. Si este precisa a su vez argumentos, se pueden pasar en un *array* como segundo argumento de `call()`.
 

@@ -18,7 +18,7 @@ Seguidamente, generaremos los archivos de configuración necesarios para su func
 php artisan vendor:publish --provider="LdapRecord\Laravel\LdapServiceProvider"
 ```
 
-El *namespace* base del paquete es ***LdapRecord\Laravel***, y se corresponde con el directorio ***vendor/directorytree/ldaprecord-laravel/src***.
+El *namespace* base del paquete es ***LdapRecord\\Laravel***, y se corresponde con el directorio ***vendor/directorytree/ldaprecord-laravel/src***.
 
 ## Configuración
 
@@ -51,7 +51,7 @@ php artisan ldap:test
 
 ## Uso
 
-Una vez instalado el paquete, disponemos de los modelos que proporciona el paquete *LdapRecord*, situados en ***vendor/directorytree/ldaprecord/src/Models*** (corresponde al *namespace* de ese paquete, es decir, ***Ldaprecord\Models***).
+Una vez instalado el paquete, disponemos de los modelos que proporciona el paquete *LdapRecord*, situados en ***vendor/directorytree/ldaprecord/src/Models*** (corresponde al *namespace* de ese paquete, es decir, ***Ldaprecord\\Models***).
 
 Si deseamos crear nuestros propios modelos, podemos hacerlo con `artisan`:
 
@@ -59,7 +59,7 @@ Si deseamos crear nuestros propios modelos, podemos hacerlo con `artisan`:
 php artisan make:ldap-model NombreModelo
 ```
 
-Esto creará un modelo en ***app/Ldap*** (crea la carpeta si no existe). El modelo creado extiende, por defecto, el modelo ***Ldaprecord\Models\Model***. Pero se puede cambiar a cualquier otro. Por ejemplo, si queremos funcionalidades específicas de Directorio Activo, podemo extender ***Ldaprecord\Models\ActiveDirectory\Entry***.
+Esto creará un modelo en ***app/Ldap*** (crea la carpeta si no existe). El modelo creado extiende, por defecto, el modelo ***Ldaprecord\\Models\\Model***. Pero se puede cambiar a cualquier otro. Por ejemplo, si queremos funcionalidades específicas de Directorio Activo, podemo extender ***Ldaprecord\\Models\\ActiveDirectory\\Entry***.
 
 Dado que estos modelos están definidos en el paquete *Ldaprecord*, véase la documentación de dicho paquete para más información.
 
@@ -118,7 +118,7 @@ public function isValid()
 
 El ejemplo retornará ***true*** si el usuario tiene **todos** los grupos indicados en los argumentos. Si deseamos que se compruebe si el usuario pertenece a **uno o más** de los grupos indicados, usaremos el método `contains()`.
 
-En todos los casos, los grupos indicados pueden ser *common names*, *distinguished names* o instancias del modelo ***LdapRecord\Models\ActiveDirectory\Group***.
+En todos los casos, los grupos indicados pueden ser *common names*, *distinguished names* o instancias del modelo ***LdapRecord\\Models\\ActiveDirectory\\Group***.
 
 ```php
 public function isValid()
@@ -156,7 +156,7 @@ php artisan vendor:publish --provider="LdapRecord\Laravel\LdapAuthServiceProvide
 php artisan migrate
 ```
 
-El siguiente paso es añadir el *trait* ***LdapRecord\Laravel\Auth\AuthenticatesWithLdap*** y la interfaz ***LdapRecord\Laravel\Auth\LdapAuthenticatable*** al modelo. Esto permite la lectura y escritura de los campos ***guid*** y ***domain*** en las autenticaciones.
+El siguiente paso es añadir el *trait* ***LdapRecord\\Laravel\\Auth\\AuthenticatesWithLdap*** y la interfaz ***LdapRecord\\Laravel\\Auth\\LdapAuthenticatable*** al modelo. Esto permite la lectura y escritura de los campos ***guid*** y ***domain*** en las autenticaciones.
 
 Finalmente, se pueden cambiar los nombres de esos dos campos en la migración publicada, pero en ese caso hay que *override* los métodos `getLdapDomainColumn()` y/o `getLdapGuidColumn()` en nuestro modelo:
 
@@ -217,7 +217,7 @@ Desde *PHP* es posible leer esa variable con `$_SERVER['REMOTE_USER']`. En *Lara
 
 ### *Middleware*
 
-El *middleware* que realiza esta tarea es ***LdapRecord\Laravel\Middleware\WindowsAuthenticate***. Habría que añadirlo en el grupo de *middleware* que corresponda a nuestras necesidades. Este *middleware* utiliza también las *rules* que hayamos definido en ***config/auth.php***.
+El *middleware* que realiza esta tarea es ***LdapRecord\\Laravel\\Middleware\\WindowsAuthenticate***. Habría que añadirlo en el grupo de *middleware* que corresponda a nuestras necesidades. Este *middleware* utiliza también las *rules* que hayamos definido en ***config/auth.php***.
 
 Para cambiar el nombre de la variable de entorno del servidor que almacena el nombre de usuario, se debe ejecutar el método estático del *middleware* `serverKey()`, pasándole el nuevo nombre. En nuestro caso haríamos:
 

@@ -202,6 +202,6 @@ protected $casts = [
     ];
 ```
 
-A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\Contracts\Database\Eloquent\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$casts***, se indicará como valor el nombre *fully qualified* de la clase.
+A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\\Contracts\\Database\\Eloquent\\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$casts***, se indicará como valor el nombre *fully qualified* de la clase.
 
 Tanto el método `get()` como el `set()` reciben como argumentos: una instancia del modelo, un *string* con la clave del campo, otro con el valor del mismo, y finalmente un *array* con atributos. Cada método retorna el valor del tipo adecuado (traducido).

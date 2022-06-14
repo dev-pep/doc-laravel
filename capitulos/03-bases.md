@@ -728,7 +728,7 @@ Por defecto, las *cookies* están encriptadas y firmadas (no pueden ser modifica
 
 ### Redirecciones
 
-Una redirección es una respuesta de tipo ***Illuminate\Http\RedirectResponse***. Se trata de redirección externa (genera nueva *request* en el cliente). Para generar una redirección:
+Una redirección es una respuesta de tipo ***Illuminate\\Http\\RedirectResponse***. Se trata de redirección externa (genera nueva *request* en el cliente). Para generar una redirección:
 
 ```php
 Route::get('dashboard', function() {
@@ -1533,7 +1533,7 @@ Si por ejemplo deseamos un valor por defecto cuando no existe valor antiguo (*ol
 
 Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será ***Sabadell***. Esto muestra el uso del operador `??` de *Blade* (similar al operador ternario).
 
-Por otro lado, los errores producidos son enviados como argumento a todas las vistas de la aplicación (cuando tratamos la redirección por fallos de validación), a través de la variable `$errors` (de tipo ***Illuminate\Support\MessageBag***). En la plantilla *Blade* se puede comprobar su contenido:
+Por otro lado, los errores producidos son enviados como argumento a todas las vistas de la aplicación (cuando tratamos la redirección por fallos de validación), a través de la variable `$errors` (de tipo ***Illuminate\\Support\\MessageBag***). En la plantilla *Blade* se puede comprobar su contenido:
 
 ```
 @if($errors->any())
@@ -1585,7 +1585,7 @@ Es posible crear un objeto validador, el cual disponga del método `validate()`.
 
 Cuando la validación ha sido correcta, tenemos una serie de datos que han sido validados, pero puede haber otros campos que no hayan pasado por la validación (por no ser necesario, o porque se han insertado de forma ilícita). Existe una forma de acceder al subconjunto de datos que han pasado por la validación: por un lado, el método `validate()` de la *request*, y por otro, el método `validated()` de una *form request* (no de la *request*) o de un validador creado manualmente. Estos métodos retornan un *array* con los datos.
 
-En lugar de este método puede usarse `safe()`, el cual retorna un objeto de tipo ***Illuminate\Support\ValidatedInput***. Este objeto dispone de tres métodos, los cuales retornan un *array* con un subconjunto de los datos validados: `all()` los retorna todos, `only()` retorna solo los que le indicamos en un argumento *array*, y `except()` hace lo contrario. Además, este objeto puede ser iterado y accedido igual que un *array*. También puede convertirse en una *collection* usando el método `collect()`.
+En lugar de este método puede usarse `safe()`, el cual retorna un objeto de tipo ***Illuminate\\Support\\ValidatedInput***. Este objeto dispone de tres métodos, los cuales retornan un *array* con un subconjunto de los datos validados: `all()` los retorna todos, `only()` retorna solo los que le indicamos en un argumento *array*, y `except()` hace lo contrario. Además, este objeto puede ser iterado y accedido igual que un *array*. También puede convertirse en una *collection* usando el método `collect()`.
 
 ### Reglas de validación personalizadas
 
@@ -1626,7 +1626,7 @@ Cuando un campo no está presente o está vacío, las reglas de validación (inc
 
 ## Tratamiento de errores
 
-Las excepciones levantadas durante la ejecución se loguean y muestran a través de la clase ***App\Exceptions\Handler***. Esta clase permite tener control acerca de cómo y qué se reportará en caso de fallo.
+Las excepciones levantadas durante la ejecución se loguean y muestran a través de la clase ***App\\Exceptions\\Handler***. Esta clase permite tener control acerca de cómo y qué se reportará en caso de fallo.
 
 En el archivo de configuración ***config/app.php*** existe una clave, ***debug***, con un valor booleano que indica la cantidad de información que se muestra al usuario en caso de error. Esta variable, por defecto, lee el contenido de ***APP_DEBUG*** en el archivo ***.env***.
 
@@ -1634,7 +1634,7 @@ En el archivo de configuración ***config/app.php*** existe una clave, ***debug*
 
 Es posible retornar un código de error *HTTP* mediante el *helper* `abort()`, pasándole como argumento el código específico.
 
-Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene la excepción *HTTP*, y es del tipo ***Symfony\Component\HttpKernel\Exception\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
+Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene la excepción *HTTP*, y es del tipo ***Symfony\\Component\\HttpKernel\\Exception\\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
 
 *Laravel* ofrece una serie de plantillas de error por defecto, que pueden publicarse y personalizarse adecuadamente. Para publicarlas:
 
@@ -1671,7 +1671,7 @@ Los *logs* ***single*** y ***daily*** admiten también los siguientes campos:
 
 Los niveles de *logging* son, en orden descendente, ***emergency***, ***alert***, ***critical***, ***error***, ***warning***, ***notice***, ***info***, y ***debug***. Cada canal define su nivel mínimo.
 
-Para enviar mensajes al *log*, se usará la *facade* ***Illuminate\Support\Facades\Log***, utilizando los métodos oportunos, cuyo nombre coincide con el nivel de *logging*.
+Para enviar mensajes al *log*, se usará la *facade* ***Illuminate\\Support\\Facades\\Log***, utilizando los métodos oportunos, cuyo nombre coincide con el nivel de *logging*.
 
 ```php
 Log::info($mensaje);
