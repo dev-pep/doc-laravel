@@ -140,10 +140,11 @@ $url = route('profile', ['id' => 1, 'photos' => 'yes']);
 
 ### Acceso a la ruta actual
 
-Es posible acceder al objeto ruta actual, así como a la acción actual:
+Es posible acceder al objeto ruta actual, su nombre, o a la acción asociada:
 
 ```php
 $ruta = Route::current();  // ruta actual
+$nombre = Route::currentRouteName();  // nombre de la ruta actual (string)
 $action = Route::currentRouteAction();  // acción de la ruta actual (string)
 ```
 
