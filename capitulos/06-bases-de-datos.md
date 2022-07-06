@@ -402,7 +402,7 @@ El comando de *artisan* `make:refresh` realiza *rollback* de todas las migracion
 
 En cambio, `make:fresh` lo que hace es eliminar todas las tablas existentes en la base de datos, limpiar el registro de migraciones realizadas, y ejecutar `migrate`.
 
-### Creación de columnas
+### Creación de tablas
 
 Ya hemos visto cómo definir campos a través del método `create()` de la *facade* ***Schema***. Existen otros métodos útiles esta *facade*: `hasTable()` comprueba si existe la tabla cuyo nombre le pasamos como argumento. `hasColumn()` comprueba si existe el campo; se le deben pasar dos nombres: tabla y columna. `rename()` cambia el nombre de una tabla (argumentos: nombre antiguo, nombre nuevo).
 
@@ -412,6 +412,23 @@ Si deseamos especificar una conexión de base de datos en lugar de usar la conex
 
 ```php
 Schema::connection('sqlite')->create('tabla', function(Blueprint $table) { /*...*/ });
+```
+
+En el caso específico de *MySQL*/*MariaDB*, se pueden indicar algunas características de la tabla a crear mediante determinadas propiedades del objeto ***Blueprint***:
+
+- ***engine*** permite indicar el motor de base de datos (normalmente ***MyISAM*** o ***InnoDB***).
+- ***charset*** es el juego de caracteres de la tabla.
+- ***collation*** es la *collation* de la tabla, es decir, el modo utilizados para comparar y ordenar caracteres y *strings*.
+
+De no indicarse estos valores, se usarán los valores por defecto que tenga *MySQL*/*MariaDB*.
+
+```php
+Schema::create('coches', function (Blueprint $table) {
+    $table->engine = 'InnoDB';
+    $table->charset = 'utf8mb4';
+    $table->collation = 'utf8mb4_unicode_ci';
+    // ...
+});
 ```
 
 El objeto ***Blueprint*** dispone de numerosos métodos para crear campos (columnas). Los tipos de datos descritos son tipos propios de la base de datos (normalmente *SQL*). En general, estos métodos toman un argumento con el nombre del campo; algunos admiten otros argumentos. Veamos algunos de ellos (asumiremos tipos *MySQL*):
