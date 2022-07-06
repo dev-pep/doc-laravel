@@ -322,7 +322,9 @@ Una migración especifica la estructura de una tabla, y puede indicar cómo se c
 php artisan make:migration create_coches_table
 ```
 
-En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***\<timestamp>\_create_coches_table.php***, donde ***\<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación. Además, las migraciones ya aplicadas deberán ignorarse.
+En este caso, se creará una migración en el directorio ***database/migrations***. El nombre del archivo será ***\<timestamp>\_create_coches_table.php***, donde ***\<timestamp>*** es una serie de caracteres que indican el momento de creación de la migración. Esto es necesario, puesto que si hay varios archivos de migración referidos a la misma tabla, se deberán aplicar en orden de creación.
+
+*Laravel* guardará registro de las migraciones que se han aplicado ya, para no repetirlas. Ello lo hace mediante una tabla ***migrations*** en la misma base de datos.
 
 *Laravel* intentará deducir el nombre de la tabla a partir del nombre de la migración, y si se trata de una tabla que hay que crear, o una que hay que modificar. En el ejemplo, la tabla será ***coches***. En caso de que no sea posible tal deducción, simplemente habrá que editar el archivo de migración.
 
@@ -370,7 +372,7 @@ Una vez creadas las migraciones que queramos, se ejecutarán así:
 php artisan migrate
 ```
 
-Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía (archivos con *timestamp* posterior a la última migración ejecutada con `artisan migrate`).
+Esto ejecutará las nuevas migraciones que no se hayan aplicado todavía, y quedarán registradas como ejecutadas (en la tabla ***migrations***).
 
 Para ver el estado de las migraciones, es decir, qué migraciones se han aplicado actualmente:
 
