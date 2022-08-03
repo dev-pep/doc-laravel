@@ -261,7 +261,15 @@ En este caso, no se especifica *URI* como primer argumento.
 
 ### *Method spoofing*
 
-Dado que los formularios *HTML* solo permiten métodos ***GET*** y ***POST***, si deseamos enviar el formulario mediante otro método, usaremos la directiva *Blade* `@method()` a la que pasaremos un string con el método deseado (***PUT***, ***DELETE***, etc.).
+Dado que los formularios *HTML* solo permiten métodos ***GET*** y ***POST***, si deseamos enviar el formulario mediante otro método, usaremos la directiva *Blade* `@method()` a la que pasaremos un string con el método deseado (***PUT***, ***DELETE***, etc.). Para que esto funcione, además de incluir el token `@csrf`, el formulario *HTML* deberá estar definido con ***POST***:
+
+```html
+<form action="index.html" method="post">
+    @method('delete')
+    @csrf
+    <!-- ... -->
+</form>
+```
 
 ### Aclaraciones sobre rutas
 
