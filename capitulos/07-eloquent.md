@@ -62,6 +62,8 @@ Si como primer método indicamos `find()` con un *array* de claves primarias, re
 
 En el caso de los métodos que retornan un solo registro (como `find()` con un solo valor, no *array*, o `first()`), el tipo retornado es el del modelo (en este caso ***App\\Models\\Coche***). Estos métodos están disponibles tanto en colecciones como en *builders*, así como en el mismo modelo (por lo que pueden estar en primer lugar: `Coche::first()`).
 
+Cuando el conjunto de registros retornados es cero, por ejemplo cuando `find()` con un argumento no encuentre la clave primara, lo retornado es ***null***.
+
 > Podemos definir tantos métodos como queramos en el modelo. De hecho, toda la lógica relacionada con la base de datos debería estar definida en los modelos.
 >
 > Los nombres de los campos de la tabla pueden accederse como propiedades del objeto con el mismo nombre. Desde el código del modelo el acceso se puede hacer como `$this->campo`.
