@@ -158,7 +158,8 @@ class Cliente {
 
 // ...
 
-$cliente = new Cliente;  // ERROR! El constructor espera 1 argumento...
+$cliente = new Cliente;  // ERROR! El constructor espera
+                         // un argumento...
 ```
 
 Las dependencias suelen inyectarse en los clientes a través de su constructor, o, en algunos casos, a través de métodos *setter*.

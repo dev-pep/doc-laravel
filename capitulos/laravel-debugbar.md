@@ -19,7 +19,8 @@ Tras haber hecho esto, el paquete es autodescubierto por *Laravel*, con lo que n
 Seguidamente, generaremos los archivos de configuración necesarios para su funcionamiento, es decir, publicaremos el paquete:
 
 ```
-php artisan vendor:publish --provider="Barryvdh\Debugbar\ServiceProvider"
+php artisan vendor:publish
+    --provider="Barryvdh\Debugbar\ServiceProvider"
 ```
 
 El *namespace* base del paquete es ***Barryvdh\\Debugbar***, y se corresponde con el directorio ***vendor/barryvdh/laravel-debugbar/src***.
@@ -53,7 +54,8 @@ Cuando tal mensaje no es un simple valor (como un *string*), sino un *array* o u
 En la pestaña ***Timeline*** se pueden cronometrar fragmentos de código. Una de las formas de hacerlo es:
 
 ```php
-\Debugbar::startMeasure('nombre', 'Descripción de la medición');
+\Debugbar::startMeasure('nombre',
+                        'Descripción de la medición');
 // Código a cronometrar
 \Debugbar::stopMeasure('nombre');
 ```

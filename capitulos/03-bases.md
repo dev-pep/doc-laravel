@@ -129,7 +129,8 @@ Así, podríamos referirnos a esta ruta, simplemente por el nombre corto:
 
 ```php
 $url = route('profile');  // obtenemos la URL
-return redirect()->route('profile');  // redirigimos a esa ruta
+return redirect()->route('profile');  // redirigimos a esa
+                                      // ruta
 ```
 
 Para obtener la *URL* podemos añadir parámetros, que serán añadidos a esta:
@@ -144,8 +145,10 @@ Es posible acceder al objeto ruta actual, su nombre, o a la acción asociada:
 
 ```php
 $ruta = Route::current();  // ruta actual
-$nombre = Route::currentRouteName();  // nombre de la ruta actual (string)
-$action = Route::currentRouteAction();  // acción de la ruta actual (string)
+$nombre = Route::currentRouteName();  // nombre de la ruta
+                                      // actual (string)
+$action = Route::currentRouteAction();  // acción de la ruta
+                                        // actual (string)
 ```
 
 La ruta actual se puede obtener también a través del objeto *request* actual (se verá más adelante). Suponiendo que ***\$req*** sea una variable en la que se ha inyectado dicha *request*, podemos acceder mediante
@@ -160,15 +163,19 @@ Para especificar un grupo de rutas, podemos usar el método `group()` al que pas
 
 ```php
 Route::group([], function() {
-    Route::get(/* definición ruta */) -> name(/* nombre ruta */);
+    Route::get(/* definición ruta */)
+        ->name(/* nombre ruta  */);
     Route::post(/* definición ruta */);
-}) -> name(/* nombre del grupo */);
+})->name(/* nombre del grupo */);
 ```
 
 El primer argumento a `group()` es un *array* en el que se definen propiedades (atributos) comunes a todas las rutas del grupo. Por ejemplo, para añadir *middleware*, se asignará un *array* con nombres de *middleware* a la propiedad ***middleware***, etc.:
 
 ```php
-Route::group(['middleware' => ['api', 'web'], 'prefix' => 'admin'], function() {
+Route::group([
+    'middleware' => ['api', 'web'],
+    'prefix' => 'admin'
+], function() {
     // Definición de las rutas del grupo
 });
 ```
@@ -178,7 +185,8 @@ Existe otra forma de crear grupos. En lugar de utilizar el método `Route::group
 Para definir el *middleware* que afectará al grupo:
 
 ```php
-Route::middleware(['miduno', 'middos'])->group(function () {
+Route::middleware(['miduno', 'middos'])
+    ->group(function () {
     // Definición de las rutas
 });
 ```
@@ -202,9 +210,11 @@ Existen otros métodos para indicar propiedades para la ruta o grupo de rutas. T
 `controller()` recibe el nombre del controlador *fully qualified* asociado a la ruta. `domain()` recibe el nombre de un subdominio (acepta también parámetros):
 
 ```php
-Route::domain('{account}.example.com')->group(function () {
-    Route::get('user/{id}', function ($account, $id) {/*...*/});
-});
+Route::domain('{account}.example.com')
+    ->group(function () {
+        Route::get('user/{id}', function ($account, $id)
+            {/*...*/});
+    });
 ```
 
 Para añadir un prefijo a todas las rutas sin tener que teclearlo en todas, se usa `prefix()`, pasándole un *string* con dicho prefijo.
@@ -228,7 +238,8 @@ Route::get('/coches/{coche}', function (Coche $coche) {
 También es posible inyectarlo en el controlador:
 
 ```php
-Route::get('/coches/{coche}', [MiController::class, 'show']);
+Route::get('/coches/{coche}',
+           [MiController::class, 'show']);
  // En la definición del método show():
 public function show(Coche $coche) { /*...*/ }
 ```
@@ -236,7 +247,8 @@ public function show(Coche $coche) { /*...*/ }
 Si en lugar del campo ID deseamos que se haga por otro campo, debemos indicarlo:
 
 ```php
-Route::get('/coches/{coche:matricula}', function (Coche $coche) { /*...*/ });
+Route::get('/coches/{coche:matricula}',
+           function (Coche $coche) { /*...*/ });
 ```
 
 Si queremos que el campo **por defecto** no sea ID, deberemos *override* el método `getRouteKeyName()` del modelo *Eloquent*:
@@ -311,7 +323,8 @@ El ejemplo anterior realiza sus acciones **antes** de que la *request* sea atend
 public function handle($request, Closure $next)
 {
     // Acciones previas al tratamiento de la request
-    $response = $next($request);    // invocación de la closure
+    $response = $next($request);    // invocación de la
+                                    // closure
     // Acciones posteriores al tratamiento de la request
     return $response;
 }
@@ -351,7 +364,8 @@ Es posible pasar parámetros a nuestro *middleware*. Estos se recogen a partir d
 Para pasar los parámetros se haría mediante el método `middleware()` de la ruta, tras dos puntos (***:***), y separándolos por comas. En la definición de `handle()`:
 
 ```php
-public function handle($request, Closure $next, $name, $age) { /* ... */ }
+public function handle($request,
+                       Closure $next, $name, $age) {/*...*/}
 ```
 
 Y en la definición de la ruta:
@@ -464,7 +478,8 @@ Deberemos crear todas las vistas que necesitemos, con los formularios adecuados.
 A parte del método `middleware()`, los métodos `only()` y `except()` también se pueden usar en la definición de las rutas:
 
 ```php
-Route::resource('coches', CocheController::class)->only(['index', 'show']);
+Route::resource('coches', CocheController::class)
+    ->only(['index', 'show']);
 ```
 
 ### *API Resource controllers*
@@ -522,7 +537,10 @@ El método `is()` comprueba si la *URI* coincide con cierto patrón que se le pa
 Si además deseamos añadir parámetros extra a la *query string*:
 
 ```php
-$ruta = $request->fullUrlWithQuery(['marca' => 'ACME', 'modelo' => '33']);
+$ruta = $request->fullUrlWithQuery([
+    'marca' => 'ACME',
+    'modelo' => '33'
+]);
 ```
 
 Para obtener el verbo (método) *HTTP*, `method()` retorna este. También existe `isMethod()`:
@@ -536,7 +554,8 @@ Con el método `header()` podemos obtener el valor de una cabecera que esté inc
 
 ```php
 $valor1 = $request->header('Nombre-Cabecera1');
-$valor2 = $request->header('Nombre-Cabecera2', 'Valor por defecto');
+$valor2 = $request->header('Nombre-Cabecera2',
+                           'Valor por defecto');
 ```
 
 Para comprobar si existe una cabecera:
@@ -606,7 +625,9 @@ Retornará ***true*** si por lo menos uno de ellos está presente.
 El método `whenHas()` ejecuta la *closure* indicada como segundo argumento, siempre y cuando la entrada incluya el campo indicado en el primer argumento. El tercer argumento, opcional, es otra *closure* que se ejecutará si el campo no está incluido.
 
 ```php
-$req->whenHas('name', function() {/*...*/}, function() {/*...*/});
+$req->whenHas('name',
+              function() {/*...*/},
+              function() {/*...*/});
 ```
 
 El método `filled()` es como `has()` con un argumento no *array*, pero retornará ***false*** en el caso que el dato exista pero esté vacío.
@@ -643,7 +664,8 @@ $antiguoNombre = $req->old('name');
 Sin embargo, en lugares (como una plantilla *Blade*) en los que no tenemos acceso al objeto *request*, es útil usar el *helper* `old()`:
 
 ```html
-<input type="text" name="username" value="{{ old('user') }}">
+<input type="text" name="username"
+    value="{{ old('user') }}">
 ```
 
 Si no existe tal dato antiguo, `old()` (tanto el método como el *helper*) retornará ***null***, a no ser que le indiquemos como segundo argumento un valor por defecto.
@@ -681,7 +703,8 @@ Si no deseamos que se guarde el archivo con un nombre autogenerado, usaremos el 
 Hay que tener en cuenta que para que se puedan enviar archivos desde un formulario *HTML*, la etiqueta `<form>` debe incluir el atributo ***enctype*** con valor ***multipart/form-data***, y que el método *HTTP* debe ser *POST*.
 
 ```html
-<form action="subida.php" method="post" enctype="multipart/form-data">
+<form action="subida.php" method="post"
+    enctype="multipart/form-data">
 ```
 
 ## Respuestas (*responses*)
@@ -702,8 +725,10 @@ Esto equivale a:
 
 ```php
 return response($contenido)
-            ->withHeaders(['Content-type' => $type,
-                           'Otro-header' => 'valor otro header']);
+            ->withHeaders([
+                'Content-type' => $type,
+                'Otro-header' => 'valor otro header'
+            ]);
 ```
 
 El *helper* `response()` acepta un primer argumento con el contenido de tal respuesta (*string*, vista, *array*, etc.). Como segundo argumento, opcional, el código de la respuesta (200 es *OK*). Opcionalmente puede tener un tercer argumento con un *array* de encabezados, aunque dichos encabezados se pueden añadir, como hemos visto, con el método `withHeaders()`.
@@ -771,7 +796,8 @@ return redirect()->route('perfil', ['id' => 1]);
 Para redirigir a la acción de un controlador:
 
 ```php
-return redirect()->action([NombreController::class, 'metodo']);
+return redirect()
+    ->action([NombreController::class, 'metodo']);
 ```
 
 Se puede pasar un segundo argumento con un *array* de parámetros de la *URI*.
@@ -796,8 +822,8 @@ Si además de retornar una respuesta personalizada como las que hemos visto, el 
 
 ```php
 return response()
-            ->header('Content-type', $type)
-            ->view('vistaHello', $data, 200);
+    ->header('Content-type', $type)
+    ->view('vistaHello', $data, 200);
 ```
 
 En caso de que no queramos personalizar cabeceras, y simplemente queramos retornar una vista, podemos simplemente usar la función `view()`:
@@ -809,13 +835,16 @@ return view('vistaHello', $data, 200);
 Para una respuesta *JSON*, se puede usar el método `json()`, el cual establecerá automáticamente la cabecera ***Content-Type*** a ***application/json***, y convertirá el *array* proporcionado a formato *JSON* usando automáticamente la función de *PHP* `json_encode()`:
 
 ```php
-return response()->json(['name' => 'Abigail', 'state' => 'CA']);
+return response()
+    ->json(['name' => 'Abigail', 'state' => 'CA']);
 ```
 
 Si queremos que la respuesta haga que el cliente descargue un archivo:
 
 ```php
-return response()->download($path, $name, $headers)->deleteFileAfterSend();
+return response()
+    ->download($path, $name, $headers)
+    ->deleteFileAfterSend();
 ```
 
 El único argumento obligatorio es el primero (ruta del archivo en el servidor). El segundo argumento es el nombre de archivo que verá el cliente, mientras que el tercer argumento es un *array* con cabeceras.
@@ -840,7 +869,8 @@ Cuando definimos una ruta con el *helper* `view()`:
 
 ```php
 Route::get('/', function() {
-    return view('saludo', ['nombre' => 'James', 'edad' => 55]);
+    return view('saludo',
+                ['nombre' => 'James', 'edad' => 55]);
 });
 ```
 
@@ -861,7 +891,11 @@ Debido a esta notación, los subdirectorios de las vistas no deben contener el c
 El *helper* `view()` equivale al método `make()` de la *facade* ***View***. Esta *facade* contiene otros métodos útiles. Por ejemplo, con el método `first()` se retorna la primera vista existente de una lista de vistas posibles:
 
 ```php
-return View::first(['email.customer', 'customer', 'general.customer'], $args);
+return View::first([
+    'email.customer',
+    'customer',
+    'general.customer'
+], $args);
 ```
 
 El *array* de argumentos es opcional.
@@ -879,8 +913,8 @@ Los argumentos se pueden pasar a una vista mediante un *array*, como se ha visto
 
 ```php
 return view('greeting')
-           ->with('name', 'James')
-           ->with('age', 55);
+   ->with('name', 'James')
+   ->with('age', 55);
 ```
 
 Es posible compartir datos entre todas las vistas de la aplicación, a través del método `share()` de la *facade* ***View***. Las llamadas para compartir datos se usan, típicamente, en el método `boot()` de un *service provider*:
@@ -1113,7 +1147,8 @@ Esto registrará el nombre ***paquete-alerta*** con la clase asociada al compone
 Es posible pasar argumentos a un componente, usando formato *HTML* al incluirlo:
 
 ```html
-<x-mensaje-aviso tipo-ms="error" mensaje="No ha funcionado."/>
+<x-mensaje-aviso tipo-ms="error"
+    mensaje="No ha funcionado."/>
 ```
 
 Estos parámetros son pasados directamente al constructor de la clase del componente, y deberían almacenarse dentro de la instancia para su posterior presentación.
@@ -1246,7 +1281,12 @@ Hay que aclarar que este método está pensado para mezclar atributos de la prop
 Para mezcla de clases (***class***) existe el método `class()`, que acepta un *array* con las clases a incluir/mezclar. Si el elemento tiene una clave numérica, la clase (o conjunto de clases) se añade siempre. En cambio, si la clave es un *string*, es la clave la que define la clase (o clases), y el valor es una expresión booleana, de tal modo que la inclusión se producirá solamente en caso de que la expresión sea cierta.
 
 ```
-<div {{ $attributes->class(['uno', 'dos tres', 'cuatro cinco' => $expresion, 'seis']) }}>
+<div {{ $attributes->class([
+    'uno',
+    'dos tres',
+    'cuatro cinco' => $expresion,
+    'seis'
+    ]) }}>
     <!-- Contenido -->
 </div>
 ```
@@ -1482,7 +1522,8 @@ Un método equivalente a `get()` es `pull()`, pero en este caso, si la clave exi
 Para que ciertos datos estén disponibles en la *request* actual y también en la siguiente (pero no más allá), se hace mediante el método `flash()`.
 
 ```php
-$req->session()->flash('status', 'Mensaje enviado con éxito');
+$req->session()
+    ->flash('status', 'Mensaje enviado con éxito');
 ```
 
 En este caso, el elemento ***status*** estará disponible también durante la siguiente *request*. Si en la siguiente solicitud decidimos prorrogar la disponibilidad de los datos *flashed* una *request* más:
@@ -1504,8 +1545,10 @@ Si lo que queremos es que un dato concreto esté disponible únicamente durante 
 Para eliminar datos de la sesión:
 
 ```php
-$req->session()->forget('key');    // elimina un dato de sesión
-$req->session()->forget(['key1', 'key2', 'key3']);    // varios datos
+$req->session()
+    ->forget('key');    // elimina un dato de sesión
+$req->session()
+    ->forget(['key1', 'key2', 'key3']);    // varios datos
 $req->session()->flush();    // todos los datos
 ```
 
@@ -1537,7 +1580,8 @@ Cuando la validación ha fallado, y se recibe la respuesta de la posterior redir
 Si por ejemplo deseamos un valor por defecto cuando no existe valor antiguo (*old data*), se puede hacer así:
 
 ```html
-<input type="text" name="ciudad" id="ciudadform" value="{{ old('DNI') ?? 'Sabadell' }}">
+<input type="text" name="ciudad"
+    id="ciudadform" value="{{ old('DNI') ?? 'Sabadell' }}">
 ```
 
 Así, en el caso de que el valor antiguo exista, retornará este; de lo contrario, será ***Sabadell***. Esto muestra el uso del operador `??` de *Blade* (similar al operador ternario).
@@ -1625,7 +1669,9 @@ $req->validate([
         'required',
         function($atributo, $valor, $fallo) {
             if($valor == '666')
-                $fallo('El campo ' . $atributo . ' no puede ser 666...');
+                $fallo('El campo ' .
+                       $atributo .
+                       ' no puede ser 666...');
         }],
     'Nombre' => 'required'
 ]);
@@ -1697,7 +1743,8 @@ Log::channel('nombre_canal')->info($mensaje);
 Si deseamos crear un *stack* sobre la marcha para registrar un mensaje:
 
 ```php
-Log::stack(['single', 'monolog'])->info('Mensaje a registrar');
+Log::stack(['single', 'monolog'])
+    ->info('Mensaje a registrar');
 ```
 
 Si el nivel del mensaje es inferior al nivel definido en cada *log* específico, no se registrará.

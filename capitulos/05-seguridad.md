@@ -37,7 +37,8 @@ public function authenticate(Request $request)
 {
     $credentials = $request->only('username', 'password');
     if(Auth::attempt($credentials)) {
-         $request->session()->regenerate();  // regeneramos la sesión
+         $request->session()
+             ->regenerate();  // regeneramos la sesión
          return redirect('dashboard');  // autenticación OK
     }
     return redirect('inicio');  // autenticación fallida
@@ -55,7 +56,11 @@ La regeneración de la sesión cambia la *session ID*, y es útil para evitar el
 Por otro lado, el método `attempt()` acepta más campos, a parte del usuario y el *password*:
 
 ```php
-if(Auth::attempt(['username' => $usname, 'password' => $password, 'active' => 1]))
+if(Auth::attempt([
+    'username' => $usname,
+    'password' => $password,
+    'active' => 1
+]))
     // ...
 ```
 
@@ -113,7 +118,8 @@ En algunos casos, si el servidor es *Apache*, podría ser necesario añadir esta
 
 ```
 RewriteCond %{HTTP:Authorization} ^(.+)$
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteRule .* -
+    [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 ```
 
 Es decir, si se trata de la cabecera de autenticación, se creará una variable del servidor con el contenido de dicha cabecera.
@@ -315,9 +321,11 @@ Existe otro modo de usar las políticas, y es mediante las directivas *Blade* `@
 
 ```
 @can('update', $coche)
-    <!-- código html para usuarios que pueden actualizar el elemento $coche -->
+    <!-- código html para usuarios que pueden
+         actualizar el elemento $coche -->
 @elsecan('create', App\Coche::class)
-    <!-- código html para usuarios que NO pueden actualizarlo pero sí crearlo -->
+    <!-- código html para usuarios que NO pueden
+         actualizarlo pero sí crearlo -->
 @endcan
 ```
 
@@ -327,9 +335,11 @@ El ejemplo anterior equivale exactamente a:
 
 ```
 @if(Auth::user()->can('update', $coche))
-    <!-- código html para usuarios que pueden actualizar el elemento $coche -->
+    <!-- código html para usuarios que pueden
+         actualizar el elemento $coche -->
 @elseif(Auth::user()->can('create', App\Coche::class))
-    <!-- código html para usuarios que NO pueden actualizar el elemento $coche -->
+    <!-- código html para usuarios que NO pueden
+         actualizar el elemento $coche -->
 @endif
 ```
 
@@ -339,9 +349,11 @@ También podemos comprobar si el usuario tiene por lo menos una de las capacidad
 
 ```
 @canany(['update', 'view', 'delete'], $coche)
-    <!-- para usuarios que pueden actualizar, ver o borrar el elemento $coche -->
+    <!-- para usuarios que pueden actualizar,
+         ver o borrar el elemento $coche -->
 @elsecanany(['create'], App\Coche::class)
-    <!-- para usuarios que no pueden hacer lo anterior pero sí crear un coche -->
+    <!-- para usuarios que no pueden hacer
+         lo anterior pero sí crear un coche -->
 @endcanany
 ```
 

@@ -234,7 +234,8 @@ Las operaciones de disco se realizan mediante la *facade* ***Illuminate\\Support
 Por ejemplo, suponiendo que la variable ***\$filecontents*** almacene el contenido de un archivo ***foto.png***, para guardarlo en la carpeta ***avatars*** de nuestro disco llamado ***local***:
 
 ```php
-Storage::disk('local')->put('avatars/foto.png', $filecontents);
+Storage::disk('local')
+    ->put('avatars/foto.png', $filecontents);
 ```
 
 Usando esta *facade*, si no se indica el disco, es como indicar el disco por defecto:
@@ -310,14 +311,18 @@ Lo cual guardará ese archivo en la carpeta ***archivos*** del disco por defecto
 La sentencia anterior es equivalente a:
 
 ```php
-$ruta = Storage::putFile('archivos', $request->file('docu'));
+$ruta = Storage::putFile('archivos',
+                         $request->file('docu'));
 ```
 
 Si queremos que guarde el archivo con un nombre concreto:
 
 ```php
-$ruta = $request->file('docu')->storeAs('archivos', 'archivo55.txt');
-$ruta = Storage::putFileAs('archivos', $request->file('docu'), 'archivo55.txt');
+$ruta = $request->file('docu')
+    ->storeAs('archivos', 'archivo55.txt');
+$ruta = Storage::putFileAs('archivos',
+                           $request->file('docu'),
+                           'archivo55.txt');
 ```
 
 Las dos sentencias son equivalentes.
@@ -329,17 +334,22 @@ Si queremos especificar un disco concreto, en el caso de la *facade* ***Storage*
 En el caso de archivos subidos en la *request*, podemos obtener otra información de los mismos:
 
 ```php
-$size = $request->file('docu')->getSize();  // tamaño (bytes)
-$tipo = $request->file('docu')->getClientOriginalName();  // nombre original
-$tipo = $request->file('docu')->getClientOriginalExtension();  // extensión original
-$tipo = $request->file('docu')->hashName();  // nombre generado
-$tipo = $request -> file('docu') -> extension();  // extensión generada (según contenido)
+$size = $request->file('docu')
+    ->getSize();  // tamaño (bytes)
+$tipo = $request->file('docu')
+    ->getClientOriginalName();  // nombre original
+$tipo = $request->file('docu')
+    ->getClientOriginalExtension();  // extensión original
+$tipo = $request->file('docu')
+    ->hashName();  // nombre generado
+$tipo = $request->file('docu')
+    ->extension();  // extensión generada (según contenido)
 ```
 
 Para saber si la *request* actual contiene un archivo concreto:
 
 ```php
-if($request -> hasFile('docu'))
+if($request->hasFile('docu'))
     /* ... */
 ```
 
@@ -457,7 +467,7 @@ La función `secure_asset()` es igual, pero retorna una *URL HTTPS*.
 El *helper* `route()` retorna la *URL* correspondiente a una ruta **con nombre**. Por ejemplo, `route('nombreRuta')` retornaría la *URL* correspondiente a la ruta que tiene como nombre ***nombreRuta***. Si se define una ruta que contiene parámetros, se deben pasar tantos argumentos como sean necesarios a este *helper* mediante un array. Por ejemplo, si hemos definido la ruta:
 
 ```php
-Route::get('clients/{id}', /* closure o controller */) -> name('clientesForm');
+Route::get('clients/{id}', /* closure o controller */)->name('clientesForm');
 ```
 
 Podemos obtener la *URL* así: `route('clientesForm', ['id' => 33])`.
@@ -511,14 +521,15 @@ Se le puede pasar, como primer argumento, el nombre del *guard* deseado.
 La función `back()` retorna una *response* de redirección a la localización anterior.
 
 ```php
-return back($status = 302, $headers = [], $fallback = false);
+return back($status = 302, $headers = [],
+            $fallback = false);
 return back();
 ```
 
 Supongamos que nos presentan un formulario para introducir datos. Esta es la localización original (fruto, de hecho, de una *response* de la aplicación). Rellenamos los campos y realizamos una *request* que envía esos datos. Un controlador decide que los datos son incorrectos, con lo que tenemos que volver al formulario, es decir, tenemos que volver atrás, nuevamente a la *response* original, no retornar una nueva. Ahí es cuando usamos `back()`. Pero, si además queremos que esa respuesta venga rellena con los datos que el usuario ha escrito (aunque sean incorrectos, es mejor que no pierda lo que ha escrito), lo haremos así:
 
 ```php
-return back() -> withInput();
+return back()->withInput();
 ```
 
 Los datos antiguos están disponibles a través del *helper* `old()`.
@@ -588,7 +599,8 @@ Podemos pasarle un segundo argumento con un valor por defecto en caso de que no 
 El *helper* `redirect()` retorna una *response* de redirección. Sin argumentos, retorna una instancia del redirector.
 
 ```php
-return redirect($to = null, $status = 302, $headers = [], $secure = null);
+return redirect($to = null, $status = 302,
+                $headers = [], $secure = null);
 
 return redirect('/home');
 
@@ -630,7 +642,10 @@ Sin argumentos retorna el almacén completo de la sesión.
 
 ```php
 $value = session('key');  // obtener valor
-session(['chairs' => 7, 'instruments' => 3]);  // establecer valores
+session([
+    'chairs' => 7,
+    'instruments' => 3
+]);  // establecer valores
 // Equivalente:
 $value = session()->get('key');
 session()->put(['chairs' => 7, 'instruments' => 3]);
@@ -719,7 +734,8 @@ $resp = Http::withHeaders([
 Para indicar que la respuesta debe ser de tipo *JSON*:
 
 ```php
-$resp = Http::acceptJson()->get('http://ejemplo.com/usuarios');
+$resp = Http::acceptJson()
+    ->get('http://ejemplo.com/usuarios');
 ```
 
 ### Autenticación
@@ -728,10 +744,12 @@ Para indicar las credenciales *basic* o *digest*:
 
 ```php
 // Autenticación basic:
-$resp = Http::withBasicAuth('nombreusuario', 'password')->post(/*...*/);
+$resp = Http::withBasicAuth('nombreusuario', 'password')
+    ->post(/*...*/);
 
 // Autenticación digest:
-$resp = Http::withDigestAuth('nombreusuario', 'password')->post(/*...*/);
+$resp = Http::withDigestAuth('nombreusuario', 'password')
+    ->post(/*...*/);
 ```
 
 ### Timeout y reintentos
@@ -830,8 +848,10 @@ Cuando las aplicaciones se vuelven grandes, guardar las traducciones mediante *s
 
 ```json
 {
-    "Bienvenido a nuestra aplicación.": "Welcome to our application",
-    "Gracias por visitar nuestra web.": "Thanks for visiting our website."
+    "Bienvenido a nuestra aplicación.":
+        "Welcome to our application",
+    "Gracias por visitar nuestra web.":
+        "Thanks for visiting our website."
 }
 ```
 
@@ -888,8 +908,14 @@ El método `from()` permite especificar un remitente válido. El primer argument
 Se puede utilizar un remitente configurado globalmente en ***config/mail.php***. Además, se puede indicar la dirección *reply to* (si es distinta a *from*):
 
 ```php
-'from' => ['address' => 'pepe@ejemplo.com', 'name' => 'Nombre del remitente'],
-'reply_to' => ['address' => 'paco@ejemplo.com', 'name' => 'Nombre a quien respondemos'],
+'from' => [
+    'address' => 'pepe@ejemplo.com',
+    'name' => 'Nombre del remitente'
+],
+'reply_to' => [
+    'address' => 'paco@ejemplo.com',
+    'name' => 'Nombre a quien respondemos'
+],
 ```
 
 Si existe tal configuración, los métodos `from()` y `replyTo()` tienen prioridad sobre ella.
@@ -1044,7 +1070,8 @@ Una vez requerido e instalado el paquete, es frecuente que su configuración deb
 public function boot()
 {
     $this->publishes([
-        __DIR__.'/../config/courier.php' => config_path('courier.php'),
+        __DIR__.'/../config/courier.php' =>
+            config_path('courier.php'),
     ]);
 }
 ```
@@ -1052,7 +1079,8 @@ public function boot()
 Para publicar la configuración tras requerir el paquete, usaremos *artisan*:
 
 ```
-php artisan vendor:publish --provider=<NombreServiceProvider>
+php artisan vendor:publish
+    --provider=<NombreServiceProvider>
 ```
 
 El nombre del *service provider* debe indicarse *fully qualified*.
@@ -1075,7 +1103,8 @@ Por otro lado, en lugar de publicar el archivo como un bloque, se pueden publica
 
 ```php
 public function register() {
-    $this->mergeConfigFrom(__DIR__ . '/../config/courier.php', 'courier');
+    $this->mergeConfigFrom(__DIR__ .
+        '/../config/courier.php', 'courier');
 }
 ```
 
@@ -1100,8 +1129,9 @@ Es importante recordar que por defecto, las rutas en el directorio estándar (**
 ```php
 public function boot() {
     Route::middleware('web')
-        -> group(function() {
-            $this->loadRoutesFrom(__DIR__ . '/../routes/rutas.php');
+        ->group(function() {
+            $this->loadRoutesFrom(__DIR__ .
+                '/../routes/rutas.php');
     });
 }
 ```
@@ -1111,7 +1141,7 @@ Por simplicidad, esto es equivalente a:
 ```php
 public function boot() {
     Route::middleware('web')
-        -> group(__DIR__ . '/../routes/rutas.php');
+        ->group(__DIR__ . '/../routes/rutas.php');
 }
 ```
 
@@ -1121,7 +1151,7 @@ Para registrar migraciones:
 
 ```php
 public function boot() {
-    $this -> loadMigrationsFrom('/../database/migrations');
+    $this->loadMigrationsFrom('/../database/migrations');
 }
 ```
 
@@ -1136,7 +1166,8 @@ Para acceder a estas traducciones, se usa el formato ***paquete::archivo.texto**
 ```php
 public function boot()
 {
-    $this->loadTranslationsFrom(__DIR__ . '/../lang', 'courier');
+    $this->loadTranslationsFrom(__DIR__ .
+        '/../lang', 'courier');
 }
 ```
 
@@ -1153,7 +1184,8 @@ Para publicar vistas se usa el método `loadViewsFrom()`:
 ```php
 public function boot()
 {
-    $this->loadViewsFrom(__DIR__ . '/../resources/views', 'courier');
+    $this->loadViewsFrom(__DIR__ .
+        '/../resources/views', 'courier');
 }
 ```
 

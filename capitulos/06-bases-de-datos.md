@@ -11,7 +11,8 @@ Una vez está configurada la base de datos adecuadamente, podemos acceder a ella
 Para hacer un simple *select*, usaremos `select()`, que recibe dos argumentos: la consulta *SQL*, y un *array* opcional de argumentos ligados a esta consulta (valores del filtro `where`, etc.):
 
 ```php
-$datos = DB::select('SELECT * FROM coches WHERE marca = ?', ['seat']);
+$datos = DB::select('SELECT * FROM coches WHERE marca = ?',
+                    ['seat']);
 ```
 
 Los argumentos se van ligando a la consulta en orden de aparición de los ***'?'*** (es más seguro hacerlo así, para evitar ataques de *SQL injection*).
@@ -25,13 +26,17 @@ $m = $datos[2]->modelo;
 En lugar de utilizar interrogantes, se pueden enlazar los argumentos con nombre:
 
 ```php
-$datos = DB::select('SELECT * FROM coches WHERE marca = :mrc', ['mrc' => 'seat']);
+$datos = DB::select(
+    'SELECT * FROM coches WHERE marca = :mrc',
+    ['mrc' => 'seat']
+);
 ```
 
 Para insertar, se haría de forma similar:
 
 ```php
-DB::insert('INSERT INTO users (id, name) VALUES (?, ?)', [33501, 'Pepe']);
+DB::insert('INSERT INTO users (id, name) VALUES (?, ?)',
+           [33501, 'Pepe']);
 ```
 
 Si la inserción tiene éxito, el método retorna *true*.
@@ -39,7 +44,10 @@ Si la inserción tiene éxito, el método retorna *true*.
 Un *update*:
 
 ```php
-$affected = DB::update('UPDATE users SET votes = 100 WHERE name = ?', ['John']);
+$affected = DB::update(
+    'UPDATE users SET votes = 100 WHERE name = ?',
+    ['John']
+);
 ```
 
 Este método retorna el número de registros afectados.
@@ -111,7 +119,9 @@ $marcaCoche2 = $tablaCoches[2]->marca;
 Una forma de aplicar un filtro al query builder es mediante `where()` (se verá en detalla más adelante). Por otro lado, en lugar de convertir el *query builder* en una *collection* de objetos, se puede convertir en un solo objeto mediante el método `first()`. En este caso, el objeto es el primero de los registros de la *query*.
 
 ```php
-$user = DB::table('coches')->where('marca', 'Volvo')->first();
+$user = DB::table('coches')
+    ->where('marca', 'Volvo')
+    ->first();
 ```
 
 Este ejemplo toma la tabla ***coches***, le aplica un *where* (`marca=Volvo`) mediante el método `where()`, y luego retorna el primero de los elementos. El método `first()` retorna el registro, no una colección. Este objeto retornado permite acceder a sus campos mediante sintaxis de acceso a propiedades.
@@ -158,7 +168,9 @@ Para comprobar si existen registros: `exists()` y `doesntExist()`. Retornan un b
 Para seleccionar campos, se puede refinar el *query builder* con el método `select()`:
 
 ```php
-$users = DB::table('users')->select('name', 'email as user_email')->get();
+$users = DB::table('users')
+    ->select('name', 'email as user_email')
+    ->get();
 ```
 
 El método `distinct()` retorna un *query builder* en el que se han eliminado los registros duplicados. El método `addSelect()` añade campos al *query builder*.
@@ -167,10 +179,10 @@ En un método como `select()`, `where()`, etc. se puede pasar como argumentos un
 
 ```php
 $users = DB::table('users')
-                 ->select(DB::raw('count(*) as user_count, status'))
-                 ->where('status', '<>', 1)
-                 ->groupBy('status')
-                 ->get();
+    ->select(DB::raw('count(*) as user_count, status'))
+    ->where('status', '<>', 1)
+    ->groupBy('status')
+    ->get();
 ```
 
 Dependiendo de a qué método deseemos pasar una expresión literal, podemos utilizar una sintaxis más compacta, mediante los métodos `selectRaw()`, `whereRaw()`, `orWhereRaw()`, `havingRaw()`, `orHavingRaw()`, `orderByRaw()` o `groupByRaw()`.
@@ -181,10 +193,10 @@ Para hacer un *inner join* con otra tabla, se usa el método `join()`. El primer
 
 ```php
 $users = DB::table('users')
-            ->join('contacts', 'users.id', '=', 'contacts.user_id')
-            ->join('orders', 'users.id', '=', 'orders.user_id')
-            ->select('users.*', 'contacts.phone', 'orders.price')
-            ->get();
+    ->join('contacts', 'users.id', '=', 'contacts.user_id')
+    ->join('orders', 'users.id', '=', 'orders.user_id')
+    ->select('users.*', 'contacts.phone', 'orders.price')
+    ->get();
 ```
 
 De forma similar, podemos hacer un *left join* (`leftJoin()`) o un *right join* (`rightJoin()`).
@@ -210,12 +222,12 @@ Para agrupar cláusulas *where* adecuadamente teniendo en cuenta las *and* y *or
 
 ```php
 $users = DB::table('users')
-           ->where('name', '=', 'John')
-           ->where(function ($query) {
-               $query->where('votes', '>', 100)
-                     ->orWhere('title', '=', 'Admin');
-           })
-           ->get();
+    ->where('name', '=', 'John')
+    ->where(function ($query) {
+        $query->where('votes', '>', 100)
+            ->orWhere('title', '=', 'Admin');
+        })
+    ->get();
 ```
 
 ### Orden
@@ -240,10 +252,10 @@ Es posible aplicar un método en la cadena solamente si una determinada condici�
 
 ```php
 $coches = DB::table('coches')
-              ->when($marca, function($query, $marca) {
-                    $query->where('marca', $marca);
-              })
-              ->get();
+    ->when($marca, function($query, $marca) {
+        $query->where('marca', $marca);
+    })
+    ->get();
 ```
 
 En este caso, al *query builder* se le aplicará la cláusula *where* cuando la variable ***\$marca*** exista y se evalúe a ***true***. La *closure* como primer argumento el *query builder* que estamos construyendo, y como segundo, el primer argumento a `when()`.
@@ -269,8 +281,16 @@ Para ello, el método `upsert()` recibe un primer argumento consistente en un *a
 
 ```php
 DB::table('flights')->upsert([
-    ['departure' => 'Oakland', 'destination' => 'San Diego', 'price' => 99],
-    ['departure' => 'Chicago', 'destination' => 'New York', 'price' => 150]
+    [
+        'departure' => 'Oakland',
+        'destination' => 'San Diego',
+        'price' => 99
+    ],
+    [
+        'departure' => 'Chicago',
+        'destination' => 'New York',
+        'price' => 150
+    ]
 ], ['departure', 'destination'], ['price']);
 ```
 
@@ -284,8 +304,8 @@ De forma similar a las inserciones, una actualización o cambio (*update*) se re
 
 ```php
 $affected = DB::table('users')
-              ->where('id', 1)
-              ->update(['votes' => 1]);
+    ->where('id', 1)
+    ->update(['votes' => 1]);
 ```
 
 El método `update()` retorna el número de registros afectados.
@@ -295,7 +315,8 @@ El método `updateOrInsert()` toma dos argumentos: un *array* con una serie valo
 Para incrementar o decrementar un campo numérico, tenemos `increment()` y `decrement()`. Debemos indicar el nombre del campo. Si además especificamos un número (siempre positivo), ese cambio no será de 1 sino de lo que indiquemos. Si además indicamos un *array* con pares campo/valor, ese campo será también actualizado.
 
 ```php
-DB::table('coches')->increment('km', 100, ['estado' => 'usado']);
+DB::table('coches')
+    ->increment('km', 100, ['estado' => 'usado']);
 ```
 
 ### Borrado
@@ -341,9 +362,9 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('coches', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('coches', function (Blueprint $t) {
+            $t->id();
+            $t->timestamps();
         });
     }
 
@@ -411,7 +432,10 @@ El método `table()` de ***Schema*** tiene el mismo uso que `create()`, pero en 
 Si deseamos especificar una conexión de base de datos en lugar de usar la conexión por defecto, se debe usar el método `connection()`:
 
 ```php
-Schema::connection('sqlite')->create('tabla', function(Blueprint $table) { /*...*/ });
+Schema::connection('sqlite')
+    ->create('tabla', function(Blueprint $table) {
+        /*...*/
+    });
 ```
 
 En el caso específico de *MySQL*/*MariaDB*, se pueden indicar algunas características de la tabla a crear mediante determinadas propiedades del objeto ***Blueprint***:
@@ -529,8 +553,10 @@ Supongamos que añadimos a una tabla ***coches*** una columna ***color_id***, qu
 
 ```php
 Schema::table('coches', function (Blueprint $tabla) {
-    $tabla->unsignedBigInteger('color_id');  // crea la columna
-    $tabla->foreign('color_id')->references('id')->on('colors');  // crea la restricción
+    $tabla->unsignedBigInteger('color_id');  // crea columna
+    $tabla->foreign('color_id')
+        ->references('id')
+        ->on('colors');  // crea la restricción
 });
 ```
 
@@ -561,9 +587,9 @@ Por otro lado, es posible definir cláusulas ***ON DELETE*** y ***ON UPDATE*** m
 
 ```php
 $table->foreignId('color_id')
-    -> constrained()
-    -> onDelete('restrict')
-    -> onUpdate('cascade');
+    ->constrained()
+    ->onDelete('restrict')
+    ->onUpdate('cascade');
 ```
 
 A la hora de definir la restricción, la tabla a la que pertenece la clave a la que hacemos referencia debe existir ya en la base de datos.

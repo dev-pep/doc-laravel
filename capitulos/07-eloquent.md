@@ -29,7 +29,10 @@ Si deseamos asociar el modelo a una conexión de base de datos distinta de la co
 Si queremos dar un valor por defecto a alguno de los campos, definiremos la variable protegida ***\$attributes***. Se le dará como valor un *array* con los nombres de los atributos a los que queramos dar valor por defecto, junto con sus valores:
 
 ```php
-protected $attributes = [ 'delayed' => false, 'city' => 'Sabadell' ];
+protected $attributes = [
+    'delayed' => false,
+    'city' => 'Sabadell'
+];
 ```
 
 ## Acceso a la base de datos
@@ -196,12 +199,12 @@ En el caso de ***decimal*** se debe indicar el número de dígitos (p.e. ***deci
 
 ```php
 protected $casts = [
-        'es_electrico' => 'boolean',
-        'marca' => 'string',
-        'marca' => 'string',
-        'km' => 'integer',
-        'matriculacion' => 'date'
-    ];
+    'es_electrico' => 'boolean',
+    'marca' => 'string',
+    'marca' => 'string',
+    'km' => 'integer',
+    'matriculacion' => 'date'
+];
 ```
 
 A parte de los *casts* por defecto, se puede definir un *cast* a medida. Para ello debemos implementar una clase que implemente la interfaz ***Illuminate\\Contracts\\Database\\Eloquent\\CastsAttributes***. La clase debe definir las conversiones mediante el método `get()` (de base de datos a objeto *PHP*) y `set()` de objeto a base de datos. Luego, a la hora de definir el mapeo de un campo en el *array* ***\$casts***, se indicará como valor el nombre *fully qualified* de la clase.

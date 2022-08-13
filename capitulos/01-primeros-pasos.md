@@ -17,25 +17,31 @@ Hay que asegurarse que la carpeta de ejecutables de los paquetes instalados glob
 Una vez instalado, para crear un proyecto, se ejecuta, desde la carpeta en la que deseamos que se cree la subcarpeta del proyecto:
 
 ```
-laravel new <nombreProyecto>
+laravel new nombreProyecto
 ```
 
 Por otro lado, para instalar un proyecto *Laravel* directamente:
 
 ```
-composer create-project --prefer-dist laravel/laravel nombreProyecto
+composer create-project --prefer-dist laravel/laravel
+    nombreProyecto
 ```
 
 O lo que es lo mismo:
 
 ```
-composer create-project --prefer-dist laravel/laravel nombreProyecto
+composer create-project --prefer-dist laravel/laravel
+    nombreProyecto
 ```
 
-Si queremos una versión concreta de *Laravel*, cualquiera de estas órdenes vale:
+Si queremos una versión concreta de *Laravel*, cualquiera de estas dos órdenes vale:
+
 ```
-composer create-project --prefer-dist laravel/laravel:^7.0 nombreProyecto
-composer create-project --prefer-dist laravel/laravel nombreProyecto ^7.0
+composer create-project --prefer-dist laravel/laravel:^7.0
+    nombreProyecto
+
+composer create-project --prefer-dist laravel/laravel
+    nombreProyecto ^7.0
 ```
 
 Esto creará un proyecto *Laravel* en una carpeta ***nombreProyecto***, usando la versión más actualizada de *Laravel*.
@@ -110,7 +116,7 @@ En este caso, se accede a un archivo ***config/app.php*** que retorna un *array*
 
 Es posible establecer un valor de configuración en tiempo de ejecución. Para ellos pasaremos un *array* a `config()` estableciendo los valores que deseemos:
 
-```
+```php
 config(['app.timezone' => 'Madrid/Paris']);
 ```
 
@@ -133,7 +139,6 @@ Ejemplos:
 ```
 php artisan down
 php artisan down --redirect=/mantenimiento
-
 php artisan up
 ```
 

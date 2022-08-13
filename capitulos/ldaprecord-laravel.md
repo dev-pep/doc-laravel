@@ -15,7 +15,8 @@ composer require directorytree/ldaprecord-laravel
 Seguidamente, generaremos los archivos de configuración necesarios para su funcionamiento, es decir, publicaremos el paquete:
 
 ```
-php artisan vendor:publish --provider="LdapRecord\Laravel\LdapServiceProvider"
+php artisan vendor:publish
+    --provider="LdapRecord\Laravel\LdapServiceProvider"
 ```
 
 El *namespace* base del paquete es ***LdapRecord\\Laravel***, y se corresponde con el directorio ***vendor/directorytree/ldaprecord-laravel/src***.
@@ -112,7 +113,8 @@ La clase dispone de dos atributos:
 ```php
 public function isValid()
 {
-    return $this->user->groups()->exists('Finanzas', 'Marketing');
+    return $this->user->groups()
+        ->exists('Finanzas', 'Marketing');
 }
 ```
 
@@ -124,8 +126,10 @@ En todos los casos, los grupos indicados pueden ser *common names*, *distinguish
 public function isValid()
 {
     return $this->user->groups()->exists(
-        Group::find('cn=Finanzas,ou=Groups,dc=tesla,dc=com'),
-        Group::find('cn=Marketing,ou=Groups,dc=tesla,dc=com'));
+        Group::find(
+            'cn=Finanzas,ou=Groups,dc=tesla,dc=com'),
+        Group::find(
+            'cn=Marketing,ou=Groups,dc=tesla,dc=com'));
 }
 ```
 
@@ -138,7 +142,10 @@ Cuando un usuario se autentica correctamente, ***Auth::user()*** retorna una ins
 Para autenticar de forma llana:
 
 ```php
-Auth::attempt(['mail' => 'pepe@pepe.com', 'password' => 'secreto']);
+Auth::attempt([
+    'mail' => 'pepe@pepe.com',
+    'password' => 'secreto'
+]);
 ```
 
 El método retorna ***true*** si la autenticación tiene éxito. En ese caso, como de costumbre se tiene acceso al usuario mediante ***Auth::user()*** (instancia del modelo), se puede comprobar la autenticación con ***Auth::check()***, etc.
@@ -152,7 +159,8 @@ La tabla de usuarios de la base de datos local puede tener los campos que deseem
 La migración encargada de añadir esos campos está disponible para publicación:
 
 ```
-php artisan vendor:publish --provider="LdapRecord\Laravel\LdapAuthServiceProvider"
+php artisan vendor:publish
+    --provider="LdapRecord\Laravel\LdapAuthServiceProvider"
 php artisan migrate
 ```
 
@@ -193,7 +201,8 @@ Una vez hecho esto, hay que configurar este proveedor de usuarios adecuadamente 
 'providers' => [
     'users' => [
         'driver' => 'ldap',
-        'model' => LdapRecord\Models\ActiveDirectory\User::class,  // modelo ldaprecord
+        'model' =>  // modelo ldaprecord
+            LdapRecord\Models\ActiveDirectory\User::class,
         'rules' => [],
         'database' => [
             'model' => App\User::class,  // modelo eloquent
@@ -222,7 +231,8 @@ El *middleware* que realiza esta tarea es ***LdapRecord\\Laravel\\Middleware\\Wi
 Para cambiar el nombre de la variable de entorno del servidor que almacena el nombre de usuario, se debe ejecutar el método estático del *middleware* `serverKey()`, pasándole el nuevo nombre. En nuestro caso haríamos:
 
 ```php
-WindowsAuthenticate::serverKey('REMOTE_USER');  // servidor Apache
+WindowsAuthenticate::serverKey('REMOTE_USER');  // servidor
+                                                // Apache
 ```
 
 Un buen lugar para hacerlo es en el método `boot()` de un *service provider*, como ***AuthServiceProvider***.
