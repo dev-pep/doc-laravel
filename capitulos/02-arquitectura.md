@@ -241,7 +241,6 @@ Si no hay que pasar argumentos al constructor, y solo consideramos una posibilid
 
 ```php
 $this->app->bind(InterfazCreditos::class, Creditos::class);
-});
 ```
 
 Esto simplemente *binds* una interfaz a una implementación concreta de la misma.
