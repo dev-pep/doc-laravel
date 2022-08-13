@@ -1,6 +1,8 @@
 # Primeros pasos
 
-Como requisito previo para la programación en el *framework Laravel*, será necesario saber programar en lenguaje *PHP*.
+*Laravel* es un *framework PHP*. Es una estructura de funcionalidades creadas en *PHP* que automatiza, es decir, simplifica enormemente, el trabajo con aspectos muy frecuentemente utilizados, como el tratamiento de la solicitud (*request*) entrante, la respuesta (*response*) retornada al cliente, las cabeceras *HTTP* entrantes y salientes, la autenticación del usuario, el trabajo con bases de datos, el manejo de la sesión o la seguridad, entre otras cosas.
+
+Por lo tanto, resulta imprescindible conocer el lenguaje *PHP* para poder utilizar *Laravel* de forma eficiente.
 
 ## Instalación
 
