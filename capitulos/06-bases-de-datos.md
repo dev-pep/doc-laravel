@@ -105,7 +105,7 @@ php artisan db pgsql
 
 El *query builder* es un mecanismo que permite construir *queries* a la base de datos mediante el encadenamiento de métodos. Las *queries* construidas así son inmunes a los ataques de inyección de *SQL*.
 
-Cada uno de estos métodos retorna una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***). Se puede ir refinando la *query* en la cadena de métodos. Al final de la cadena utilizaremos un método que transforme el *query builder* deseado en otro tipo de objeto, como *array* o *collection* (***Illuminate\\Support\\Collection***) de registros.
+Cada uno de estos métodos retorna una instancia de un *query builder* (***Illuminate\\Database\\Query\\Builder***). Se puede ir refinando la *query* en la cadena de métodos. Al final de la cadena utilizaremos un método que transforme el *query builder* deseado en una *collection* (***Illuminate\\Support\\Collection***) de registros (método `get()`).
 
 El método inicial para empezar el *query builder* es `DB::table()`. Empezaremos simplemente indicando la tabla sobre la que trabajar (se trata de un *select* de la tabla entera), indicada como argumento *string*. Este método retorna, lógicamente, una instancia del *query builder*.
 
@@ -115,6 +115,8 @@ El método final es frecuentemente `get()`, un método del objeto *query builder
 $tablaCoches = DB::table('coches')->get();
 $marcaCoche2 = $tablaCoches[2]->marca;
 ```
+
+> Una collection puede convertirse en *array* mediante el método `toArray()` de la collection.
 
 Una forma de aplicar un filtro al query builder es mediante `where()` (se verá en detalla más adelante). Por otro lado, en lugar de convertir el *query builder* en una *collection* de objetos, se puede convertir en un solo objeto mediante el método `first()`. En este caso, el objeto es el primero de los registros de la *query*.
 
