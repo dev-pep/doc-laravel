@@ -384,6 +384,51 @@ class Departamento extends Model
 }
 ```
 
+#### Acceso a la tabla intermedia
+
+La tabla intermedia de relaciones se utiliza internamente por parte de *Eloquent* para vincular dos tablas mediante una relación muchos a muchos. Pero ¿cómo se podría acceder a los registros de esa tabla directamente? *Eloquent* permite hacerlo mediante el atributo ***pivot*** de los modelos de las dos tablas relacionadas. Siguiendo con el ejemplo anterior:
+
+```php
+$emp = Empleado::find(3333);
+foreach($emp->depars as $dep) {
+    $v1 = $emp->pivot->empleado_id;
+    $v2 = $emp->pivot->departamento_id;
+}
+```
+
+Como vemos, en la colección retornada por ***\$emp->depars***, se ha añadido automáticamente a cada elemento un atributo ***pivot*** que es en realidad un modelo de la tabla intermedia.
+
+Por defecto, se puede acceder únicamente a los dos campos con las claves externas de la tabla intermedia. En el ejemplo, la tabla intermedia (***departamento_empleado***) contenía únicamente esos dos campos (***empleados_id*** y ***departamentos_id***).
+
+Pero, ¿qué pasa si para cada relación queremos añadir información adicional? Supongamos que para cada relación empleado-departamento deseamos añadir la fecha en la que el empleado se incorporó al departamento en cuestión, así como la fecha de baja. En este caso, la tabla intermedia tendrá, por ejemplo, los campos adicionales ***fecha_incorp*** y ***fecha_baja***.
+
+Para que se pueda acceder a estos campos extra, es necesario informar a *Eloquent* a la hora de definir la relación, pasando sus nombres como argumento al método `withPivot()`. Adicionalmente, si deseamos que *Eloquent* gestione los *timestamps* de la tabla intermedia, al acceder a través del atributo ***depars***, añadiremos el método `withTimestamps()`:
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Empleado extends Model
+{
+    public function depars() {
+        return $this->belongsToMany(Departamento::class)
+            ->withPivot('fecha_incorp', 'fecha_baja')
+            ->withTimestamps();
+    }
+}
+```
+
+Ahora ya podríamos acceder a esa información adicional:
+
+```php
+$emp = Empleado::find(3333);
+foreach($emp->depars as $dep) {
+    $incor = $emp->pivot->fecha_incorp;
+    $baja = $emp->pivot->fecha_baja;
+}
+```
+
 ### Modelo por defecto
 
 Es posible que una clave externa tenga valor ***null***. En ese caso, es posible establecer un modelo por defecto que será retornado en estas circunstancias por funciones como `hasOne()` o `belongsTo()` (funciones que retornan un modelo, no una colección). Ello se consigue pasando como argumento al método `withDefault()` un *array* asociativo con los valores de los campos del modelo deseado:
