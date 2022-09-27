@@ -191,7 +191,7 @@ if($coche1->isNot($coche2))
 
 ## Relaciones
 
-*Eloquent* nos permite definir el tipo de relaciones en una base de datos relacional. Veremos aquí cómo definir algunos de estos tipos.
+*Eloquent* nos permite definir el tipo de relaciones en una base de datos relacional. Veremos aquí cómo definir algunos de estos tipos y qué ventajas ofrece.
 
 ### Relación uno a uno
 
@@ -217,19 +217,21 @@ $departamento = Departamento::find(33);
 $jefeDep = $departamento->jefe;
 ```
 
-Internamente, *Eloquent* localiza al jefe a través del convenio de claves externas: dentro del modelo de departamento obtenido, buscará una clave externa basada en el nombre del modelo (***Jefe***), resultando en un campo ***jefe_id***. Si en nuestra tabla el nombre de la clave externa es distinto, hay que informar de dicho nombre al definir la relación:
+Internamente, *Eloquent* localiza al jefe a través del convenio de claves externas: en este caso, asumirá que en el modelo ***Jefe*** (tabla ***jefes***) existirá un campo (clave externa) ***departamento_id*** cuyo valor será igual al campo ***id*** (clave primaria) del modelo actual, es decir ***Departamento*** (tabla ***departamentos***).
+
+Si el nombre del campo correspondiente a la clave externa no fuese ***departamento_id***, tendríamos que informar de ello a la hora de crear la relación:
 
 ```php
-return $this->hasOne(Jefe::class, 'campo_clave_externa');
+return $this->hasOne(Jefe::class, 'depar_ident');
 ```
 
-Del mismo modo, *Eloquent* asume que el campo de la tabla externa tendrá como nombre ***id***. Si no es así, pasaremos un tercer argumento a `hasOne()` con el nombre del campo de la clave primaria en esa tabla:
+Del mismo modo, si el nombre de nuestra clave primaria no es ***id***, también hay que informar de ello en el tercer argumento a `hasOne()`:
 
 ```php
-return $this->hasOne(Jefe::class, 'campo_clave_externa', 'campo_id_tabla_ext');
+return $this->hasOne(Jefe::class, 'depar_ident', 'ident');
 ```
 
-Así, podemos acceder al jefe a partir del departamento. Para poder hacerlo a la inversa (acceder al departamento a partir del jefe), y **una vez establecida la relación uno a uno** en ***Departamento***, debemos definir el modelo ***Jefe*** así:
+Así, podemos acceder al jefe a partir del departamento. Para poder hacerlo a la inversa (acceder al departamento a partir del jefe), debemos definir dentro del modelo ***Jefe***:
 
 ```php
 namespace App\Models;
@@ -251,10 +253,10 @@ $jefeDep = Jefe::find(3333);
 $departamento = $jefeDep->depar;
 ```
 
-Una vez más, *Eloquent* asume una clave primaria con nombre ***id*** en nuestra tabla de jefes, y una clave externa ***jefe_id*** en la tabla de departamentos. Si no es así, nuevamente hay que informar de los nombres: primero el de la clave externa en tabla de departamentos, y, si procede, el nombre de la clave primaria en nuestra tabla:
+En este caso, *Eloquent* asume una clave primaria con nombre ***id*** en el modelo ***Departamento*** (tabla ***departamentos***), y una clave externa ***departamento_id*** en el modelo actual ***Jefe*** (tabla ***jefes***). Si los nombres de los campos difieren, nuevamente hay que informar: primero el nombre del campo con la clave externa en nuestro modelo (***Jefe***, tabla ***jefes***), y, si procede, el nombre de la clave primaria en el modelo externo (***Departamento***, tabla ***departamentos***):
 
 ```php
-return $this->belongsTo(Departamento::class, 'campo_clave_externa', 'campo_id_tabla');
+return $this->belongsTo(Departamento::class, 'depar_ident', 'ident');
 ```
 
 ### Relación uno a muchos
@@ -283,19 +285,21 @@ $emps = $departamento->empleados;
 
 En este caso, lo retornado no será un modelo empleado, sino una colección *Eloquent* (de tipo ***Illuminate\\Database\\Eloquent\\Collection***) con todos los empleados que trabajan en ese departamento. Como ya hemos visto, una colección *Eloquent* admite métodos análogos a los de un *query builder*, con lo que puede refinarse la relación de registros.
 
+En este caso, *Eloquent* asume que el modelo ***Empleado*** (tabla ***empleados***) contiene un campo ***departamento_id***, que es la clave externa que debe coincidir con la clave primaria ***id*** del modelo actual ***Departamento*** (tabla ***departamentos***). En este caso, podrá haber más de un registro de ***empleados*** con el mismo valor en su clave externa ***departamento_id***.
+
 Como en el caso de las relaciones uno a uno, si los nombres de los campos no son los estándar, hay que indicarlo a la hora de definir la relación:
 
 ```php
-return $this->hasMany(Empleado::class, 'campo_clave_externa');
+return $this->hasMany(Empleado::class, 'depar_ident');
 ```
 
 O:
 
 ```php
-return $this->hasMany(Empleado::class, 'campo_clave_externa', 'campo_id_tabla_ext');
+return $this->hasMany(Empleado::class, 'depar_ident', 'ident');
 ```
 
-Podemos así acceder a la lista de empleados a partir del departamento. Para hacerlo a la inversa (acceder al departamento a partir de un empleado), y **una vez establecida la relación uno a muchos** en ***Departamento***, debemos definir el modelo ***Empleado*** así:
+Podemos así acceder a la lista de empleados a partir del departamento. Para hacerlo a la inversa (acceder al departamento a partir de un empleado), debemos definir dentro del modelo ***Empleado***:
 
 ```php
 namespace App\Models;
@@ -317,23 +321,25 @@ $emp = Empleado::find(3333);
 $departamento = $emp->depar;
 ```
 
-Como siempre, *Eloquent* asume una clave primaria con nombre ***id*** en nuestra tabla de empleados, y una clave externa ***empleado_id*** en la tabla de departamentos. Si no es así, nuevamente hay que informar de los nombres: primero el de la clave externa en la tabla de departamentos, y, si procede, el nombre de la clave primaria en nuestra tabla:
+Esto retorna el modelo correspondiente al departamento en el que trabaja el empleado (retorna un solo registro, no una colección).
+
+Como siempre, *Eloquent* asume una clave primaria con nombre ***id*** en la tabla de departamentos, y una clave externa ***departamento_id*** en nuestra tabla de empleados. Si hay divergencias en los nombres, nuevamente hay que informar de ello: primero el nombre de la clave externa en nuestro modelo, y, si procede, el nombre de la clave primaria en el modelo externo:
 
 ```php
-return $this->hasOne(Jefe::class, 'campo_clave_externa', 'campo_id_tabla');
+return $this->hasOne(Jefe::class, 'depar_ident', 'ident');
 ```
 
 ### Relación muchos a muchos
 
 Una relación muchos a muchos necesita de tres tablas. Siguiendo con el ejemplo anterior, supongamos que un empleado puede trabajar en más de un departamento. En este caso, la relación entre empleados y departamentos es muchos a muchos.
 
-Las tablas involucradas en la base de datos serían, en primer lugar, ***empleados*** y ***departamentos***. Pero en este caso, no puede haber una clave externa en ***empleados*** llamada ***departamento_id***, puesto que puede haber varios departamentos asociados al empleado. Del mismo modo, tampoco puede haber una clave externa en ***departamentos*** llamada ***empleado_id***, por el mismo motivo. Así, que la relación debe apoyarse en una tercera tabla que realice todas las asociaciones. *Eloquent* asume que el nombre de esta tabla estará compuesto por los nombres de las dos tablas involucradas, en singular (sin la ***s*** final), en orden alfabético, y en *snake case*. En este caso, el resultado sería la tabla ***departamento_empleado***.
+Las tablas involucradas en la base de datos serían, en primer lugar, ***empleados*** y ***departamentos***. Pero en este caso, no puede haber una clave externa en ***empleados*** llamada ***departamento_id***, puesto que puede haber varios departamentos asociados al empleado. Del mismo modo, tampoco podría haber una clave externa en ***departamentos*** llamada ***empleado_id***, puesto que eso solo permitiría un empleado por departamento.
 
-El convenio que toma *Eloquent* es el de considerar que esta nueva tabla tiene dos campos: cada uno de ellos es una clave externa de las dos tablas a relacionar. En este caso, los dos campos serían ***departamento_id*** (asociado al campo ***id*** de la tabla ***departamentos***) y ***empleado_id*** (asociado al campo ***id*** de la tabla ***empleados***).
+Así, que la relación debe apoyarse en una tercera tabla que realice todas las asociaciones. *Eloquent* asume que el nombre de esta tabla intermedia estará compuesto por los nombres de las dos tablas involucradas, en singular (sin la ***s*** final), en orden alfabético, y en *snake case*. En este caso, el resultado sería la tabla ***departamento_empleado***.
 
-Esta nueva tabla es la que relaciona todos los empleados con todos los departamentos en los que trabajan.
+El convenio que toma *Eloquent* es el de considerar que esta nueva tabla tiene dos únicos campos: cada uno de ellos es una clave externa correspondiente a cada una de las dos tablas a relacionar. En este caso, los dos campos serían ***departamento_id*** (asociado al campo ***id*** de la tabla ***departamentos***) y ***empleado_id*** (asociado al campo ***id*** de la tabla ***empleados***).
 
-Con esta estructura en mente, ya podríamos definir la relación:
+Esta nueva tabla es la que relaciona todos los empleados con todos los departamentos en los que trabajan. Con esta estructura en mente, ya podríamos definir la relación:
 
 ```php
 namespace App\Models;
@@ -369,6 +375,8 @@ Además podemos indicar los nombres de las claves externas en esa tabla, si no s
 return $this->belongsToMany(Departamento::class, 'emple_depar', 'emple_id', 'depar_id');
 ```
 
+En este caso, el tercer argumento es el nombre de la clave externa en el modelo desde el que estamos definiendo el método, mientras que el cuarto argumento es el nombre de la clave externa en el modelo con el que nos estamos relacionando.
+
 Para definir la contraparte, es decir, para poder acceder a todos los empleados de un departamento, la acción es exactamente igual, pero invirtiendo los modelos:
 
 ```php
@@ -400,9 +408,9 @@ Como vemos, en la colección retornada por ***\$emp->depars***, se ha añadido a
 
 Por defecto, se puede acceder únicamente a los dos campos con las claves externas de la tabla intermedia. En el ejemplo, la tabla intermedia (***departamento_empleado***) contenía únicamente esos dos campos (***empleados_id*** y ***departamentos_id***).
 
-Pero, ¿qué pasa si para cada relación queremos añadir información adicional? Supongamos que para cada relación empleado-departamento deseamos añadir la fecha en la que el empleado se incorporó al departamento en cuestión, así como la fecha de baja. En este caso, la tabla intermedia tendrá, por ejemplo, los campos adicionales ***fecha_incorp*** y ***fecha_baja***.
+Pero, ¿qué pasa si para cada relación queremos añadir información adicional? Supongamos que para cada relación empleado-departamento deseamos añadir la fecha en la que el empleado se incorporó al departamento en cuestión, así como la fecha de baja. En este caso, la tabla intermedia tendrá, por ejemplo, los campos adicionales ***fecha_incorp*** y ***fecha_baja***, a parte de las dos claves externas.
 
-Para que se pueda acceder a estos campos extra, es necesario informar a *Eloquent* a la hora de definir la relación, pasando sus nombres como argumento al método `withPivot()`. Adicionalmente, si deseamos que *Eloquent* gestione los *timestamps* de la tabla intermedia, al acceder a través del atributo ***depars***, añadiremos el método `withTimestamps()`:
+Para que se pueda acceder a estos campos extra, es necesario informar a *Eloquent* a la hora de definir la relación, pasando sus nombres como argumento al método `withPivot()`. Adicionalmente, si deseamos que *Eloquent* gestione también los *timestamps* de la tabla intermedia al acceder a través del atributo ***depars***, añadiremos el método `withTimestamps()`:
 
 ```php
 namespace App\Models;
