@@ -421,9 +421,9 @@ Para revertir **todas** las migraciones del proyecto:
 php artisan migrate:reset
 ```
 
-El comando de *artisan* `make:refresh` realiza *rollback* de todas las migraciones y ejecuta el comando `migrate`, es decir, regenera la base de datos completamente.
+El comando de *artisan* `migrate:refresh` realiza *rollback* de todas las migraciones ejecutadas y posteriormente ejecuta el comando `migrate`, es decir, regenera la base de datos completamente.
 
-En cambio, `make:fresh` lo que hace es eliminar todas las tablas existentes en la base de datos, limpiar el registro de migraciones realizadas, y ejecutar `migrate`.
+En cambio, `migrate:fresh` lo que hace es eliminar todas las tablas existentes en la base de datos (fruto de migraciones o no), borrar el registro de migraciones realizadas, y ejecutar `migrate`.
 
 ### Creación de tablas
 
