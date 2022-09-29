@@ -201,6 +201,25 @@ $users = DB::table('users')
     ->get();
 ```
 
+En el caso de los *joins* podríamos tener un problema cuando existiesen campos con nombres idénticos en las tablas unidas (se sobreescribirían). En este caso es posible dar un **alias a los campos** que deseemos en el método `select()`. Supongamos que en la tabla ***users*** del ejemplo anterior ya existe un campo ***phone***. En este caso, tendríamos un conflicto entre ***users.phone*** y ***contacts.phone***. Si no hacemos nada para evitarlo, solo uno de los dos campos aparecerá en los registros (con el nombre ***phone***). Podemos solucionarlo con un alias:
+
+```php
+// ...
+    ->select('users.*', 'contacts.phone AS tel',
+             'orders.price')
+    // ...
+```
+
+También es posible dar **alias a los nombres de las tablas** que deseemos. En ese caso, se deberá usar el alias y no el nombre de la tabla:
+
+```php
+$users = DB::table('users AS u')
+    ->join('contacts AS c', 'u.id', '=', 'c.user_id')
+    ->join('orders AS o', 'u.id', '=', 'o.user_id')
+    ->select('u.*', 'c.phone AS tel', 'o.price')
+    ->get();
+```
+
 De forma similar, podemos hacer un *left join* (`leftJoin()`) o un *right join* (`rightJoin()`).
 
 También se puede hacer un *cross join* (`crossJoin()`). En este caso solo se especifica como parámetro la tabla con la que hacer el producto cartesiano.
