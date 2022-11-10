@@ -826,10 +826,10 @@ return response()
     ->view('vistaHello', $data, 200);
 ```
 
-En caso de que no queramos personalizar cabeceras, y simplemente queramos retornar una vista, podemos simplemente usar la función `view()`:
+En caso de que no queramos personalizar cabeceras, y simplemente queramos retornar una vista, podemos simplemente usar la función `view()`, aunque en este caso no podremos especificar el código de respuesta:
 
 ```php
-return view('vistaHello', $data, 200);
+return view('vistaHello', $data);
 ```
 
 Para una respuesta *JSON*, se puede usar el método `json()`, el cual establecerá automáticamente la cabecera ***Content-Type*** a ***application/json***, y convertirá el *array* proporcionado a formato *JSON* usando automáticamente la función de *PHP* `json_encode()`:

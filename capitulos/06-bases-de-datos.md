@@ -201,7 +201,7 @@ $users = DB::table('users')
     ->get();
 ```
 
-En el caso de los *joins* podríamos tener un problema cuando existiesen campos con nombres idénticos en las tablas unidas (se sobreescribirían). En este caso es posible dar un **alias a los campos** que deseemos en el método `select()`. Supongamos que en la tabla ***users*** del ejemplo anterior ya existe un campo ***phone***. En este caso, tendríamos un conflicto entre ***users.phone*** y ***contacts.phone***. Si no hacemos nada para evitarlo, solo uno de los dos campos aparecerá en los registros (con el nombre ***phone***). Podemos solucionarlo con un alias:
+En el caso de los *joins* podríamos tener un problema cuando existiesen campos con nombres idénticos en las tablas unidas (se sobreescribirían). En este caso es posible dar un **alias a los campos** que deseemos, en el método `select()`. Supongamos que en la tabla ***users*** del ejemplo anterior ya existe un campo ***phone***. En este caso, tendríamos un conflicto entre ***users.phone*** y ***contacts.phone***. Si no hacemos nada para evitarlo, solo uno de los dos campos aparecerá en los registros (con el nombre ***phone***). Podemos solucionarlo con un alias:
 
 ```php
 // ...
