@@ -486,11 +486,11 @@ El número de bits de estos enteros es el siguiente: ***TINYINT*** 8, ***SMALLIN
 
 Para tipos *string*: `binary()` (***BLOB***, *binary large object*), `char()` (***CHAR***, con tamaño en segundo argumento), `longtext()` (***LONGTEXT***), `mediumText()` (***MEDIUMTEXT***), `string()` (***VARCHAR***, con tamaño, por defecto 255), `text()` (***TEXT***), `enum()` (***ENUM***, con *array* con los valores posibles, de los que el campo solo puede tener un valor), `set()` (***SET***, con *array* con los valores posibles; a diferencia de un ***ENUM***, el valor del campo puede tener 0 o más elementos).
 
-Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión), `time()` (***TIME***). El tipo ***DATETIME*** acepta un número de dígitos decimales, hasta 6 (microsegundos); el valor por defecto es 0.
+Para tipos fecha/hora: `date()` (***DATE***), `dateTime()` (***DATETIME***, con precisión), `time()` (***TIME***) y `timestamp()` (***TIMESTAMP***, con precisión opcional). El tipo ***DATETIME*** acepta un número de dígitos decimales, hasta 6 (microsegundos); el valor por defecto es 0.
 
 Para otros tipos: `json()` (***JSON***).
 
-El método `timestamps()` crea los campos ***created_at*** y ***updated_at***, que son utilizados automáticamente por *Eloquent* (ver más adelante).
+El método `timestamps()` crea los campos (de tipo ***TIMESTAMP***) ***created_at*** y ***updated_at***, que son utilizados automáticamente por *Eloquent* (ver más adelante).
 
 A los métodos anteriores se les puede encadenar métodos modificadores:
 
