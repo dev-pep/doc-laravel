@@ -20,40 +20,132 @@ Uno de los *service providers* más importantes es ***App\\Providers\\RouteServi
 
 Una vez procesada la *request*, el controlador o ruta retornará una *response*, que pasará a su vez por otro *middleware* (de "salida") el método `handle()` del *kernel* retorna esa *request*. Finalmente, ***index.php*** envía esa respuesta al navegador del usuario.
 
-## Service container
+## Servicios e inyección de dependencias
 
-Para entender este mecanismo, debemos comprender lo que es la dependencia y la inyección de dependencias (*dependency injection*). Se denomina **servicio** a una clase que es utilizada por otra clase (llamada clase **cliente**). Entonces, la clase cliente **depende** de la clase servicio.
+Para entender este mecanismo, debemos comprender lo que son los servicios, los clientes, la dependencia y la inyección de dependencias (*dependency injection*).
 
-Supongamos que tenemos una clase ***Actividad***, que en alguno de sus métodos utiliza una instancia de una clase ***Deporte***, que a su vez utiliza en algún momento una clase de tipo ***Rugby***, que a su vez usa una clase de tipo ***Estadio***, etc. Esto puede acabar representando un problema tremendo. Imaginemos que queremos crear una instancia de ***Actividad***. Es posible que tengamos que inicializar cada uno de estos objetos:
+### Inyección de dependencias
 
-```php
-$actividad = new Actividad($p1, $p2, new Deporte($p3, new Rugby($p4, $p5, new Estadio, $p6)));
-```
+Se denomina **servicio** a una clase que es utilizada por otra clase (llamada clase **cliente**). Entonces, se dice que la clase cliente **depende** de la clase servicio.
 
-O lo que es peor, la creación de estos objetos podría estar esparcida por el código dentro de la clase:
+Supongamos que tenemos una clase ***Viaje***, que en alguna parte de su lógica utiliza una instancia de una clase ***Coche***. Esto podría verse así:
 
 ```php
-class Actividad {
-    public function __construct($p1, $p2) {
-        // ...
-        $e = new Estadio;
-        // ...
-        $r = new Rugby($p4, $p5, $d, $p6);
-        // ...
-        $d = new Deporte($p3, $r);
+class Coche
+{
+    public function __construct($marca, $modelo) { /*...*/ }
+}
+
+class Viaje
+{
+    private $medio;
+
+    public function __construct()
+    {
+        $this->medio = new Coche('Tesla', 'Model X');
     }
 }
 
-$actividad = new Actividad($v1, $v2);
+$viaje = new Viaje;
 ```
 
-A parte de ser bastante lío, ¿qué pasaría si el constructor de uno o más de estos servicios cambia en cuanto a los parámetros? Habría que ir por todo el código cambiando todas las sentencias `new` en la clase cliente. En cambio, si centralizamos en algún punto concreto del código la información acerca de cómo se construye cada servicio, todo sería más sencillo, pues no habría que especificarlo por todo el código en cada instanciación. Esto es precisamente lo que hace el *service container*: proporciona una instancia de la clase servicio que se le solicite.
+En este caso, la clase ***Coche*** es un servicio utilizado por la clase cliente ***Viaje***. Existe en este código una fuerte dependencia de la clase ***Coche*** por parte de ***Viaje***. Esto presenta varios problemas:
 
-La instancia del *service container* se crea en el archivo ***bootstrap/app.php***. Este objeto es de tipo ***Illuminate\\Foundation\\Application***, y puede obtenerse dicha instancia a través del *helper* `app()`.
+- La clase cliente debe conocer los detalles de instanciación del servicio, lo cual resta mantenibilidad y reusabilidad, y además dificulta las pruebas de código (para hacer un test unitario sobre la clase ***Viaje*** debe probarse obligatoriamente la clase ***Coche***).
+- Si se desea cambiar algún parámetro de ***Coche*** habrá que modificar el código de ***Viaje***.
+- Si en lugar de utilizar la clase ***Coche*** deseamos utilizar otra clase ***Bicicleta***, también habrá que modificar la clase cliente.
 
-Supongamos que tenemos una clase llamada ***Cliente*** que depende de otra llamada ***Servicio***. Deberíamos ser capaces de codificar la clase cliente sin preocuparnos de cómo se construye una instancia de la clase servicio. Simplemente deberíamos obtener esa instancia de la clase servicio desde el *service container*, que se encargaría él mismo de construirla (pues sabe cómo hacerlo).
+La inyección de dependencias consiste, pues, en liberar al cliente de los detalles de instanciación de los servicios, de tal modo que tal instanciación se produzca **fuera** de la clase:
 
-Para instruir al contenedor de servicios acerca de cómo hacerlo, usaremos el método `bind()` del mismo, pasándole como primer argumento el nombre *fully-qualified* de la clase a registrar, y como segundo argumento una *closure* o función que retornará la instancia de la clase. Esta *closure* tiene como parámetro una instancia del mismo *service container*:
+```php
+class Coche
+{
+    public function __construct($marca, $modelo) { /*...*/ }
+}
+
+class Viaje
+{
+    private $medio;
+
+    public function __construct(Coche $coche)
+    {
+        $this->medio = $coche;
+    }
+}
+
+$coche = new Coche('Tesla', 'Model X');
+$viaje = new Viaje($coche);
+```
+
+En el constructor de ***Viaje*** indicamos el tipo del parámetro (*type hint*), lo cual no es necesario, pero es una buena práctica acostumbrarse a hacerlo cuando se inyecten dependencias.
+
+Ahora los detalles del servicio quedan completamente fuera del código de ***Viaje***.
+
+La inyección de dependencias aumenta la flexibilidad del código gracias a la posibilidad de inyectar interfaces. Por ejemplo, supongamos que la clase cliente utiliza los métodos públicos `getData()` y `setData()` del servicio. Entonces, cualquier clase que implemente obligatoriamente esos dos métodos, podría inyectarse en lugar de únicamente ***Coche***:
+
+```php
+interface Vehiculo
+{
+    public function getData();
+    public function setData($data);
+}
+
+class Coche implements Vehiculo
+{
+    public function __construct($marca, $modelo) { /*...*/ }
+    public function getData() { /*...*/ }
+    public function setData($data) { /*...*/ }
+}
+
+class Bicicleta implements Vehiculo
+{
+    public function __construct($marca) { /*...*/ }
+    public function getData() { /*...*/ }
+    public function setData($data) { /*...*/ }
+}
+
+class Viaje
+{
+    private $medio;
+    private $data;
+
+    public function __construct(Vehiculo $vehiculo)
+    {
+        $this->medio = $vehiculo;
+        $this->data = $vehiculo->getData();
+        /* ... */
+    }
+}
+
+$coche = new Coche('Tesla', 'Model X');
+$bicicleta = new Bicicleta('BMC');
+$viaje1 = new Viaje($coche);
+$viaje2 = new Viaje($bicicleta);
+```
+
+> Aunque tanto ***Coche*** como ***Bicicleta*** implementan la interfaz ***Vehiculo***, sus constructores son diferentes. De hecho, aunque es posible que una interfaz defina el constructor, no suele ser una buena práctica, ya que la instanciación es algo muy específico de cada clase.
+
+Existen varios tipos de inyección de dependencias:
+
+- **Inyección en constructor** (*constructor injection*): es la que hemos visto. Dado que la inyección se produce en el constructor, se trata de una dependencia obligatoria.
+- **Inyección en** ***setter*** (*setter injection*): la inyección se produce del mismo modo, pero en un método que no es el constructor. Esta dependencia es opcional, ya que solo se utiliza al invocar ciertas funcionalidades de la clase cliente. Normalmente, el método es un *setter*, ya que su invocación suele cambiar el estado (propiedades) del objeto.
+- **Inyección de interfaces** (*interface injection*): puede ser de cualquiera de los dos tipos anteriores, pero en lugar de indicar un tipo de clase, se indica una interfaz, como hemos visto.
+
+Sin embargo, esto representa todavía un problema. En el mundo real, una clase puede tener múltiples dependencias, unas obligatorias, otras opcionales, etc. De este modo, necesitaríamos saber de antemano todos los servicios que va a precisar el cliente, tanto los obligatorios como los opcionales, y proceder a instanciarlos todos antes de crear la instancia de la clase cliente. Y esta gestión manual de las dependencias representa un problema muy complejo en la práctica.
+
+### El contenedor de servicios
+
+Aquí es donde entra en juego el *service container*, que no es más que un mecanismo que permite gestionar las dependencias de forma automática. Este tipo de contenedor suele formar parte de un *framework*, ya que tal característica no existe de forma nativa en el lenguaje *PHP*.
+
+Por suerte, *Laravel* proporciona su propio *service container*.
+
+La idea es centralizar en algún punto los detalles acerca de cómo construir (instanciar) cada clase servicio. Así, desaparece la necesidad de instanciar manualmente los servicios que se van necesitando, ya que es precisamente el *service container* quien se encarga de proporcionar dichas instancias de servicios sobre la marcha.
+
+El *service container* está definido en el archivo ***bootstrap/app.php***. Este objeto es de tipo ***Illuminate\\Foundation\\Application***, y puede obtenerse dicha una instancia del contenedor a través del *helper* `app()`.
+
+Supongamos que tenemos una clase llamada ***Cliente*** que depende de otra llamada ***Servicio***. Deberíamos ser capaces de codificar la clase cliente sin preocuparnos de cómo se construye una instancia de la clase servicio. Simplemente deberíamos obtener esa instancia de la clase servicio desde el *service container*, que se encargaría construirla y proporcionarla.
+
+Para instruir al contenedor de servicios acerca de cómo instanciar cada servicio, usaremos su método `bind()`, pasándole como primer argumento el nombre *fully-qualified* de la clase servicio a registrar, y como segundo argumento una *closure* o función que retornará la instancia de la clase. Esta *closure* tiene como parámetro una instancia del mismo *service container*:
 
 ```php
 app()->bind(Servicio::class, function($app) {
@@ -87,7 +179,7 @@ class Cliente
 }
 ```
 
-Lo cierto es que el ejemplo no tiene mucho sentido, ya que la gracia está en no tener que instruir al contenedor de servicios. Así, la gran mayoría de los servicios quedarán registrados mediante un *service provider*, que instruirá al contenedor al principio de todo, y en las clases nos olvidaremos de registrar *bindings*.
+Lo cierto es que el ejemplo no tiene mucho sentido, ya que la gracia está en no tener que instruir al contenedor de servicios dentro de la clase cliente. Así, la gran mayoría de los servicios quedarán registrados mediante un *service provider*, que instruirá al contenedor al principio de todo, y en las clases nos olvidaremos de registrar *bindings*.
 
 Por otro lado, el *helper* `resolve()` equivale a `app()->make()`, así como `app()` con el nombre *fully-qualified* de la clase como argumento. Así, asumiendo que un *service provider* ya ha registrado el *binding*, la clase quedaría así:
 
@@ -102,13 +194,17 @@ class Cliente
 }
 ```
 
+Todavía no estamos usando la inyección automática. Pero ya falta poco.
+
 ### *Binding* de interfaces
 
-Cuando registramos el *binding* de una interfaz, la *closure* debe retornar una instancia de la clase que deseemos, siempre y cuando esa clase implemente la interfaz. Este mecanismo es muy potente, ya que al depender de una interfaz se puede cambiar el servicio de una clase a otra.
+Cuando registramos el *binding* de una interfaz, la *closure* debe retornar una instancia de la clase que deseemos, siempre y cuando esa clase implemente la interfaz. Es en este punto donde podemos intercambiar entre una u otra clase (*interface injection*).
 
 ### Inyección automática
 
-Cuando un método o función no es invocado directamente por nuestro código, es decir, cuando **es llamado automáticamente por** ***Laravel*** (método de un controlador, *handler* de ruta, *event listener*, *middleware*, etc.), podemos indicar la inyección de dependencias dentro de la lista de parámetros de tal método o función, sin llamar a `resolve()`. Estos parámetros inyectados automáticamente deben estar *type-hinted* (se debe indicar el tipo), y deben estar **antes** de los parámetros formales.
+Para invocar directamente un método o instanciar una clase explícitamente (con `new`), si necesitamos inyectar algun servicio, deberemos utilizar el *service container* explícitamente, mediante `resolve()` o equivalente.
+
+Sin embargo, cuando un método o constructor **es invocado automáticamente por** ***Laravel*** (método de un controlador, *handler* de ruta, *event listener*, *middleware*, etc.), la inyección de dependencias se indica dentro de la lista de parámetros de tal método o constructor, sin utilizar `resolve()` manualmente. Es importante tener en cuenta que estos parámetros inyectados automáticamente deben estar *type-hinted* (se debe indicar el tipo), y deben estar **antes** de los parámetros formales.
 
 Este código:
 
@@ -147,7 +243,7 @@ Route::get('/', function(Servicio $serv) { /*...*/ })
 
 Así, las dependencias solo tienen que indicarse en la lista de parámetros para que sean inyectadas automáticamente por el *service container*.
 
-En cambio, si la llamada al método o función la realizamos directamente, la llamada no se hace a través del contenedor, y este mecanismo no está disponible:
+Como hemos comentado, si la llamada al método o instanciación de clase la realizamos directamente, este mecanismo no está disponible:
 
 ```php
 class Servicio {}
@@ -162,8 +258,6 @@ $cliente = new Cliente;  // ERROR! El constructor espera
                          // un argumento...
 ```
 
-Las dependencias suelen inyectarse en los clientes a través de su constructor, o, en algunos casos, a través de métodos *setter*.
-
 > A modo de organización, la lógica de negocio se debería incluir en servicios inyectados en los controladores, que quedarían así, libres de lógica de negocio. Cabe añadir que la lógica relacionada con bases de datos se debería pasar al modelo (ver capítulo de bases de datos), fuera del controlador. De este modo, los controladores deberían tener muy poco código (*thin controllers*).
 
 ### Resolución de configuración cero
@@ -173,9 +267,7 @@ Hay que mencionar que **no siempre es necesario registrar un** ***binding***. Es
 - Su constructor no precisa de argumentos que precisen valores concretos, como números o *strings*. Así, todos los parámetros (si los hay) deben ser dependencias *type-hinted*, que en ningún caso pueden ser interfaces.
 - La clase no tiene dependencias, y si las tiene, cumplen todas el requisito anterior.
 
-De todas formas, no tiene sentido que las clases pensadas para actuar como servicios para otras clases esperen valores concretos.
-
-> El contenedor de servicios evalúa las dependencias de una clase mediante el mecanismo de reflexión de *PHP*, que permite obtener información de la propia clase (incluso puede acceder a los comentarios del código).
+De todas formas, no tiene sentido que las clases pensadas para actuar como servicios para otras clases cliente esperen valores concretos.
 
 ```php
 class Servicio {}
@@ -184,6 +276,8 @@ Route::get('/', function(Servicio $serv) { /*...*/ })
 ```
 
 En este ejemplo no es necesario registrar el *binding*.
+
+> El contenedor de servicios evalúa las dependencias de una clase mediante el mecanismo de reflexión de *PHP*, que permite obtener información de la propia clase (incluso puede acceder a los comentarios del código).
 
 ### *Binding*
 
