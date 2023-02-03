@@ -1,5 +1,180 @@
 # Profundizando
 
+## Comandos *artisan*
+
+Es posible escribir comandos *artisan* en la aplicación. Para crear un comando nuevo, se puede hacer a través del propio `artisan`:
+
+```
+php artisan make:command MiComando
+```
+
+Se creará el comando en el archivo (clase) ***app/Console/Commands/MiComando.php***, en el *namespace* ***App\\Console\\Commands***.
+
+En la clase existen dos propiedades que hay que definir:
+
+- ***\$signature*** indica el nombre que utilizaremos para invocar el comando desde la línea de comandos, así como la sintaxis del mismo (parámetros). Puede ser del tipo `comando:subcomando`, o simplemente `comando`.
+- ***\$description*** es la descripción que aparecerá cuando solicitemos la lista de comandos disponibles mediante `php artisan list`.
+
+Por otro lado, debemos definir el método `handle()`, que contendrá la lógica del comando. Como siempre, es posible incluir en la lista de parámetros objetos *type-hinted*, que serán inyectados por el *service container*. Al final, este método debe retornar el código de salida (*exit code*, entero), que si todo es correcto será cero.
+
+### Definición de parámetros
+
+Si deseamos que nuestro comando reciba argumentos, lo definiremos en ***\$signature***, mediante strings como estos:
+
+- `comando:subcomando {usuario} {producto}` espera dos argumentos.
+- `comando:subcomando {usuario?}` espera un argumento **opcional**.
+- `comando:subcomando {usuario=foo}` espera un argumento **con valor por defecto**.
+
+Por otro lado, podemos aceptar también opciones:
+
+- `comando:subcomando {usuario} {--desayuno}` admite la presencia o ausencia del *switch* `--desayuno` (nótense los dos guiones iniciales).
+- `comando:subcomando {usuario} {--desayuno=}` en este caso, la opción no es un *switch* (presencia/ausencia), sino que espera que se le asigne un valor.
+- `comando:subcomando {usuario} {--desayuno=frugal}` este caso es como el anterior, pero se da un valor por defecto a la opción.
+
+Para invocar este comando, suponiendo que la opción no es un *switch*:
+
+```
+php artisan comando:subcomando Pedrito --desayuno=continental
+```
+
+Si no se especifica la opción, se entenderá el valor por defecto, o ***null*** si no está definido.
+
+También se puede especificar un atajo para las opciones, de este tipo `comando:subcomando {--D|desayuno}`, en cuyo caso se invocará con `--desayuno`, o `-D` (un solo guión).
+
+Para recoger un *array* definiremos:
+
+- `comando:subcomando {usuario*}` para uno o más elementos.
+- `comando:subcomando {usuario?*}` para **cero** o más elementos.
+
+Se invocaría así:
+
+```
+php artisan comando:subcomando Pepe Juan Pedro
+```
+
+Y sería recogido en un *array* de tres elementos.
+
+También podemos definir opciones que acepten *arrays*:
+
+- `comando:subcomando {--desayuno=*}`
+
+Para invocar:
+
+```
+php artisan comando:subcomando --desayuno=continental --desayuno=frugal
+```
+
+Podemos proporcionar explicaciones de los parámetros para el comando `help` de *artisan*:
+
+- `comando:subcomando {usuario : Usuario que desayuna} {--desayuno= : Qué va a tomar el señor}`
+
+Lo veríamos en:
+
+```
+php artisan help comando:subcomando
+```
+
+### Recogida de los argumentos
+
+Para acceder a los argumentos que introduce el usuario, se utiliza, dentro del método `handle()`:
+
+```php
+$usuario = $this->argument('usuario');
+```
+
+También es posible recoger **todos** los argumentos en un *array*:
+
+```php
+$argumentos = $this->arguments();
+```
+
+De forma similar, podemos recoger las opciones:
+
+```php
+$desayuno = $this->option('desayuno');
+$opciones = $this->options();
+```
+
+En el caso de que recojamos un solo argumento u opción, y sea múltiple, el valor obtenido será un *array*.
+
+### Solicitar entrada de datos
+
+Es posible solicitar información al usuario de forma interactiva:
+
+```php
+$nombre = $this->ask('¿Cómo te llamas?');
+```
+
+Como segundo argumento se le puede dar un valor por defecto.
+
+Para campos confidenciales (contraseñas) se utiliza el método `secret()`:
+
+```php
+$nombre = $this->secret('Teclea contraseña');
+```
+
+Para solicitar una confirmación del tipo sí/no:
+
+```php
+if($this->confirm('¿Seguir adelante?'))
+    { /* ... */}
+```
+
+En este caso, solo se evaluará a verdadero si el usuario introduce ***y***, ***ye*** o ***yes***. Pero si lo hacemos así:
+
+```php
+if($this->confirm('¿Seguir adelante?', true))
+    { /* ... */}
+```
+
+En este caso solo se evaluará a falso si el usuario introduce ***n*** o ***no***.
+
+Para dar a elegir entre varias posibilidades:
+
+```php
+$nombre = $this->choice('¿Quién es tu jefe?', ['Pedro', 'Juan', 'Paco']);
+```
+
+En este caso, el usuario puede elegir tecleando el nombre deseado, o el índice del elemento. Como tercer argumento se puede indicar el elemento por defecto (por su índice o por su valor).
+
+En este caso hay un cuarto argumento opcional con el número máximo de intentos (por defecto ***null***, infinitos), y un quinto que indica si se pueden seleccionar múltiples elementos (por defecto ***false***).
+
+Si queremos anticiparnos a posibles valores de entrada con autocompletado:
+
+```php
+$nombre = $this->anticipate('¿Cómo te llamas?', ['Pedro', 'Juan', 'Paco']);
+```
+
+Es similar a `choice()`, aunque en este caso no se presenta un menú de opciones, y el usuario puede teclear cualquier cosa. Nuevamente, como tercer argumento se le puede dar un valor por defecto (no índice), que no tiene por qué coincidir con ninguno de los elementos del *array*.
+
+### Salida
+
+Para escribir algo a la salida, existen los métodos `line()`, `info()`, `comment()`, `question()`, `warn()` y `error()` que escriben el valor que se le pasa como argumento, con el color adecuado. En este caso, suele ser, respectivamente, blanco, verde, amarillo, negro con fondo cyan, amarillo y blanco con fondo rojo.
+
+Para un salto de línea, o bien se utiliza `\n` dentro de un *string* (de comillas dobles), o simplemente el método `newLine()`, al que opcionalmente se le puede pasar un entero con el número de saltos deseados (por defecto 1).
+
+Para imprimir una tabla de datos de forma agradable para modo texto:
+
+```php
+use App\Models\Usuario;
+
+$this->table(['Usuario', 'Teléfono'],  // encabezados
+             Usuario::all(['user', 'tel'])->toArray());
+```
+
+### Registro de comandos
+
+Por defecto, se escanearán todos los comandos presentes en ***app/Console/Commands/MiComando.php***. Si queremos especificar otros directorios, se debe editar la función `commands()` en ***app/Console/Kernel.php***:
+
+```php
+protected function commands()
+{
+    $this->load(__DIR__.'/Commands');  // por defecto
+    $this->load(__DIR__.'/../Comandos/Otros');  // añadido
+    // ...
+}
+```
+
 ## Colecciones (*collections*)
 
 La clase ***Illuminate\\Support\\Collection*** proporciona un potente mecanismo para el tratamiento de *arrays* de datos.
