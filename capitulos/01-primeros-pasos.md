@@ -122,13 +122,19 @@ Es posible establecer un valor de configuración en tiempo de ejecución. Para e
 config(['app.timezone' => 'Madrid/Paris']);
 ```
 
-Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todos los valores de configuración en un solo archivo que será cargado al principio:
+Para que la aplicación funcione más rápido (normalmente, en entorno de producción), se puede configurar la aplicación para que agrupe todos los valores de configuración en un solo archivo cache que será cargado al principio:
 
 ```
 php artisan config:cache
 ```
 
 > Si hacemos esto, las llamadas a `env()`, fuera de los archivos de configuración, retornarán siempre ***null***.
+
+Para eliminar ese archivo cache de configuración:
+
+```
+php artisan config:clear
+```
 
 ### Modo de depuración
 
