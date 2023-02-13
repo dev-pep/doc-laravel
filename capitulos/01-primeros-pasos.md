@@ -226,4 +226,8 @@ Para eliminar todas las plantillas precompiladas (bajo demanda o por el comando 
 php artisan view:clear
 ```
 
+Si hacemos cambios en el archivo ***.env***, se debe ejecutar este comando posteriormente.
+
 Se debería establecer ***APP_DEBUG*** a ***false***, para no exponer información sobre valores de configuración.
+
+En cuanto a la variable ***APP_ENV***, es aconsejable indicar ***production*** en lugar de ***local*** (para desarrollo). Esta variable es útil cuando nuestra aplicación se comporta de forma diferente en producción que en desarrollo, o incluso en otras fases del ciclo de vida que se nos ocurran. Si en el código no hacemos distinción alguna, su valor es indiferente.
