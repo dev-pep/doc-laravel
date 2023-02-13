@@ -66,7 +66,7 @@ El archivo ***index.php*** es el *front controller*, que gestiona todas las peti
 
 Todos los archivos de configuración están en el directorio ***config***.
 
-Por otro lado, el archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***.
+Por otro lado, el archivo ***.env*** guarda los valores de entorno de la aplicación. Debería estar fuera de control de versiones, para que cada desarrollador tenga su contenido adaptado a sus necesidades. Sin embargo, el contenido que debiera ir a producción sí podría incluirse, por ejemplo en un archivo ***.env.example***. Este no debería incluir una *key* de aplicación, para que se generara una nueva para este despliegue.
 
 > La variable ***APP_URL*** del archivo ***.env*** no juega un papel importante en el funcionamiento de la aplicación. Sin embargo, algunos paquetes la usan y no funcionarán bien si está mal configurada. A parte de esto, algunos componentes, como las notificaciones por correo electrónico o algunos comandos de consola, también se pueden ver afectados.
 
