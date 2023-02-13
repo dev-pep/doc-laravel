@@ -138,7 +138,9 @@ php artisan config:clear
 
 ### Modo de depuración
 
-Por defecto, la configuración de depuración (en ***config/debug.php***) establece el modo de depuración según la variable de entorno (normalmente en ***.env***) ***APP_DEBUG***.
+Por defecto, la configuración de depuración (en ***config/app.php***) se determina por la opción ***debug***. Esta variable puede ser ***true*** o ***false*** según deseemos el modo de depuración. Dicha opción suele basarse en el valor de la variable de entorno (en ***.env***) ***APP_DEBUG***.
+
+Cuando el modo de depuración está activo, se muestra mucha información sobre un posible error encontrado en el código. Esta información no se muestra con el modo desactivado, aunque sigue siendo accesible a través del *log* de errores (siempre que esté debidamente configurado, es decir, activo y con nivel de *logging* ***debug***).
 
 ### Modo de mantenimiento
 
@@ -204,12 +206,24 @@ Si hay muchas (cientos) rutas, se recomienda:
 php artisan route:cache
 ```
 
-Esto acelera el registro de rutas.
+Esto crea un archivo cache de rutas que acelera el registro de las mismas. Para eliminar tal archivo:
+
+```
+php artisan route:clear
+```
+
+Por otro lado:
 
 ```
 php artisan view:cache
 ```
 
-Esto precompila todos los *templates Blade*, con lo que no se hace *on demand* cada vez que se retorne una vista a partir de una petición.
+Precompila todos los *templates Blade*, con lo que no se hace *on demand* cada vez que se retorne una vista a partir de una petición.
+
+Para eliminar todas las plantillas precompiladas (bajo demanda o por el comando anterior):
+
+```
+php artisan view:clear
+```
 
 Se debería establecer ***APP_DEBUG*** a ***false***, para no exponer información sobre valores de configuración.
