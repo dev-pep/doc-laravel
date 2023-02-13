@@ -136,6 +136,8 @@ Para eliminar ese archivo cache de configuración:
 php artisan config:clear
 ```
 
+Si se ha creado un archivo cache de configuración y posteriormente se modifica dicha configuración (directorio ***config*** y/o archivo ***.env***), habrá que eliminar o regenerar dicho cache.
+
 ### Modo de depuración
 
 Por defecto, la configuración de depuración (en ***config/app.php***) se determina por la opción ***debug***. Esta variable puede ser ***true*** o ***false*** según deseemos el modo de depuración. Dicha opción suele basarse en el valor de la variable de entorno (en ***.env***) ***APP_DEBUG***.
@@ -225,8 +227,6 @@ Para eliminar todas las plantillas precompiladas (bajo demanda o por el comando 
 ```
 php artisan view:clear
 ```
-
-Si hacemos cambios en el archivo ***.env***, se debe ejecutar este comando posteriormente.
 
 Por otro lado, se debería establecer la variable ***APP_DEBUG*** a ***false***, para no exponer información sobre valores de configuración.
 
