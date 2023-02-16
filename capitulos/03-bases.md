@@ -1681,13 +1681,76 @@ Cuando un campo no está presente o está vacío, las reglas de validación (inc
 
 ## Tratamiento de errores
 
-Las excepciones levantadas durante la ejecución se loguean y muestran a través de la clase ***App\\Exceptions\\Handler***. Esta clase permite tener control acerca de cómo y qué se reportará en caso de fallo.
+Las excepciones levantadas durante la ejecución se loguean y muestran a través de la clase ***App\\Exceptions\\Handler***. Este manejador de excepciones permite tener control acerca de cómo y qué se reportará en caso de fallo.
 
-En el archivo de configuración ***config/app.php*** existe una clave, ***debug***, con un valor booleano que indica la cantidad de información que se muestra al usuario en caso de error. Esta variable, por defecto, lee el contenido de ***APP_DEBUG*** en el archivo ***.env***.
+En el archivo de configuración ***config/app.php*** existe una clave, ***debug***, con un valor booleano que indica si en caso de error se va a mostrar al usuario un informe completo de dicho de error (con su correspondiente *stack trace*, etc.) o no se va a mostrar tal información. Esta variable, por defecto, lee primero el contenido de ***APP_DEBUG*** en el archivo ***.env***, y suele se ***false*** en entornos de producción. En dichos entornos, aunque la información de la excepción no se haya mostrado al usuario final, normalmente se incluye en el *log* de la aplicación (gracias a la mencionada clase ***App\\Exceptions\\Handler***).
+
+### El manejador de excepciones
+
+En ocasiones, nos puede interesar cambiar el comportamiento por defecto del programa a la hora de reportar un tipo de excepción determinado de alguna forma (en una base de datos, un archivo, una variable, etc.).
+
+Para ello se debe usar el método `register()` de la clase ***App\\Exceptions\\Handler***.
+
+Por ejemplo, registrar una *closure* que se ejecute cada vez que se produzca un tipo específico de excepción usaremos el método `reportable()` de esta clase:
+
+```php
+public function register()
+{
+    $this->reportable(function(MiException $e) {
+        // Código de la closure
+    });
+}
+```
+
+La *closure* recibirá un argumento *type-hinted*, que *Laravel* utilizará para identificar el tipo de excepción a reportar.
+
+Aunque registremos esta función, y siempre según la configuración de *log* definida (canales de *log* y nivel de *log*), el informe de error irá debidamente reportado al *log* de la aplicación, independientemente de dónde lo hayamos reportado nosotros. Existen dos formas de evitarlo:
+
+- Haciendo que el método `reportable()` retorne ***false***, o
+- encadenando un método `stop()` (sin argumentos).
+
+El manejador de excepciones contiene una propiedad ***dontReport***, inicialmente un *array* vacío, en la que podemos indicar los tipos de excepción que sean simplemente ignorados (no reportados).
+
+```php
+protected $dontReport = [
+    MiException::class,
+];
+```
+
+### Renderizado de excepciones
+
+Es posible definir la respuesta enviada al navegador en cuanto se produzca un tipo de excepción determinado mediante el método `renderable()`, al que se pasa una *closure*.
+
+A diferencia de los métodos anteriores, la definición del renderizado de una excepción puede hacerse para redefinir el modo de presentación de las excepciones predeterminadas de *Laravel* (o *Symphony*). Esto es útil en los tipos de excepciones que pueden producirse **antes** de que se ejecute nuestro controlador (por ejemplo, al subir un archivo que exceda el tamaño máximo indicado por la configuración de *PHP*). En este caso, puede resultar útil redirigir a nuestra propia página de error para evitar romper la dinámica de la aplicación.
+
+Si la *closure* no retorna ningún valor, la presentación se hará de la forma predeterminada.
+
+La *closure* recibe como primer argumento una instancia de la excepción (*type-hinted*), y una instancia de la *request* actual. Es importante que la *closure* retorne una *response*, que puede construirse con *helpers* como `response()` (o `redirect()` si queremos redirigir).
+
+```php
+use Illuminate\Http\Exceptions\PostTooLargeException;
+
+public function register()
+{
+    $this->renderable(function(
+                          PostTooLargeException $e,
+                          $request)
+    {
+        // Código de la closure, finalmente retornando
+        // una response
+    });
+}
+```
+
+### Excepciones personalizadas
+
+En nuestras propias excepciones podemos definir los métodos de reporte y renderizado `report()` y/o `render()`. De este modo, podemos indicar cómo queremos que se produzca el reportado y/o la presentación, sin tener que modificar el manejador de excepciones.
+
+Si nuestra excepción extiende una excepción renderizable, y no queremos redefinir la presentación, nuestro método `render()` retornará simplemente ***false***. De forma similar, `report()` puede retornar ***false*** si no queremos redefinir la forma de reporte. En todo caso, pueden retornar ***false*** u otra cosa, dependiendo de las condiciones del momento.
 
 ### Excepciones *HTTP*
 
-Es posible retornar un código de error *HTTP* mediante el *helper* `abort()`, pasándole como argumento el código específico.
+Es posible retornar un código de error *HTTP* en la *response* mediante el *helper* `abort()`, pasándole como argumento el código específico.
 
 Por otro lado, es posible definir páginas asociadas a un *status code* concreto. Estas páginas deben estar en el directorio ***resources/views/errors***, y tendrán como nombre el código deseado. Por ejemplo, para el estado de página no encontrada, podríamos definir el archivo ***resources/views/errors/404.blade.php***. También es posible definir una página para una serie de códigos. Esto se consigue con las plantillas ***4xx.blade.php*** (códigos 400) y ***5xx.blade.php*** (códigos 500). Estos archivos deben residir en el directorio indicado anteriormente. En todos estos archivos, está disponible la variable ***\$exception***, que contiene la excepción *HTTP*, y es del tipo ***Symfony\\Component\\HttpKernel\\Exception\\HttpException***. Se puede acceder al mensaje de error mediante su método `getMessage()`.
 
