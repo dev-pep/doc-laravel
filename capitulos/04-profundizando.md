@@ -1062,8 +1062,6 @@ Por ejemplo, supongamos que el paquete ***skyrim/hearthfire*** (recordemos que e
 
 En el *array* ***mailers*** del archivo de configuración se encuentran todos los *mailers* disponibles, junto a su configuración. A parte, se puede definir el *mailer* por defecto, y el remitente *from* (dirección y nombre).
 
-Nos centraremos en el envío por *SMTP*. Para otros *mailers*, véase la documentación oficial.
-
 ### Los *mailables*
 
 Cada tipo de correo que enviamos se corresponde con una clase *mailable*. Estas clases se almacenan en ***app/Mail***. Se pueden crear mediante *artisan*:
@@ -1072,65 +1070,104 @@ Cada tipo de correo que enviamos se corresponde con una clase *mailable*. Estas 
 php artisan make:mail PwdCaducado
 ```
 
-Esta clase posee, a parte de su constructor, un método `build()`, que es donde se configura el correo a enviar. Este correo debe retornar una instancia del *mailable*. El objeto retornado contiene toda la información del correo a enviar: remitente, destinatiario(s), contenido, asunto, etc.
+Esta clase posee, a parte de su constructor, los métodos necesarios para generar un correo electrónico.
 
-Para ello, lo habitual es utilizar como base la propia instancia, a través de ***\$this***, añadiéndole información a través del encadenado de métodos (no importa el orden).
+El método `envelope()` permite definir el asunto del correo (y opcionalmente el remitente), y retorna un objeto del tipo ***Illuminate\\Mail\\Mailables\\Envelope***. El método `content()` define el cuerpo del mensaje, a través de una plantilla *Blade*. Retorna un objeto del tipo ***Illuminate\\Mail\\Mailables\\Content***. Para definir los posibles archivos adjuntos del mensaje se utiliza el método `attachments()`.
 
-#### Remitente
+### Remitente y asunto
 
-El método `from()` permite especificar un remitente válido. El primer argumento que recibe es in *string* con la dirección de correo del remitente, y el segundo, el nombre del mismo (opcional). Si la dirección de respuesta debe ser distinta, se puede usar el método `replyTo()`, que tiene los mismos argumentos que `from()`.
-
-Se puede utilizar un remitente configurado globalmente en ***config/mail.php***. Además, se puede indicar la dirección *reply to* (si es distinta a *from*):
+Para definir el remitente, se puede hacer mediante el sobre (*envelope*) del mensaje, que también define el asunto. Para generar direcciones de correo (nombre + dirección), usaremos una instancia de la clase ***Illuminate\\Mail\\Mailables\\Address***:
 
 ```php
-'from' => [
-    'address' => 'pepe@ejemplo.com',
-    'name' => 'Nombre del remitente'
-],
-'reply_to' => [
-    'address' => 'paco@ejemplo.com',
-    'name' => 'Nombre a quien respondemos'
-],
-```
+use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Envelope;
 
-Si existe tal configuración, los métodos `from()` y `replyTo()` tienen prioridad sobre ella.
-
-#### Asunto
-
-Para especificar el asunto, simplemente se incluirá en la cadena el método `subject()`, que recibe un *string* con el asunto.
-
-Si no se especifica, el asunto, por defecto, es el nombre de la clase *mailable*.
-
-#### Contenido
-
-Para especificar el contenido, se puede usar una plantilla *Blade*, cuyo nombre se pasará como argumento al método `view()`. Un segundo argumento podrá contener un *array* con argumentos para la plantilla.
-
-Es posible definir una versión en texto plano mediante el método `text()`, que usa como base también una plantilla *Blade*, que se usará como texto. Recibe los mismos argumentos que `view()`.
-
-La plantilla *Blade* utilizada tendrá acceso a todas las propiedades públicas del *mailable*, a parte de los argumentos que reciba. También se puede usar el método `with()`, al que se le pasará un *array* de argumentos para la plantilla (o plantillas: *Blade* y texto).
-
-#### Adjuntos
-
-Se puede añadir un adjunto mediante el método `attach()`. El primer argumento a dicho método es la ruta (completa) del archivo. Como segundo argumento, opcional, se puede pasar un *array* con el nombre que tendrá el archivo y/o el tipo del mismo.
-
-```php
-public function build()
+public function envelope(): Envelope
 {
-    return $this->view('emails.orders.shipped')
-                ->attach('/path/to/file', [
-                    'as' => 'name.pdf',
-                    'mime' => 'application/pdf',
-                ]);
+    return new Envelope(
+        from: new Address('pedro@ejemplo.com', 'Don Pedro'),
+        replyTo: new Address('norep@ejemplo.com', 'NO REP'),
+        subject: 'Contraseña caducada');
 }
 ```
 
-Por otro lado, el método `attachFromStorage()` toma como primer argumento la ruta de archivo **relativa** al directorio ***storage***. En este caso, el segundo argumento (opcional) será el nombre que tendrá el archivo en el correo. Como tercer argumento, también opcional, podemos incluir el *array* de opciones (con el tipo *MIME*, por ejemplo). Similar a este método, `attachFromStorageDisk()` adjunta un archivo en uno de los discos definidos. El nombre del disco es el primer argumento. El segundo argumento es la ruta absoluta del archivo dentro de ese disco. También acepta opcionalmente el nombre con el que se enviará y el *array* de opciones.
+En este caso, el argumento ***from*** es la dirección, y ***subject*** es el asunto del correo. El argumento ***replyTo*** es la dirección de respuesta (por defecto la misma que ***from***).
 
-El método `attachData()` recibe como primer argumento una cadena de *bytes*, como segundo el nombre del archivo (solo nombre, no ruta). Opcionalmente puede incluirse un *array* de opciones.
+Si no se proporciona el argumento ***from***, se tomará el remitente global definido en ***config/mail.php*** (si existe):
+
+```php
+'from' => [
+    'address' => 'pedro@ejemplo.com',
+    'name' => 'Don Pedro'
+],
+```
+
+Adicionalmente se puede definir también una dirección de respuesta global, con el mismo formato, y clave ***reply_to***.
+
+### Contenido
+
+El cuerpo del mensaje se define en el método `content()` de la clase *mailable*:
+
+```php
+use Illuminate\Mail\Mailables\Content;
+
+public function content(): Content
+{
+    return new Content(
+        view: 'notificaciones.password',
+        text: 'notificaciones.password-text'
+    );
+}
+```
+
+Los argumentos del constructor de ***Content*** toman como valor el nombre de la vista *Blade* correspondiente. En el ejemplo se define el contenido (argumento ***view***, alias de ***html***), y la versión de texto plano (***text***). Podemos definir una sola versión del correo.
+
+### Datos en el mensaje
+
+A la hora de crear el mensaje, es posible que deseemos incorporar datos concretos en el cuerpo, o en el asunto del mensaje. Para ello, hay dos posibilidades:
+
+- Las propiedades **públicas** del objeto *mailable* están disponibles para la plantilla *Blade*, usando el nombre de tal propiedad como una variable normal. Normalmente se dará valor a estas propiedades mediante el constructor del *mailable*.
+- En la instanciación del elemento ***Content***, a través del argumento ***with***:
+
+```php
+public function content(): Content
+{
+    return new Content(
+        view: 'notificaciones.password',
+        with: [
+            'nombreUsuario' => $this->nombre,
+            'causa' => $this->causa
+        ],
+    );
+}
+```
+
+### Archivos adjuntos
+
+Se pueden añadir archivos adjuntos mediante el método `attachments()`. Este retornará  un *array* de elementos de tipo ***Illuminate\\Mail\\Mailables\\Attachment***. Una forma de conseguir una instancia de un adjunto es utilizando su método estático `fromPath()`, al que se la pasará como argumento la ruta completa del archivo. Adicionalmente, se le puede dar al archivo un nombre con el que debe guardarse, y/o un tipo *MIME* encadenando los métodos `as()` y/o `withMime()` respectivamente:
+
+```php
+use Illuminate\Mail\Mailables\Attachment;
+
+public function attachments(): array
+{
+    return [
+        Attachment::fromPath('/ruta/al/archivo')
+            ->as('nombre.pdf')
+            ->withMime('application/pdf'),
+    ];
+}
+```
+
+Si el archivo se encuentra en el sistema de archivos por defecto definido en la aplicación, en lugar de `fromPath()` puede utilizarse `fromStorage()`, pasándole la ruta del archivo relativa al raíz de dicho sistema de archivos (por lo demás funciona igual que `fromPath()`).
+
+También puede utilizarse cualquier otro sistema de archivos configurado en la aplicación que no sea el disco por defecto, mediante `fromStorageDisk()`. Este funciona igual que `fromStorage()`, pero en este caso recibirá un primer argumento con el nombre del disco, antes del argumento con la ruta del archivo.
+
+Por otro lado, el método `fromData()` permite utilizar una ristra de *bytes* que convertirá en archivo adjunto. El método recibe como primer argumento una *closure* que retorna estos datos binarios, y un segundo argumento con el nombre que tendrá el archivo.
 
 ### Envío de correo
 
-Para enviar un correo, se utiliza la *facade* ***Illuminate/Support/Facades/Mail***. En este caso, debemos especificar el destinatario o destinatarios, copias, copias ocultas, etc. El método `to()` acepta un *string* con la dirección de correo electrónico, o un objeto. En el caso de un objeto, se usarán sus propiedades ***mail*** y ***name*** para el envío. Pero también acepta un *array* con *strings* y/o objetos, si queremos enviarlo a varios destinatarios.
+Para enviar un correo, se utiliza la *facade* ***Illuminate/Support/Facades/Mail***. En este caso, debemos especificar como argumento el destinatario o destinatarios, copias, copias ocultas, etc. El método `to()` acepta un *string* con la dirección de correo electrónico, o un objeto. En el caso de un objeto, se usarán sus propiedades ***mail*** y ***name*** para el envío. Pero también acepta un *array* de *strings* o de objetos, si queremos enviarlo a varios destinatarios.
 
 También pueden encadenarse métodos como `cc()` (*carbon copy*, copia), `cco()` (*blind carbon copy*, copia oculta), con el mismo formato de argumentos que `to()`.
 
@@ -1140,7 +1177,7 @@ También pueden encadenarse métodos como `cc()` (*carbon copy*, copia), `cco()`
 Mail::to($request->user())
     ->cc($moreUsers)
     ->bcc($evenMoreUsers)
-    ->send(new OrderShipped(33));
+    ->send(new PwdCaducado);
 ```
 
 Si en lugar de usar el *mailer* por defecto deseamos usar otro:
@@ -1154,6 +1191,8 @@ Mail::mailer('postmark')
 ### Previsualización de *mailables*
 
 Para ver una previsualización de un *mailable*, no es necesario enviarlo. Simplemente si como *response* retornamos la instancia concreta de dicho *mailable*, podremos verlo en pantalla.
+
+Otra opción es generar el código *HTML* del *mailable* utilizando el método `render()` del *mailable* (que entre otras cosas se puede retornar como respuesta).
 
 ## Desarrollo de paquetes
 
