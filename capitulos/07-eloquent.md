@@ -437,6 +437,12 @@ foreach($emp->depars as $dep) {
 }
 ```
 
+#### Retorno de un modelo con relaciones
+
+Si retornamos un modelo (o colección de modelos), no se incluirán las relaciones en una posible respuesta, a no ser que se haga una referencia explícita a las mismas antes de retornarlas.
+
+Esto es importante cuando retornamos simplemente una respuesta *JSON*. En cambio, si retornamos el modelo como argumento de una plantilla *Blade*, todas las relaciones referenciadas en esa plantilla se incluirán adecuadamente.
+
 ### Modelo por defecto
 
 Es posible que una clave externa tenga valor ***null***. En ese caso, es posible establecer un modelo por defecto que será retornado en estas circunstancias por funciones como `hasOne()` o `belongsTo()` (funciones que retornan un modelo, no una colección). Ello se consigue pasando como argumento al método `withDefault()` un *array* asociativo con los valores de los campos del modelo deseado:
