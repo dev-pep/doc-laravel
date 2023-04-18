@@ -439,9 +439,11 @@ foreach($emp->depars as $dep) {
 
 #### Retorno de un modelo con relaciones
 
-Si retornamos un modelo (o colección de modelos), no se incluirán las relaciones en una posible respuesta, a no ser que se haga una referencia explícita a las mismas antes de retornarlas.
+Si retornamos un modelo (o colección de modelos), no se incluirán las relaciones en una posible respuesta, a no ser que se haga una referencia a las mismas antes de retornarlas. Dicha referencia puede hacerse dentro de la lógica del controlador, o también en la misma plantilla *Blade*.
 
-Esto es importante cuando retornamos simplemente una respuesta *JSON*. En cambio, si retornamos el modelo como argumento de una plantilla *Blade*, todas las relaciones referenciadas en esa plantilla se incluirán adecuadamente.
+Pero si por ejemplo retornamos simplemente una respuesta *JSON*, habrá que realizar una referencia explícita antes de retornar.
+
+Así, la primera vez que se realiza una referencia a la relación, *Eloquent* da valor a la propiedad adecuada; cualquier cambio que se realice en esta propiedad se conservará hasta el final.
 
 ### Modelo por defecto
 
