@@ -118,7 +118,7 @@ $marcaCoche2 = $tablaCoches[2]->marca;
 
 > Una collection puede convertirse en *array* mediante el método `toArray()` de la collection.
 
-Una forma de aplicar un filtro al query builder es mediante `where()` (se verá en detalla más adelante). Por otro lado, en lugar de convertir el *query builder* en una *collection* de objetos, se puede convertir en un solo objeto mediante el método `first()`. En este caso, el objeto es el primero de los registros de la *query*.
+Una forma de aplicar un filtro al query builder es mediante `where()` (se verá en detalle más adelante). Por otro lado, en lugar de convertir el *query builder* en una *collection* de objetos, se puede convertir en un solo objeto mediante el método `first()`. En este caso, el objeto es el primero de los registros de la *query*.
 
 ```php
 $user = DB::table('coches')
@@ -133,6 +133,28 @@ Este ejemplo toma la tabla ***coches***, le aplica un *where* (`marca=Volvo`) me
 `find()` retorna un simple objeto con el registro tal que su clave primaria (campo con nombre ***id***) tiene el valor que pasamos como argumento. Si no encuentra dicho registro, retorna ***null***.
 
 `pluck()` retorna todos los valores que tiene la columna (campo) cuyo nombre le pasamos como argumento. El tipo de retorno es una *collection*. Si le pasamos un segundo argumento con en nombre de otro campo, los elementos de la *collection* retornada tendrán como clave el valor de ese segundo campo.
+
+> Es importante tener en cuenta que los métodos que actúan modificando el *query builder*, no solo retornan el *query builder* modificado, sino que además actúan *in situ* sobre este.
+
+Por ejemplo:
+
+```php
+$builder = DB::table('coches')
+    ->where('marca', 'Volvo');
+```
+
+Tras crear el *query builder*, sin pasarlo a *collection*, podemos refinarlo más adelante:
+
+```php
+$builder = $builder
+    ->select(['marca', 'modelo']);
+```
+
+En este caso, la asignación es redundante, con lo que la instrucción anterior podría sustituirse por:
+
+```php
+$builder->select(['marca', 'modelo']);
+```
 
 ### Fragmentos (*chunks*)
 
